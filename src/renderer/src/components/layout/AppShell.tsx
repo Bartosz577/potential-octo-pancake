@@ -3,6 +3,7 @@ import { Sidebar } from './Sidebar'
 import { StepIndicator } from './StepIndicator'
 import { ImportStep } from '@renderer/components/steps/ImportStep'
 import { CompanyStep } from '@renderer/components/steps/CompanyStep'
+import { PreviewStep } from '@renderer/components/steps/PreviewStep'
 import { useAppStore, STEP_LABELS } from '@renderer/stores/appStore'
 import { Upload } from 'lucide-react'
 
@@ -34,6 +35,8 @@ function MainContent(): React.JSX.Element {
       return <ImportStep />
     case 2:
       return <CompanyStep />
+    case 3:
+      return <PreviewStep />
     default:
       return <StepPlaceholder />
   }
