@@ -2,6 +2,7 @@ import { TitleBar } from './TitleBar'
 import { Sidebar } from './Sidebar'
 import { StepIndicator } from './StepIndicator'
 import { ImportStep } from '@renderer/components/steps/ImportStep'
+import { CompanyStep } from '@renderer/components/steps/CompanyStep'
 import { useAppStore, STEP_LABELS } from '@renderer/stores/appStore'
 import { Upload } from 'lucide-react'
 
@@ -31,6 +32,8 @@ function MainContent(): React.JSX.Element {
   switch (currentStep) {
     case 1:
       return <ImportStep />
+    case 2:
+      return <CompanyStep />
     default:
       return <StepPlaceholder />
   }
