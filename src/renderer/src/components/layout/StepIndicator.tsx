@@ -1,0 +1,66 @@
+import { Upload, Building2, Table, ShieldCheck, Download } from 'lucide-react'
+import { useAppStore, STEP_LABELS, type Step } from '@renderer/stores/appStore'
+
+const STEP_ICONS: Record<Step, typeof Upload> = {
+  1: Upload,
+  2: Building2,
+  3: Table,
+  4: ShieldCheck,
+  5: Download
+}
+
+const STEPS: Step[] = [1, 2, 3, 4, 5]
+
+export function StepIndicator(): React.JSX.Element {
+  const { currentStep } = useAppStore()
+
+  return (
+    <div className="flex items-center justify-center gap-0 h-14 bg-bg-app border-t border-border px-8">
+      {STEPS.map((step, index) => {
+        const Icon = STEP_ICONS[step]
+        const isActive = step === currentStep
+        const isCompleted = step < currentStep
+        const isLast = index === STEPS.length - 1
+
+        return (
+          <div key={step} className="flex items-center">
+            {/* Step circle + label */}
+            <div className="flex items-center gap-2">
+              <div
+                className={`flex items-center justify-center w-7 h-7 rounded-full transition-colors ${
+                  isActive
+                    ? 'bg-accent text-white'
+                    : isCompleted
+                      ? 'bg-accent/20 text-accent'
+                      : 'bg-bg-hover text-text-muted'
+                }`}
+              >
+                <Icon className="w-3.5 h-3.5" />
+              </div>
+              <span
+                className={`text-xs font-medium ${
+                  isActive
+                    ? 'text-text-primary'
+                    : isCompleted
+                      ? 'text-accent'
+                      : 'text-text-muted'
+                }`}
+              >
+                {STEP_LABELS[step]}
+              </span>
+            </div>
+
+            {/* Connector line */}
+            {!isLast && (
+              <div
+                className={`w-12 h-px mx-3 ${
+                  isCompleted ? 'bg-accent/40' : 'bg-border'
+                }`}
+              />
+            )}
+          </div>
+        )
+      })}
+    </div>
+  )
+}
