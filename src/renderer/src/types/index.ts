@@ -14,4 +14,5 @@ export interface ParsedFile {
   rows: string[][]
   rowCount: number
   columnCount: number
+  fileSize: number
 }

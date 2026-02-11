@@ -3,6 +3,9 @@ import { electronAPI } from '@electron-toolkit/preload'
 
 const api = {
   platform: process.platform,
+  openFileDialog: (): Promise<string[]> => ipcRenderer.invoke('dialog:openFiles'),
+  readFile: (filePath: string): Promise<{ content: string; size: number }> =>
+    ipcRenderer.invoke('file:read', filePath),
   window: {
     minimize: (): void => ipcRenderer.send('window:minimize'),
     maximize: (): void => ipcRenderer.send('window:maximize'),

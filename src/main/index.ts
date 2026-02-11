@@ -1,5 +1,6 @@
-import { app, shell, BrowserWindow, ipcMain } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
 import { join } from 'path'
+import { readFile, stat } from 'fs/promises'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 
@@ -48,6 +49,23 @@ function createWindow(): void {
   })
   mainWindow.on('unmaximize', () => {
     mainWindow.webContents.send('window:maximized-changed', false)
+  })
+
+  // File dialog IPC handler
+  ipcMain.handle('dialog:openFiles', async () => {
+    const result = await dialog.showOpenDialog(mainWindow, {
+      title: 'Wybierz pliki TXT',
+      filters: [{ name: 'Pliki tekstowe', extensions: ['txt'] }],
+      properties: ['openFile', 'multiSelections']
+    })
+    return result.canceled ? [] : result.filePaths
+  })
+
+  // Read file content IPC handler
+  ipcMain.handle('file:read', async (_event, filePath: string) => {
+    const content = await readFile(filePath, 'utf-8')
+    const stats = await stat(filePath)
+    return { content, size: stats.size }
   })
 
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {

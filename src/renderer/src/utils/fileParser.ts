@@ -8,7 +8,7 @@ function generateId(): string {
   return `file_${Date.now()}_${++idCounter}`
 }
 
-export function parseTxtFile(content: string, filename: string): ParsedFile {
+export function parseTxtFile(content: string, filename: string, fileSize = 0): ParsedFile {
   const lines = content
     .split(/\r?\n/)
     .filter((line) => line.trim().length > 0)
@@ -63,7 +63,8 @@ export function parseTxtFile(content: string, filename: string): ParsedFile {
     dateTo,
     rows,
     rowCount: rows.length,
-    columnCount
+    columnCount,
+    fileSize
   }
 }
 

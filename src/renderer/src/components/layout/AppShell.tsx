@@ -1,10 +1,11 @@
 import { TitleBar } from './TitleBar'
 import { Sidebar } from './Sidebar'
 import { StepIndicator } from './StepIndicator'
+import { ImportStep } from '@renderer/components/steps/ImportStep'
 import { useAppStore, STEP_LABELS } from '@renderer/stores/appStore'
 import { Upload } from 'lucide-react'
 
-function MainContentPlaceholder(): React.JSX.Element {
+function StepPlaceholder(): React.JSX.Element {
   const { currentStep, activeJpkType } = useAppStore()
 
   return (
@@ -24,6 +25,17 @@ function MainContentPlaceholder(): React.JSX.Element {
   )
 }
 
+function MainContent(): React.JSX.Element {
+  const { currentStep } = useAppStore()
+
+  switch (currentStep) {
+    case 1:
+      return <ImportStep />
+    default:
+      return <StepPlaceholder />
+  }
+}
+
 export function AppShell(): React.JSX.Element {
   return (
     <div className="flex flex-col h-full w-full">
@@ -36,7 +48,7 @@ export function AppShell(): React.JSX.Element {
 
         {/* Main content */}
         <main className="flex-1 bg-bg-main flex flex-col min-h-0">
-          <MainContentPlaceholder />
+          <MainContent />
         </main>
       </div>
 
