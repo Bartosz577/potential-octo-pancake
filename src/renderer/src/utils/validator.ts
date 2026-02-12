@@ -255,7 +255,7 @@ function validateLevel3(file: ParsedFile): ValidationItem[] {
       break
     }
     case 'JPK_FA': {
-      const sumP15 = file.rows.reduce((acc, row) => acc + parseDecimal(row[28] || ''), 0)
+      const sumP15 = file.rows.reduce((acc, row) => acc + parseDecimal(row[27] || ''), 0)
       items.push({
         id: 'l3-fa-p15',
         severity: 'info',
