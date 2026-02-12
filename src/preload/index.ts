@@ -6,6 +6,8 @@ const api = {
   openFileDialog: (): Promise<string[]> => ipcRenderer.invoke('dialog:openFiles'),
   readFile: (filePath: string): Promise<{ content: string; size: number }> =>
     ipcRenderer.invoke('file:read', filePath),
+  saveFile: (defaultName: string, content: string): Promise<string | null> =>
+    ipcRenderer.invoke('dialog:saveFile', defaultName, content),
   window: {
     minimize: (): void => ipcRenderer.send('window:minimize'),
     maximize: (): void => ipcRenderer.send('window:maximize'),

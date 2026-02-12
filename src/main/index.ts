@@ -1,6 +1,6 @@
 import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
 import { join } from 'path'
-import { readFile, stat } from 'fs/promises'
+import { readFile, writeFile, stat } from 'fs/promises'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 
@@ -67,6 +67,21 @@ function createWindow(): void {
     const stats = await stat(filePath)
     return { content, size: stats.size }
   })
+
+  // Save XML file IPC handler
+  ipcMain.handle(
+    'dialog:saveFile',
+    async (_event, defaultName: string, content: string) => {
+      const result = await dialog.showSaveDialog(mainWindow, {
+        title: 'Zapisz plik XML',
+        defaultPath: defaultName,
+        filters: [{ name: 'Pliki XML', extensions: ['xml'] }]
+      })
+      if (result.canceled || !result.filePath) return null
+      await writeFile(result.filePath, content, 'utf-8')
+      return result.filePath
+    }
+  )
 
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
     mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])

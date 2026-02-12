@@ -12,6 +12,7 @@ interface AppAPI {
   platform: string
   openFileDialog: () => Promise<string[]>
   readFile: (filePath: string) => Promise<{ content: string; size: number }>
+  saveFile: (defaultName: string, content: string) => Promise<string | null>
   window: WindowAPI
 }
 

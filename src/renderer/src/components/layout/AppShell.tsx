@@ -5,6 +5,7 @@ import { ImportStep } from '@renderer/components/steps/ImportStep'
 import { CompanyStep } from '@renderer/components/steps/CompanyStep'
 import { PreviewStep } from '@renderer/components/steps/PreviewStep'
 import { ValidationStep } from '@renderer/components/steps/ValidationStep'
+import { ExportStep } from '@renderer/components/steps/ExportStep'
 import { useAppStore, STEP_LABELS } from '@renderer/stores/appStore'
 import { Upload } from 'lucide-react'
 
@@ -40,6 +41,8 @@ function MainContent(): React.JSX.Element {
       return <PreviewStep />
     case 4:
       return <ValidationStep />
+    case 5:
+      return <ExportStep />
     default:
       return <StepPlaceholder />
   }
