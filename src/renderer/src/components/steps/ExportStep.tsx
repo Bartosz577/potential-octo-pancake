@@ -5,13 +5,19 @@ import {
   Copy,
   Check,
   FileText,
+  FileSpreadsheet,
+  Package,
   FileCode2,
   HardDrive
 } from 'lucide-react'
 import { useImportStore } from '@renderer/stores/importStore'
 import { useCompanyStore } from '@renderer/stores/companyStore'
 import { useAppStore } from '@renderer/stores/appStore'
+import { useHistoryStore } from '@renderer/stores/historyStore'
 import { generateVdekXml, getVdekSummary } from '@renderer/utils/xmlGenerator'
+import { generateFaXml, getFaSummary } from '@renderer/utils/faGenerator'
+import { generateMagXml, getMagSummary } from '@renderer/utils/magGenerator'
+import type { XmlSummary } from '@renderer/utils/xmlGenerator'
 
 function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`
@@ -40,7 +46,6 @@ function XmlHighlight({ xml }: { xml: string }): React.JSX.Element {
 }
 
 function HighlightedLine({ line }: { line: string }): React.JSX.Element {
-  // Match XML parts: tags, attributes, values
   const parts: React.JSX.Element[] = []
   let remaining = line
   let key = 0
@@ -166,36 +171,73 @@ function Toast({ message, onDone }: { message: string; onDone: () => void }): Re
   )
 }
 
+type TabType = 'JPK_VDEK' | 'JPK_FA' | 'JPK_MAG'
+
 export function ExportStep(): React.JSX.Element {
   const { files } = useImportStore()
   const { company, period } = useCompanyStore()
   const { setCurrentStep } = useAppStore()
+  const { addRecord } = useHistoryStore()
 
   const [toast, setToast] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
 
-  // Find VDEK file
+  // Find available files per type
   const vdekFile = files.find((f) => f.jpkType === 'JPK_VDEK')
+  const faFile = files.find((f) => f.jpkType === 'JPK_FA')
+  const magFile = files.find((f) => f.jpkType === 'JPK_MAG')
 
+  // Build available tabs (only for actually imported files)
+  const availableTabs: { type: TabType; file: ParsedFile }[] = []
+  if (vdekFile) availableTabs.push({ type: 'JPK_VDEK', file: vdekFile })
+  if (faFile) availableTabs.push({ type: 'JPK_FA', file: faFile })
+  if (magFile) availableTabs.push({ type: 'JPK_MAG', file: magFile })
+
+  const [activeTab, setActiveTab] = useState<TabType | null>(
+    availableTabs.length > 0 ? availableTabs[0].type : null
+  )
+
+  // Update active tab if files change and current tab is no longer available
+  const activeTabEntry = availableTabs.find((t) => t.type === activeTab)
+  const activeFile = activeTabEntry?.file ?? null
+
+  // Generate XML for the active file
   const xml = useMemo(() => {
-    if (!vdekFile) return ''
-    return generateVdekXml(vdekFile, company, period)
-  }, [vdekFile, company, period])
+    if (!activeFile) return ''
+    if (activeTab === 'JPK_VDEK') return generateVdekXml(activeFile, company, period)
+    if (activeTab === 'JPK_FA') return generateFaXml(activeFile, company, period)
+    if (activeTab === 'JPK_MAG') return generateMagXml(activeFile, company, period)
+    return ''
+  }, [activeFile, activeTab, company, period])
 
   const summary = useMemo(() => {
-    if (!vdekFile) return null
-    const s = getVdekSummary(vdekFile, company, period)
+    if (!activeFile) return null
+    let s: XmlSummary
+    if (activeTab === 'JPK_VDEK') s = getVdekSummary(activeFile, company, period)
+    else if (activeTab === 'JPK_FA') s = getFaSummary(activeFile, company, period)
+    else if (activeTab === 'JPK_MAG') s = getMagSummary(activeFile, company, period)
+    else return null
     s.fileSize = new Blob([xml]).size
     return s
-  }, [vdekFile, company, period, xml])
+  }, [activeFile, activeTab, company, period, xml])
 
   const handleSave = useCallback(async () => {
-    if (!summary || !xml) return
+    if (!summary || !xml || !activeFile || !activeTab) return
     const savedPath = await window.api.saveFile(summary.filename, xml)
     if (savedPath) {
       setToast(`Zapisano: ${savedPath}`)
+      addRecord({
+        jpkType: activeFile.jpkType,
+        subType: activeFile.subType,
+        sourceFilename: activeFile.filename,
+        outputFilename: summary.filename,
+        rowCount: summary.rowCount,
+        companyNip: company.nip,
+        companyName: company.fullName,
+        period: `${period.year}-${String(period.month).padStart(2, '0')}`
+      })
     }
-  }, [summary, xml])
+  }, [summary, xml, activeFile, activeTab, company, period, addRecord])
 
   const handleCopy = useCallback(async () => {
     await navigator.clipboard.writeText(xml)
@@ -204,11 +246,12 @@ export function ExportStep(): React.JSX.Element {
     setTimeout(() => setCopied(false), 2000)
   }, [xml])
 
-  if (!vdekFile) {
+  // Empty state — no exportable files
+  if (availableTabs.length === 0) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center gap-4">
         <FileText className="w-12 h-12 text-text-muted" />
-        <p className="text-sm text-text-secondary">Brak pliku JPK_VDEK do eksportu</p>
+        <p className="text-sm text-text-secondary">Brak pliku do eksportu</p>
         <button
           onClick={() => setCurrentStep(1)}
           className="px-4 py-2 rounded-lg text-sm font-medium text-accent hover:bg-accent/10 transition-colors"
@@ -219,6 +262,23 @@ export function ExportStep(): React.JSX.Element {
     )
   }
 
+  // Value label per type
+  const valueLabel =
+    activeTab === 'JPK_VDEK' ? 'VAT:' : activeTab === 'JPK_FA' ? 'Brutto:' : 'Wartość WZ:'
+
+  // Tab icon helper
+  function tabIcon(type: TabType): React.JSX.Element {
+    if (type === 'JPK_VDEK') return <FileText className="w-3.5 h-3.5" />
+    if (type === 'JPK_FA') return <FileSpreadsheet className="w-3.5 h-3.5" />
+    return <Package className="w-3.5 h-3.5" />
+  }
+
+  function tabLabel(type: TabType): string {
+    if (type === 'JPK_VDEK') return 'JPK V7M'
+    if (type === 'JPK_FA') return 'JPK FA'
+    return 'JPK MAG'
+  }
+
   return (
     <div className="flex-1 flex flex-col min-h-0">
       {/* Header */}
@@ -227,15 +287,35 @@ export function ExportStep(): React.JSX.Element {
           <FileCode2 className="w-5 h-5 text-accent" />
           <h1 className="text-xl font-semibold text-text-primary">Eksport XML</h1>
         </div>
-        <p className="text-sm text-text-secondary mb-4">
-          Podgląd wygenerowanego pliku JPK_V7M
+        <p className="text-sm text-text-secondary mb-3">
+          Podgląd wygenerowanego pliku JPK
         </p>
+
+        {/* Tabs — only shown when more than one file type is imported */}
+        {availableTabs.length > 1 && (
+          <div className="flex gap-1 mb-4">
+            {availableTabs.map(({ type }) => (
+              <button
+                key={type}
+                onClick={() => setActiveTab(type)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                  activeTab === type
+                    ? 'bg-accent text-white'
+                    : 'bg-bg-card border border-border text-text-secondary hover:text-text-primary hover:border-border-active'
+                }`}
+              >
+                {tabIcon(type)}
+                {tabLabel(type)}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Info cards */}
       {summary && (
         <div className="px-6 pb-4">
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-3">
             <div className="flex items-center gap-2 px-3 py-2 bg-bg-card rounded-lg border border-border">
               <FileText className="w-3.5 h-3.5 text-accent" />
               <span className="text-xs text-text-secondary">
@@ -262,7 +342,7 @@ export function ExportStep(): React.JSX.Element {
             </div>
             <div className="px-3 py-2 bg-bg-card rounded-lg border border-border">
               <span className="text-xs text-text-secondary">
-                VAT:{' '}
+                {valueLabel}{' '}
                 <span className="font-mono font-medium text-text-primary">
                   {summary.vatTotal.toLocaleString('pl-PL', {
                     minimumFractionDigits: 2,
