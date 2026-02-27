@@ -47,6 +47,7 @@ src/renderer/components/
 - `importStore` — zaimportowane pliki (ParsedFile[])
 - `companyStore` — dane firmy, okres, zapamiętane firmy (localStorage)
 - `mappingStore` — aktywne mapowanie kolumn, zapisane profile
+- `historyStore` — historia konwersji (ConversionRecord[]), persistowany localStorage
 
 ## Komendy
 - `npm run dev` — development
@@ -69,7 +70,7 @@ src/renderer/components/
 - NIGDY nie modyfikuj istniejących plików w `src/core/models/types.ts` bez aktualizacji importów we wszystkich zależnych modułach
 - Każdy nowy FileReader MUSI implementować interfejs `FileReaderPlugin` i być zarejestrowany w `FileReaderRegistry`
 - Każdy nowy generator XML MUSI generować XML zgodny ze schematem XSD Ministerstwa Finansów
-- Walidacja NIP: zawsze checksum (wagi: 6,5,7,2,3,4,5,6,7)
+- Walidacja NIP: 10 cyfr → checksum (wagi: 6,5,7,2,3,4,5,6,7); 11 cyfr → PESEL (OK); KodKontrahenta ≠ PL → zagraniczny (OK); brak/pusty → warning
 - Testy: pisz testy Vitest dla każdego nowego modułu w `src/core/`
 - XML escaping: zawsze escape `&`, `<`, `>`, `"`, `'` w wartościach
 - Kodowanie plików wejściowych: auto-detect przez EncodingDetector, fallback windows-1250

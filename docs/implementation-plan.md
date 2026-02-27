@@ -100,6 +100,7 @@
 - [x] Podsumowanie per pole liczbowe (summable decimal columns)
 - [x] Edytowalność komórek (EditableCell)
 - [x] Ostrzeżenia NIP "brak" w SummaryBar
+- [x] Fix layout: tabela scrolluje w kontenerze (overflow-hidden + min-w-0), paginacja i Dalej zawsze widoczne
 
 ### 3.4 Validation Step — rozszerzenie
 - [x] Grupowanie błędów: STRUKTURA / MERYTORYKA / SUMY KONTROLNE
@@ -107,6 +108,7 @@
 - [x] Auto-fix: daty DD.MM.YYYY → YYYY-MM-DD, kwoty z przecinkiem → kropka
 - [x] Przycisk "Napraw automatycznie" per item i per grupa
 - [x] Globalny przycisk "Napraw automatycznie" w SummaryBanner
+- [x] Walidacja NIP: PESEL (11 cyfr) rozpoznawany jako OK, NIP zagraniczny akceptowany, brak/pusty = warning
 - [ ] Walidacja XSD (poziom 4) — wymaga integracji z parserem XSD
 
 ### 3.5 Export Step — rozszerzenie
