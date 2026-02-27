@@ -1,8 +1,12 @@
 import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
-import { join } from 'path'
-import { readFile, writeFile, stat } from 'fs/promises'
+import { join, basename } from 'path'
+import { readFile, readFile as readFileAsync, writeFile, stat } from 'fs/promises'
+import { readFileSync } from 'fs'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
+import { createDefaultRegistry } from '../core/readers/FileReaderRegistry'
+
+const fileRegistry = createDefaultRegistry()
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -75,9 +79,32 @@ function createWindow(): void {
 
   // Read file as buffer IPC handler (for binary files like xlsx)
   ipcMain.handle('file:readBuffer', async (_event, filePath: string) => {
-    const buffer = await readFile(filePath)
+    const buffer = await readFileAsync(filePath)
     const stats = await stat(filePath)
     return { buffer: Array.from(buffer), size: stats.size }
+  })
+
+  // Parse file in main process (avoids Node.js modules in renderer)
+  ipcMain.handle('file:parse', async (_event, filePath: string) => {
+    const buffer = readFileSync(filePath)
+    const filename = basename(filePath)
+    const stats = await stat(filePath)
+
+    const result = fileRegistry.read(buffer, filename)
+
+    // Serialize to plain JSON (no Buffer, no class instances)
+    return {
+      sheets: result.sheets.map((sheet) => ({
+        name: sheet.name,
+        headers: sheet.headers,
+        rows: sheet.rows.map((r) => r.cells),
+        metadata: sheet.metadata
+      })),
+      encoding: result.encoding,
+      separator: result.separator,
+      warnings: result.warnings.map((w) => w.message),
+      fileSize: stats.size
+    }
   })
 
   // Save XML file IPC handler

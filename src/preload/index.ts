@@ -1,6 +1,14 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 
+interface ParseFileResult {
+  sheets: { name: string; headers?: string[]; rows: string[][]; metadata: Record<string, string> }[]
+  encoding: string
+  separator?: string
+  warnings: string[]
+  fileSize: number
+}
+
 const api = {
   platform: process.platform,
   openFileDialog: (): Promise<string[]> => ipcRenderer.invoke('dialog:openFiles'),
@@ -8,6 +16,8 @@ const api = {
     ipcRenderer.invoke('file:read', filePath),
   readFileAsBuffer: (filePath: string): Promise<{ buffer: number[]; size: number }> =>
     ipcRenderer.invoke('file:readBuffer', filePath),
+  parseFile: (filePath: string): Promise<ParseFileResult> =>
+    ipcRenderer.invoke('file:parse', filePath),
   saveFile: (defaultName: string, content: string): Promise<string | null> =>
     ipcRenderer.invoke('dialog:saveFile', defaultName, content),
   window: {

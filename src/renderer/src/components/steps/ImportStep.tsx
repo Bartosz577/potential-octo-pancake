@@ -14,14 +14,10 @@ import {
 } from 'lucide-react'
 import { useImportStore } from '@renderer/stores/importStore'
 import { useAppStore } from '@renderer/stores/appStore'
-import { parseTxtFile } from '@renderer/utils/fileParser'
 import { FormatBadge } from '@renderer/components/shared/FormatBadge'
 import type { ParsedFile, JpkType, FileFormat } from '@renderer/types'
-import { createDefaultRegistry } from '../../../../core/readers/FileReaderRegistry'
 
 const ACCEPTED_EXTENSIONS = ['.txt', '.csv', '.xlsx', '.xls', '.json', '.xml', '.dat', '.tsv']
-
-const registry = createDefaultRegistry()
 
 const JPK_BADGE_CONFIG: Record<JpkType, { label: string; className: string; icon: typeof FileText }> = {
   JPK_VDEK: { label: 'V7M', className: 'bg-accent/15 text-accent', icon: FileText },
@@ -36,11 +32,8 @@ function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
-function getFileExtension(filename: string): string {
-  return filename.split('.').pop()?.toLowerCase() || ''
-}
-
-function extensionToFormat(ext: string): FileFormat {
+function extensionToFormat(filename: string): FileFormat {
+  const ext = filename.split('.').pop()?.toLowerCase() || ''
   switch (ext) {
     case 'csv': return 'csv'
     case 'xlsx': case 'xls': return 'xlsx'
@@ -153,6 +146,37 @@ function AutoDetectPanel({ files }: { files: ParsedFile[] }): React.JSX.Element 
   )
 }
 
+/** Convert serialized IPC result into a ParsedFile */
+function resultToParsedFile(
+  result: SerializedFileReadResult,
+  filename: string
+): ParsedFile | null {
+  if (result.sheets.length === 0) return null
+
+  const sheet = result.sheets[0]
+  const meta = sheet.metadata || {}
+  const rows = sheet.rows
+
+  return {
+    id: `file_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+    filename,
+    system: (meta.system as ParsedFile['system']) || 'UNKNOWN',
+    jpkType: (meta.jpkType as ParsedFile['jpkType']) || 'JPK_VDEK',
+    subType: (meta.subType as ParsedFile['subType']) || 'SprzedazWiersz',
+    pointCode: meta.pointCode || '',
+    dateFrom: meta.dateFrom || '',
+    dateTo: meta.dateTo || '',
+    rows,
+    rowCount: rows.length,
+    columnCount: rows[0]?.length || 0,
+    fileSize: result.fileSize,
+    format: extensionToFormat(filename),
+    encoding: result.encoding,
+    warnings: result.warnings.length > 0 ? result.warnings : undefined,
+    headers: sheet.headers
+  }
+}
+
 export function ImportStep(): React.JSX.Element {
   const { files, addFile, removeFile } = useImportStore()
   const { setCurrentStep } = useAppStore()
@@ -160,66 +184,24 @@ export function ImportStep(): React.JSX.Element {
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
 
-  const processFile = useCallback(
-    async (buffer: Buffer, filename: string, size: number) => {
-      try {
-        const alreadyImported = files.some((f) => f.filename === filename)
-        if (alreadyImported) {
-          setError(`Plik "${filename}" jest już zaimportowany`)
-          return
-        }
-
-        const ext = getFileExtension(filename)
-        const format = extensionToFormat(ext)
-
-        // Try using the core FileReaderRegistry for structured parsing
-        let parsed: ParsedFile | null = null
-
-        try {
-          const readResult = registry.read(buffer, filename)
-          if (readResult.sheets.length > 0) {
-            const sheet = readResult.sheets[0]
-            const meta = sheet.metadata || {}
-            const rows = sheet.rows.map((r) => r.cells)
-
-            parsed = {
-              id: `file_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-              filename,
-              system: (meta.system as ParsedFile['system']) || 'UNKNOWN',
-              jpkType: (meta.jpkType as ParsedFile['jpkType']) || 'JPK_VDEK',
-              subType: (meta.subType as ParsedFile['subType']) || 'SprzedazWiersz',
-              pointCode: meta.pointCode || '',
-              dateFrom: meta.dateFrom || '',
-              dateTo: meta.dateTo || '',
-              rows,
-              rowCount: rows.length,
-              columnCount: rows[0]?.length || 0,
-              fileSize: size,
-              format,
-              encoding: readResult.encoding,
-              warnings: readResult.warnings.map((w) => w.message),
-              headers: sheet.headers
-            }
-          }
-        } catch {
-          // Fallback to legacy TXT parser for pipe-delimited files
-          if (format === 'txt') {
-            const content = buffer.toString('utf-8')
-            const legacyParsed = parseTxtFile(content, filename, size)
-            parsed = { ...legacyParsed, format: 'txt' }
-          }
-        }
-
-        if (!parsed) {
-          setError(`Nie udało się sparsować pliku "${filename}"`)
-          return
-        }
-
-        addFile(parsed)
-        setError(null)
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Błąd parsowania pliku')
+  const importFile = useCallback(
+    async (filePath: string, filename: string) => {
+      const alreadyImported = files.some((f) => f.filename === filename)
+      if (alreadyImported) {
+        setError(`Plik "${filename}" jest już zaimportowany`)
+        return
       }
+
+      const result = await window.api.parseFile(filePath)
+      const parsed = resultToParsedFile(result, filename)
+
+      if (!parsed) {
+        setError(`Nie udało się sparsować pliku "${filename}"`)
+        return
+      }
+
+      addFile(parsed)
+      setError(null)
     },
     [files, addFile]
   )
@@ -231,15 +213,15 @@ export function ImportStep(): React.JSX.Element {
       try {
         for (const filePath of filePaths) {
           const filename = filePath.split(/[/\\]/).pop() || filePath
-          const { buffer: bufferArray, size } = await window.api.readFileAsBuffer(filePath)
-          const buffer = Buffer.from(bufferArray)
-          await processFile(buffer, filename, size)
+          await importFile(filePath, filename)
         }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Błąd parsowania pliku')
       } finally {
         setIsLoading(false)
       }
     },
-    [processFile]
+    [importFile]
   )
 
   const handleDrop = useCallback(
@@ -261,15 +243,21 @@ export function ImportStep(): React.JSX.Element {
       setError(null)
       try {
         for (const file of droppedFiles) {
-          const arrayBuffer = await file.arrayBuffer()
-          const buffer = Buffer.from(arrayBuffer)
-          await processFile(buffer, file.name, file.size)
+          // Electron File objects have a `path` property with the full filesystem path
+          const filePath = (file as File & { path: string }).path
+          if (!filePath) {
+            setError(`Nie można odczytać ścieżki pliku "${file.name}"`)
+            continue
+          }
+          await importFile(filePath, file.name)
         }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Błąd parsowania pliku')
       } finally {
         setIsLoading(false)
       }
     },
-    [processFile]
+    [importFile]
   )
 
   const handleDragOver = useCallback((e: DragEvent<HTMLDivElement>) => {
