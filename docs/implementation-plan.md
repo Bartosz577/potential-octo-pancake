@@ -26,17 +26,17 @@
 - [x] Testy: `EncodingDetector.test.ts` — detekcja UTF-8, windows-1250, CP852
 
 ### 1.2 Mapowanie
-- [ ] Testy: `AutoMapper.test.ts` — auto-mapping NAMOS → JPK_V7M
-- [ ] Testy: `AutoMapper.test.ts` — auto-mapping nieznanego formatu (heurystyka)
-- [ ] Testy: `TransformEngine.test.ts` — transformacja dat DD.MM.YYYY → YYYY-MM-DD
-- [ ] Testy: `TransformEngine.test.ts` — transformacja kwot z przecinkiem
-- [ ] Testy: `TransformEngine.test.ts` — normalizacja NIP
-- [ ] Testy: `SystemProfiles.test.ts` — profil NAMOS_JPK_V7M
+- [x] Testy: `AutoMapper.test.ts` — auto-mapping NAMOS → JPK_V7M
+- [x] Testy: `AutoMapper.test.ts` — auto-mapping nieznanego formatu (heurystyka)
+- [x] Testy: `TransformEngine.test.ts` — transformacja dat DD.MM.YYYY → YYYY-MM-DD
+- [x] Testy: `TransformEngine.test.ts` — transformacja kwot z przecinkiem
+- [x] Testy: `TransformEngine.test.ts` — normalizacja NIP
+- [x] Testy: `SystemProfiles.test.ts` — profil NAMOS_JPK_V7M
 
 ### 1.3 Pipeline
-- [ ] Testy: `ConversionPipeline.test.ts` — pełny flow TXT → validation
-- [ ] Testy: `ConversionPipeline.test.ts` — walidacja NIP checksum
-- [ ] Testy: `ConversionPipeline.test.ts` — walidacja wymaganych pól
+- [x] Testy: `ConversionPipeline.test.ts` — pełny flow TXT → validation
+- [x] Testy: `ConversionPipeline.test.ts` — walidacja NIP checksum
+- [x] Testy: `ConversionPipeline.test.ts` — walidacja wymaganych pól
 
 ## Faza 2 — Generatory XML
 
