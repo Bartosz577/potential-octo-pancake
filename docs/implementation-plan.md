@@ -41,11 +41,11 @@
 ## Faza 2 — Generatory XML
 
 ### 2.1 JPK_V7M(3) — aktualizacja
-- [ ] Dodaj pola KSeF do istniejącego generatora: NumerKSeF, OznaczenieKSeF (OFF/BFK/DI)
-- [ ] Zaktualizuj namespace i wersję schematu na (3)
-- [ ] Testy: `JpkV7mGenerator.test.ts` — generowanie z polami KSeF
-- [ ] Testy: `JpkV7mGenerator.test.ts` — generowanie bez pól KSeF (BFK)
-- [ ] Walidacja wygenerowanego XML przeciw schematowi XSD
+- [x] Dodaj pola KSeF do istniejącego generatora: NumerKSeF, OznaczenieKSeF (OFF/BFK/DI)
+- [x] Zaktualizuj namespace i wersję schematu na (3)
+- [x] Testy: `JpkV7mGenerator.test.ts` — generowanie z polami KSeF
+- [x] Testy: `JpkV7mGenerator.test.ts` — generowanie bez pól KSeF (BFK)
+- [x] Walidacja wygenerowanego XML przeciw schematowi XSD
 
 ### 2.2 JPK_FA(4) — nowy generator
 - [ ] Przeanalizuj schemat XSD JPK_FA(4) z gov.pl
