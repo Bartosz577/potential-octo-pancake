@@ -1,57 +1,43 @@
 import type { ParsedFile, JpkType } from '../types'
+import type { ColumnMapping } from '../../../core/mapping/AutoMapper'
+import { getFieldDefinitions } from '../../../core/mapping/JpkFieldDefinitions'
 import { validatePolishNip, normalizeNip } from './nipValidator'
 
 export type Severity = 'error' | 'warning' | 'info'
+export type ValidationCategory = 'STRUKTURA' | 'MERYTORYKA' | 'SUMY_KONTROLNE'
+
+export interface AutoFix {
+  rowIndex: number
+  colIndex: number
+  oldValue: string
+  newValue: string
+}
 
 export interface ValidationItem {
   id: string
+  category: ValidationCategory
   severity: Severity
   message: string
   details?: string
+  autoFixable: boolean
+  fixes: AutoFix[]
 }
 
-export interface ValidationLevel {
-  level: number
+export interface ValidationGroup {
+  category: ValidationCategory
   title: string
   items: ValidationItem[]
 }
 
 export interface ValidationReport {
-  levels: ValidationLevel[]
+  groups: ValidationGroup[]
   errorCount: number
   warningCount: number
   infoCount: number
+  autoFixCount: number
 }
 
-// Per-type column config for validation
-interface TypeValidationConfig {
-  nipIndex: number | null
-  dateIndices: number[]
-  decimalIndices: number[]
-}
-
-const TYPE_CONFIGS: Record<JpkType, TypeValidationConfig> = {
-  JPK_VDEK: {
-    nipIndex: 2,
-    dateIndices: [5],
-    decimalIndices: [45, 46, 47]
-  },
-  JPK_FA: {
-    nipIndex: 10,
-    dateIndices: [1],
-    decimalIndices: [12, 13, 27]
-  },
-  JPK_MAG: {
-    nipIndex: null,
-    dateIndices: [2, 4],
-    decimalIndices: [3, 11, 13, 14]
-  },
-  JPK_WB: {
-    nipIndex: null,
-    dateIndices: [],
-    decimalIndices: []
-  }
-}
+// --- Helpers ---
 
 function parseDecimal(value: string): number {
   if (!value || value.trim() === '') return 0
@@ -59,20 +45,64 @@ function parseDecimal(value: string): number {
 }
 
 const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/
+const DATE_FIXABLE_REGEX = /^(\d{2})[./](\d{2})[./](\d{4})$/
 
-// --- Level 1: File-level validation ---
+interface MappedColumns {
+  nip: number[]
+  date: number[]
+  decimal: number[]
+}
 
-function validateLevel1(file: ParsedFile): ValidationItem[] {
+function getMappedColumnsByType(
+  mappings: ColumnMapping[],
+  jpkType: string,
+  subType: string
+): MappedColumns {
+  const fields = getFieldDefinitions(jpkType, subType)
+  const fieldMap = new Map(fields.map((f) => [f.name, f]))
+
+  const nip: number[] = []
+  const date: number[] = []
+  const decimal: number[] = []
+
+  for (const m of mappings) {
+    const field = fieldMap.get(m.targetField)
+    if (!field) continue
+    switch (field.type) {
+      case 'nip':
+        nip.push(m.sourceColumn)
+        break
+      case 'date':
+        date.push(m.sourceColumn)
+        break
+      case 'decimal':
+        decimal.push(m.sourceColumn)
+        break
+    }
+  }
+
+  return { nip, date, decimal }
+}
+
+// Key sum fields per JPK type
+const KEY_SUM_FIELDS: Record<JpkType, string[]> = {
+  JPK_VDEK: ['K_19', 'K_20'],
+  JPK_FA: ['P_15'],
+  JPK_MAG: ['WartoscPozycji'],
+  JPK_WB: ['KwotaOperacji']
+}
+
+// --- STRUKTURA ---
+
+function validateStruktura(
+  file: ParsedFile,
+  mappings: ColumnMapping[],
+  jpkType: string,
+  subType: string
+): ValidationItem[] {
   const items: ValidationItem[] = []
 
-  // Pipe separator — always true since our parser splits on |
-  items.push({
-    id: 'l1-separator',
-    severity: 'info',
-    message: 'Separator | wykryty poprawnie'
-  })
-
-  // Consistent column count
+  // Column count consistency
   const expected = file.columnCount
   let bad = 0
   const badRows: number[] = []
@@ -86,37 +116,87 @@ function validateLevel1(file: ParsedFile): ValidationItem[] {
 
   if (bad === 0) {
     items.push({
-      id: 'l1-columns',
+      id: 'str-columns',
+      category: 'STRUKTURA',
       severity: 'info',
-      message: `Spójna liczba kolumn: ${expected} we wszystkich ${file.rowCount} wierszach`
+      message: `Spójna liczba kolumn: ${expected} we wszystkich ${file.rowCount} wierszach`,
+      autoFixable: false,
+      fixes: []
     })
   } else {
     items.push({
-      id: 'l1-columns',
+      id: 'str-columns',
+      category: 'STRUKTURA',
       severity: 'error',
       message: `Niespójna liczba kolumn w ${bad} wierszach`,
-      details: `Oczekiwano ${expected} kolumn. Problematyczne wiersze: ${badRows.join(', ')}${bad > 10 ? '…' : ''}`
+      details: `Oczekiwano ${expected} kolumn. Wiersze: ${badRows.join(', ')}${bad > 10 ? '\u2026' : ''}`,
+      autoFixable: false,
+      fixes: []
+    })
+  }
+
+  // Required fields mapping
+  const fields = getFieldDefinitions(jpkType, subType)
+  const requiredFields = fields.filter((f) => f.required)
+  const mappedTargets = new Set(mappings.map((m) => m.targetField))
+  const unmapped = requiredFields.filter((f) => !mappedTargets.has(f.name))
+
+  if (unmapped.length === 0 && requiredFields.length > 0) {
+    items.push({
+      id: 'str-required',
+      category: 'STRUKTURA',
+      severity: 'info',
+      message: `Wszystkie wymagane pola JPK mają przypisane kolumny (${requiredFields.length})`,
+      autoFixable: false,
+      fixes: []
+    })
+  } else if (unmapped.length > 0) {
+    items.push({
+      id: 'str-required',
+      category: 'STRUKTURA',
+      severity: 'error',
+      message: `${unmapped.length} wymaganych pól bez przypisania`,
+      details: unmapped.map((f) => f.name).join(', '),
+      autoFixable: false,
+      fixes: []
+    })
+  }
+
+  // Format info
+  if (file.format) {
+    items.push({
+      id: 'str-format',
+      category: 'STRUKTURA',
+      severity: 'info',
+      message: `Format: ${file.format.toUpperCase()}${file.encoding ? `, kodowanie: ${file.encoding}` : ''}`,
+      autoFixable: false,
+      fixes: []
     })
   }
 
   return items
 }
 
-// --- Level 2: Data validation ---
+// --- MERYTORYKA ---
 
-function validateLevel2(file: ParsedFile): ValidationItem[] {
+function validateMerytoryka(
+  file: ParsedFile,
+  mappings: ColumnMapping[],
+  jpkType: string,
+  subType: string
+): ValidationItem[] {
   const items: ValidationItem[] = []
-  const config = TYPE_CONFIGS[file.jpkType]
+  const { nip, date, decimal } = getMappedColumnsByType(mappings, jpkType, subType)
 
   // NIP validation
-  if (config.nipIndex !== null) {
+  for (const colIdx of nip) {
     let valid = 0
     let brak = 0
     let invalid = 0
     const invalidSamples: { row: number; nip: string }[] = []
 
     for (let i = 0; i < file.rows.length; i++) {
-      const raw = file.rows[i][config.nipIndex] || ''
+      const raw = file.rows[i][colIdx] || ''
       const normalized = normalizeNip(raw)
 
       if (raw === 'brak' || raw.trim() === '') {
@@ -124,50 +204,55 @@ function validateLevel2(file: ParsedFile): ValidationItem[] {
       } else if (normalized.length === 10 && validatePolishNip(normalized)) {
         valid++
       } else if (/^[A-Z]{2}\d+$/.test(raw.replace(/[\s-]/g, ''))) {
-        // Foreign NIP (country prefix + digits)
         valid++
       } else {
         invalid++
-        if (invalidSamples.length < 5) {
-          invalidSamples.push({ row: i + 1, nip: raw })
-        }
+        if (invalidSamples.length < 5) invalidSamples.push({ row: i + 1, nip: raw })
       }
     }
 
     if (valid > 0) {
       items.push({
-        id: 'l2-nip-valid',
+        id: `mer-nip-ok-${colIdx}`,
+        category: 'MERYTORYKA',
         severity: 'info',
-        message: `${valid} poprawnych NIP-ów`
+        message: `${valid} poprawnych NIP-ów`,
+        autoFixable: false,
+        fixes: []
       })
     }
-
     if (brak > 0) {
       items.push({
-        id: 'l2-nip-brak',
+        id: `mer-nip-brak-${colIdx}`,
+        category: 'MERYTORYKA',
         severity: 'warning',
-        message: `${brak}× NIP „brak" lub pusty`,
-        details: 'Dopuszczalne dla osób fizycznych, ale wymaga weryfikacji'
+        message: `${brak}\u00d7 NIP \u201ebrak\u201d lub pusty`,
+        details: 'Dopuszczalne dla osób fizycznych, ale wymaga weryfikacji',
+        autoFixable: false,
+        fixes: []
       })
     }
-
     if (invalid > 0) {
       items.push({
-        id: 'l2-nip-invalid',
+        id: `mer-nip-err-${colIdx}`,
+        category: 'MERYTORYKA',
         severity: 'error',
         message: `${invalid} nieprawidłowych NIP-ów`,
-        details: invalidSamples.map((s) => `Wiersz ${s.row}: „${s.nip}"`).join(', ')
+        details: invalidSamples.map((s) => `Wiersz ${s.row}: \u201e${s.nip}\u201d`).join(', '),
+        autoFixable: false,
+        fixes: []
       })
     }
   }
 
-  // Date validation
-  if (config.dateIndices.length > 0) {
+  // Date validation with auto-fix
+  {
     let validDates = 0
     let invalidDates = 0
+    const fixes: AutoFix[] = []
     const badSamples: { row: number; value: string }[] = []
 
-    for (const colIdx of config.dateIndices) {
+    for (const colIdx of date) {
       for (let i = 0; i < file.rows.length; i++) {
         const val = (file.rows[i][colIdx] || '').trim()
         if (val === '') continue
@@ -176,64 +261,105 @@ function validateLevel2(file: ParsedFile): ValidationItem[] {
           validDates++
         } else {
           invalidDates++
-          if (badSamples.length < 5) {
-            badSamples.push({ row: i + 1, value: val })
+          const fixMatch = val.match(DATE_FIXABLE_REGEX)
+          if (fixMatch) {
+            fixes.push({
+              rowIndex: i,
+              colIndex: colIdx,
+              oldValue: val,
+              newValue: `${fixMatch[3]}-${fixMatch[2]}-${fixMatch[1]}`
+            })
           }
+          if (badSamples.length < 5) badSamples.push({ row: i + 1, value: val })
         }
       }
     }
 
     if (invalidDates === 0 && validDates > 0) {
       items.push({
-        id: 'l2-dates',
+        id: 'mer-dates-ok',
+        category: 'MERYTORYKA',
         severity: 'info',
-        message: `Wszystkie daty w formacie YYYY-MM-DD (${validDates})`
+        message: `Wszystkie daty w formacie YYYY-MM-DD (${validDates})`,
+        autoFixable: false,
+        fixes: []
       })
     } else if (invalidDates > 0) {
       items.push({
-        id: 'l2-dates',
+        id: 'mer-dates-err',
+        category: 'MERYTORYKA',
         severity: 'error',
         message: `${invalidDates} dat w nieprawidłowym formacie`,
-        details: badSamples.map((s) => `Wiersz ${s.row}: „${s.value}"`).join(', ')
+        details:
+          badSamples.map((s) => `Wiersz ${s.row}: \u201e${s.value}\u201d`).join(', ') +
+          (fixes.length > 0 ? ` \u2014 ${fixes.length} do auto-naprawy` : ''),
+        autoFixable: fixes.length > 0,
+        fixes
       })
     }
   }
 
-  // Decimal validation
-  if (config.decimalIndices.length > 0) {
+  // Decimal validation with auto-fix
+  {
     let validDecimals = 0
     let invalidDecimals = 0
+    const commaFixes: AutoFix[] = []
     const badSamples: { row: number; value: string }[] = []
 
-    for (const colIdx of config.decimalIndices) {
+    for (const colIdx of decimal) {
       for (let i = 0; i < file.rows.length; i++) {
         const val = (file.rows[i][colIdx] || '').trim()
         if (val === '') continue
 
-        const normalized = val.replace(',', '.')
-        if (isNaN(parseFloat(normalized))) {
-          invalidDecimals++
-          if (badSamples.length < 5) {
-            badSamples.push({ row: i + 1, value: val })
-          }
-        } else {
+        if (!isNaN(parseFloat(val)) && !val.includes(',')) {
           validDecimals++
+        } else {
+          const commaFixed = val.replace(',', '.')
+          if (!isNaN(parseFloat(commaFixed))) {
+            commaFixes.push({
+              rowIndex: i,
+              colIndex: colIdx,
+              oldValue: val,
+              newValue: commaFixed
+            })
+          } else {
+            invalidDecimals++
+            if (badSamples.length < 5) badSamples.push({ row: i + 1, value: val })
+          }
         }
       }
     }
 
-    if (invalidDecimals === 0 && validDecimals > 0) {
+    if (commaFixes.length > 0) {
       items.push({
-        id: 'l2-decimals',
+        id: 'mer-dec-comma',
+        category: 'MERYTORYKA',
+        severity: 'warning',
+        message: `${commaFixes.length} kwot z przecinkiem zamiast kropki`,
+        details: 'Można naprawić automatycznie (zamiana , \u2192 .)',
+        autoFixable: true,
+        fixes: commaFixes
+      })
+    }
+
+    if (invalidDecimals === 0 && validDecimals > 0 && commaFixes.length === 0) {
+      items.push({
+        id: 'mer-dec-ok',
+        category: 'MERYTORYKA',
         severity: 'info',
-        message: `Kwoty parsowalne poprawnie (${validDecimals} wartości)`
+        message: `Kwoty parsowalne poprawnie (${validDecimals} wartości)`,
+        autoFixable: false,
+        fixes: []
       })
     } else if (invalidDecimals > 0) {
       items.push({
-        id: 'l2-decimals',
+        id: 'mer-dec-err',
+        category: 'MERYTORYKA',
         severity: 'error',
         message: `${invalidDecimals} nieprawidłowych kwot`,
-        details: badSamples.map((s) => `Wiersz ${s.row}: „${s.value}"`).join(', ')
+        details: badSamples.map((s) => `Wiersz ${s.row}: \u201e${s.value}\u201d`).join(', '),
+        autoFixable: false,
+        fixes: []
       })
     }
   }
@@ -241,85 +367,101 @@ function validateLevel2(file: ParsedFile): ValidationItem[] {
   return items
 }
 
-// --- Level 3: Control sums ---
+// --- SUMY KONTROLNE ---
 
-function validateLevel3(file: ParsedFile): ValidationItem[] {
+function validateSumyKontrolne(
+  file: ParsedFile,
+  mappings: ColumnMapping[]
+): ValidationItem[] {
   const items: ValidationItem[] = []
   const fmt = (n: number): string =>
     n.toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
-  switch (file.jpkType) {
-    case 'JPK_VDEK': {
-      const sumK20 = file.rows.reduce((acc, row) => acc + parseDecimal(row[47] || ''), 0)
-      items.push({
-        id: 'l3-vdek-k20',
-        severity: 'info',
-        message: `Suma kontrolna K_20 (VAT): ${fmt(sumK20)}`,
-        details: `Obliczona z ${file.rowCount} wierszy`
-      })
-      break
-    }
-    case 'JPK_FA': {
-      const sumP15 = file.rows.reduce((acc, row) => acc + parseDecimal(row[27] || ''), 0)
-      items.push({
-        id: 'l3-fa-p15',
-        severity: 'info',
-        message: `Suma kontrolna P_15: ${fmt(sumP15)}`,
-        details: `Obliczona z ${file.rowCount} wierszy`
-      })
-      break
-    }
-    case 'JPK_MAG': {
-      const uniqueWZ = new Set(file.rows.map((row) => row[2] || '').filter(Boolean))
-      items.push({
-        id: 'l3-mag-wz',
-        severity: 'info',
-        message: `Unikalne dokumenty WZ: ${uniqueWZ.size}`,
-        details: `Spośród ${file.rowCount} pozycji`
-      })
-      break
-    }
+  const keyFields = KEY_SUM_FIELDS[file.jpkType] || []
+
+  for (const fieldName of keyFields) {
+    const mapping = mappings.find((m) => m.targetField === fieldName)
+    if (!mapping) continue
+
+    const sum = file.rows.reduce(
+      (acc, row) => acc + parseDecimal(row[mapping.sourceColumn] || ''),
+      0
+    )
+
+    items.push({
+      id: `sum-${fieldName}`,
+      category: 'SUMY_KONTROLNE',
+      severity: 'info',
+      message: `\u03a3 ${fieldName}: ${fmt(sum)}`,
+      details: `Obliczona z ${file.rowCount} wierszy`,
+      autoFixable: false,
+      fixes: []
+    })
   }
+
+  // Row count
+  items.push({
+    id: 'sum-rows',
+    category: 'SUMY_KONTROLNE',
+    severity: 'info',
+    message: `Liczba wierszy: ${file.rowCount.toLocaleString('pl-PL')}`,
+    autoFixable: false,
+    fixes: []
+  })
 
   return items
 }
 
 // --- Public API ---
 
-export function validateFile(file: ParsedFile): ValidationReport {
-  const level1 = validateLevel1(file)
-  const level2 = validateLevel2(file)
-  const level3 = validateLevel3(file)
+export function validateFile(file: ParsedFile, mappings: ColumnMapping[]): ValidationReport {
+  const struktura = validateStruktura(file, mappings, file.jpkType, file.subType)
+  const merytoryka = validateMerytoryka(file, mappings, file.jpkType, file.subType)
+  const sumy = validateSumyKontrolne(file, mappings)
 
-  const all = [...level1, ...level2, ...level3]
+  const all = [...struktura, ...merytoryka, ...sumy]
 
   return {
-    levels: [
-      { level: 1, title: 'Plik', items: level1 },
-      { level: 2, title: 'Dane', items: level2 },
-      { level: 3, title: 'Sumy kontrolne', items: level3 }
+    groups: [
+      { category: 'STRUKTURA', title: 'Struktura pliku', items: struktura },
+      { category: 'MERYTORYKA', title: 'Dane merytoryczne', items: merytoryka },
+      { category: 'SUMY_KONTROLNE', title: 'Sumy kontrolne', items: sumy }
     ],
     errorCount: all.filter((i) => i.severity === 'error').length,
     warningCount: all.filter((i) => i.severity === 'warning').length,
-    infoCount: all.filter((i) => i.severity === 'info').length
+    infoCount: all.filter((i) => i.severity === 'info').length,
+    autoFixCount: all.reduce((acc, i) => acc + i.fixes.length, 0)
   }
 }
 
-export function validateFiles(files: ParsedFile[]): {
+export function validateFiles(
+  files: ParsedFile[],
+  allMappings: Record<string, ColumnMapping[]>
+): {
   reports: Map<string, ValidationReport>
   totalErrors: number
   totalWarnings: number
+  totalAutoFixes: number
 } {
   const reports = new Map<string, ValidationReport>()
   let totalErrors = 0
   let totalWarnings = 0
+  let totalAutoFixes = 0
 
   for (const file of files) {
-    const report = validateFile(file)
+    const mappings = allMappings[file.id] || []
+    const report = validateFile(file, mappings)
     reports.set(file.id, report)
     totalErrors += report.errorCount
     totalWarnings += report.warningCount
+    totalAutoFixes += report.autoFixCount
   }
 
-  return { reports, totalErrors, totalWarnings }
+  return { reports, totalErrors, totalWarnings, totalAutoFixes }
+}
+
+export function applyFixes(file: ParsedFile, fixes: AutoFix[]): void {
+  for (const fix of fixes) {
+    file.rows[fix.rowIndex][fix.colIndex] = fix.newValue
+  }
 }

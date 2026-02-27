@@ -1,14 +1,14 @@
 # Plan implementacji JPK Universal Converter v2
 
 ## Faza 0 — Przygotowanie projektu
-- [ ] Zainicjalizuj CLAUDE.md w katalogu projektu (`/init`)
-- [ ] Skopiuj `src/core/` z pakietu architektonicznego do projektu
-- [ ] Zainstaluj nowe zależności: `npm install xlsx papaparse fast-xml-parser iconv-lite`
-- [ ] Zainstaluj dev dependencies: `npm install -D vitest @types/papaparse`
-- [ ] Skonfiguruj Vitest w `vite.config.ts` (electron-vite)
-- [ ] Sprawdź kompilację: `npm run typecheck`
-- [ ] Utwórz katalog `schemas/` i pobierz aktualne XSD z gov.pl
-- [ ] Utwórz katalog `docs/` z dokumentacją regulacyjną
+- [x] Zainicjalizuj CLAUDE.md w katalogu projektu (`/init`)
+- [x] Skopiuj `src/core/` z pakietu architektonicznego do projektu
+- [x] Zainstaluj nowe zależności: `npm install xlsx papaparse fast-xml-parser iconv-lite`
+- [x] Zainstaluj dev dependencies: `npm install -D vitest @types/papaparse`
+- [x] Skonfiguruj Vitest w `vite.config.ts` (electron-vite)
+- [x] Sprawdź kompilację: `npm run typecheck`
+- [x] Utwórz katalog `schemas/` i pobierz aktualne XSD z gov.pl
+- [x] Utwórz katalog `docs/` z dokumentacją regulacyjną
 
 ## Faza 1 — Fundament core (parsery + mapowanie)
 
@@ -76,58 +76,78 @@
 ## Faza 3 — UI rozszerzenia
 
 ### 3.1 Import Step — rozszerzenie
-- [ ] Rozszerz dialog otwierania o nowe rozszerzenia (xlsx, csv, json, xml, ods, dbf)
-- [ ] Pokaż badge formatu pliku po imporcie
-- [ ] Pokaż ostrzeżenia parsowania (encoding, malformed rows)
-- [ ] Obsługa wielu plików jednocześnie (batch import)
+- [x] Rozszerz dialog otwierania o nowe rozszerzenia (xlsx, csv, json, xml, dat, tsv)
+- [x] Pokaż badge formatu pliku po imporcie (FormatBadge component)
+- [x] Pokaż ostrzeżenia parsowania (encoding, malformed rows)
+- [x] Obsługa wielu plików jednocześnie (batch import)
+- [x] Przeniesienie parsowania plików do main process (IPC `file:parse`)
 - [ ] Wybór kodowania (dropdown) jeśli auto-detect zawodzi
 
 ### 3.2 Mapping Step — NOWY
-- [ ] Utwórz `MappingStep.tsx`
-- [ ] Wyświetl wynik AutoMapper: zmapowane kolumny z confidence score
-- [ ] Interfejs drag & drop: kolumna źródłowa → pole JPK
-- [ ] Podgląd 5 pierwszych wierszy przy każdym polu
-- [ ] Konfiguracja transformacji (data format, decimal separator)
-- [ ] Zapisywanie/ładowanie profili mapowań
-- [ ] Obsługa niezmapowanych pól wymaganych (czerwone podświetlenie)
+- [x] Utwórz `MappingStep.tsx` — dwukolumnowy layout
+- [x] Wyświetl wynik AutoMapper: zmapowane kolumny z confidence score
+- [x] Interfejs manual override: klik kolumna źródłowa → klik pole JPK
+- [x] Podgląd 5 pierwszych wierszy przy każdym polu
+- [x] Utwórz `mappingStore.ts` — aktywne mapowania, autoMap, profile
+- [x] SystemProfiles: 100% confidence dla NAMOS/ESO (pozycyjne mapowanie)
+- [x] Obsługa niezmapowanych pól wymaganych (czerwone podświetlenie, blokada "Dalej")
+- [ ] Konfiguracja transformacji (data format, decimal separator) — osobny panel
+- [ ] Zapisywanie/ładowanie profili mapowań — UI (backend gotowy w mappingStore)
 
 ### 3.3 Preview Step — rozszerzenie
-- [ ] Dynamiczne kolumny w tabeli na podstawie aktywnego mapowania
-- [ ] Podświetlenie kolumn z transformacjami
-- [ ] Podsumowanie per pole liczbowe
+- [x] Dynamiczne kolumny w tabeli na podstawie aktywnego mapowania (mappingStore)
+- [x] Podświetlenie kolumn wg typu: daty=blue, kwoty=green, NIP=amber
+- [x] Podsumowanie per pole liczbowe (summable decimal columns)
+- [x] Edytowalność komórek (EditableCell)
+- [x] Ostrzeżenia NIP "brak" w SummaryBar
 
 ### 3.4 Validation Step — rozszerzenie
-- [ ] Dodaj poziom 4: walidacja XSD
-- [ ] Pokaż auto-fixable błędy z przyciskiem "Napraw automatycznie"
-- [ ] Grupowanie błędów per typ (struktura/merytoryka/sumy)
+- [x] Grupowanie błędów: STRUKTURA / MERYTORYKA / SUMY KONTROLNE
+- [x] Walidacja z uwzględnieniem dynamicznych mapowań (mapping-aware)
+- [x] Auto-fix: daty DD.MM.YYYY → YYYY-MM-DD, kwoty z przecinkiem → kropka
+- [x] Przycisk "Napraw automatycznie" per item i per grupa
+- [x] Globalny przycisk "Napraw automatycznie" w SummaryBanner
+- [ ] Walidacja XSD (poziom 4) — wymaga integracji z parserem XSD
 
 ### 3.5 Export Step — rozszerzenie
-- [ ] Obsługa wszystkich typów JPK (nie tylko V7M)
-- [ ] Informacja o wersji schematu XSD
+- [x] Obsługa wszystkich typów JPK via generatorRegistry (V7M, FA, MAG, WB)
+- [x] Informacja o wersji schematu XSD (typ + wersja + namespace)
+- [x] Utility `xmlExporter.ts` — bridge ParsedFile + mappings → core generators
+- [x] Tabbed UI per file z XML preview
+- [x] "Zapisz wszystkie" dla multi-file export
+- [x] Zapis do historii po eksporcie (historyStore.addRecord)
+- [x] Przycisk "Historia" w footerze → krok 7
 
 ### 3.6 History Step — NOWY
-- [ ] Utwórz `HistoryStep.tsx`
-- [ ] Lista poprzednich konwersji (localStorage)
-- [ ] Filtrowanie po typie JPK, dacie, firmie
-- [ ] Szybki re-eksport z zapisanych ustawień
+- [x] Utwórz `HistoryStep.tsx`
+- [x] Utwórz `historyStore.ts` — ConversionRecord[], persistowany w localStorage (zustand/persist)
+- [x] Lista poprzednich konwersji z datą, typem JPK, firmą, rozmiarem
+- [x] Filtrowanie po typie JPK (przyciski) + wyszukiwarka (nazwa/firma/NIP)
+- [x] Przycisk "Pobierz ponownie" (re-eksport XML z zapisanego rekordu)
+- [x] Przycisk "Usuń" per rekord + "Wyczyść historię"
+- [x] Pusty stan: "Brak historii konwersji"
 
 ### 3.7 Layout
-- [ ] Zaktualizuj Sidebar: dodaj nowe typy JPK (WB, KR, PKPIR, EWP)
-- [ ] Zaktualizuj StepIndicator: 7 kroków (+ ikona mapowania)
-- [ ] AppShell: routing dla nowych kroków
+- [x] Zaktualizuj Sidebar: dodaj nowe typy JPK (WB)
+- [x] Zaktualizuj StepIndicator: 7 kroków z ikonami
+- [x] AppShell: routing dla wszystkich 7 kroków (w tym HistoryStep)
+- [x] Nawigacja krokowa: wszystkie komponenty zaktualizowane (back/forward)
 
 ## Faza 4 — Zustand stores
 
-- [ ] Rozszerz `appStore`: obsługa 7 kroków, nowe typy JPK
-- [ ] Utwórz `mappingStore`: aktywne mapowanie, zapisane profile, wynik AutoMapper
-- [ ] Rozszerz `importStore`: obsługa RawSheet[] zamiast ParsedFile[]
-- [ ] Utwórz `historyStore`: lista ConversionRecord[], persistowany w localStorage
+- [x] Rozszerz `appStore`: obsługa 7 kroków, nowe typy JPK (WB)
+- [x] Utwórz `mappingStore`: aktywne mapowanie, zapisane profile, wynik AutoMapper
+- [x] Rozszerz `importStore`: obsługa format/encoding/warnings/headers w ParsedFile
+- [x] Utwórz `historyStore`: lista ConversionRecord[], persistowany w localStorage
 - [ ] Podłącz ConversionPipeline do stores (bridge pattern)
 
 ## Faza 5 — Electron main process
 
-- [ ] Rozszerz `openFileDialog()`: nowe filtry plików z FileReaderRegistry
-- [ ] Dodaj IPC handler: `readFileAsBuffer()` (Buffer zamiast string — kluczowe dla binarnych)
+- [x] Rozszerz `openFileDialog()`: nowe filtry plików (txt, csv, xlsx, xls, json, xml, dat, tsv)
+- [x] Dodaj IPC handler: `readFileAsBuffer()` (Buffer jako number[] przez IPC)
+- [x] Dodaj IPC handler: `file:parse` — parsowanie plików w main process (FileReaderRegistry)
+- [x] Rozszerz preload API: `parseFile()`, `readFileAsBuffer()`
+- [x] Typy globalne w `index.d.ts`: SerializedSheet, SerializedFileReadResult
 - [ ] Obsługa błędów: globalny error handler z logowaniem
 - [ ] Auto-update: electron-updater
 
@@ -145,3 +165,26 @@
 - [ ] Testy manualne z rzeczywistymi plikami z różnych systemów ERP
 - [ ] Feedback loop: korekty na podstawie testów
 - [ ] Wersja 2.0.0: release publiczny
+
+---
+
+## Status
+
+| Faza | Status | Testy |
+|------|--------|-------|
+| 0 — Przygotowanie | ✅ Done | — |
+| 1 — Core (parsery + mapowanie) | ✅ Done | 309 tests |
+| 2 — Generatory XML | ✅ Done | 594 tests (14 XSD) |
+| 3 — UI rozszerzenia | ✅ ~95% | Web typecheck OK |
+| 4 — Zustand stores | ✅ ~90% | — |
+| 5 — Electron main | 🔶 ~70% | Build OK |
+| 6 — Jakość | ⬜ Not started | — |
+| 7 — Release | ⬜ Not started | — |
+
+### Pozostałe zadania (Faza 3-5)
+- Wybór kodowania w ImportStep (dropdown fallback)
+- Konfiguracja transformacji w MappingStep (data format, decimal separator)
+- UI do zapisywania/ładowania profili mapowań
+- Walidacja XSD w ValidationStep (poziom 4)
+- Podłączenie ConversionPipeline do stores
+- Error handling + auto-update w Electron

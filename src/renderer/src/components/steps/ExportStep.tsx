@@ -1,22 +1,36 @@
 import { useState, useMemo, useCallback, useEffect } from 'react'
 import {
   ChevronLeft,
+  ChevronRight,
   Download,
   Copy,
   Check,
   FileText,
   FileCode2,
-  HardDrive
+  HardDrive,
+  Info,
+  Globe,
+  Clock
 } from 'lucide-react'
 import { useImportStore } from '@renderer/stores/importStore'
 import { useCompanyStore } from '@renderer/stores/companyStore'
 import { useAppStore } from '@renderer/stores/appStore'
-import { generateVdekXml, getVdekSummary } from '@renderer/utils/xmlGenerator'
+import { useMappingStore } from '@renderer/stores/mappingStore'
+import { useHistoryStore } from '@renderer/stores/historyStore'
+import { generateXmlForFile, type XmlExportResult } from '@renderer/utils/xmlExporter'
+import type { JpkType } from '@renderer/types'
 
 function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
+
+const TAB_LABELS: Record<JpkType, string> = {
+  JPK_VDEK: 'V7M',
+  JPK_FA: 'FA',
+  JPK_MAG: 'MAG',
+  JPK_WB: 'WB'
 }
 
 // Simple XML syntax highlighting
@@ -40,13 +54,11 @@ function XmlHighlight({ xml }: { xml: string }): React.JSX.Element {
 }
 
 function HighlightedLine({ line }: { line: string }): React.JSX.Element {
-  // Match XML parts: tags, attributes, values
   const parts: React.JSX.Element[] = []
   let remaining = line
   let key = 0
 
   while (remaining.length > 0) {
-    // XML declaration or processing instruction
     const piMatch = remaining.match(/^(<\?[^?]*\?>)/)
     if (piMatch) {
       parts.push(
@@ -58,7 +70,6 @@ function HighlightedLine({ line }: { line: string }): React.JSX.Element {
       continue
     }
 
-    // Closing tag
     const closeMatch = remaining.match(/^(<\/[a-zA-Z_][\w.:_-]*>)/)
     if (closeMatch) {
       parts.push(
@@ -70,7 +81,6 @@ function HighlightedLine({ line }: { line: string }): React.JSX.Element {
       continue
     }
 
-    // Opening tag (with optional attributes)
     const openMatch = remaining.match(/^(<[a-zA-Z_][\w.:_-]*)/)
     if (openMatch) {
       parts.push(
@@ -80,7 +90,6 @@ function HighlightedLine({ line }: { line: string }): React.JSX.Element {
       )
       remaining = remaining.slice(openMatch[1].length)
 
-      // Attributes
       while (remaining.length > 0) {
         const attrMatch = remaining.match(/^(\s+)([a-zA-Z_][\w.:_-]*)(=")([^"]*)(")/)
         if (attrMatch) {
@@ -113,7 +122,6 @@ function HighlightedLine({ line }: { line: string }): React.JSX.Element {
           continue
         }
 
-        // End of opening tag
         const endTagMatch = remaining.match(/^(\s*\/?>)/)
         if (endTagMatch) {
           parts.push(
@@ -128,7 +136,6 @@ function HighlightedLine({ line }: { line: string }): React.JSX.Element {
       continue
     }
 
-    // Text content (between tags)
     const textMatch = remaining.match(/^([^<]+)/)
     if (textMatch) {
       parts.push(
@@ -140,7 +147,6 @@ function HighlightedLine({ line }: { line: string }): React.JSX.Element {
       continue
     }
 
-    // Fallback: single character
     parts.push(
       <span key={key++} className="text-text-primary">
         {remaining[0]}
@@ -170,45 +176,83 @@ export function ExportStep(): React.JSX.Element {
   const { files } = useImportStore()
   const { company, period } = useCompanyStore()
   const { setCurrentStep } = useAppStore()
+  const { activeMappings } = useMappingStore()
+  const { addRecord } = useHistoryStore()
 
   const [toast, setToast] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
+  const [activeFileId, setActiveFileId] = useState<string>(files[0]?.id || '')
 
-  // Find VDEK file
-  const vdekFile = files.find((f) => f.jpkType === 'JPK_VDEK')
+  const activeFile = files.find((f) => f.id === activeFileId) || files[0]
 
-  const xml = useMemo(() => {
-    if (!vdekFile) return ''
-    return generateVdekXml(vdekFile, company, period)
-  }, [vdekFile, company, period])
+  // Generate XML for each file
+  const results = useMemo(() => {
+    const map = new Map<string, XmlExportResult | null>()
+    for (const file of files) {
+      const mappings = activeMappings[file.id] || []
+      map.set(file.id, generateXmlForFile(file, mappings, company, period))
+    }
+    return map
+  }, [files, activeMappings, company, period])
 
-  const summary = useMemo(() => {
-    if (!vdekFile) return null
-    const s = getVdekSummary(vdekFile, company, period)
-    s.fileSize = new Blob([xml]).size
-    return s
-  }, [vdekFile, company, period, xml])
+  const activeResult = activeFile ? results.get(activeFile.id) ?? null : null
 
   const handleSave = useCallback(async () => {
-    if (!summary || !xml) return
-    const savedPath = await window.api.saveFile(summary.filename, xml)
+    if (!activeResult) return
+    const savedPath = await window.api.saveFile(activeResult.filename, activeResult.xml)
     if (savedPath) {
+      addRecord({
+        jpkType: activeFile!.jpkType,
+        companyName: company.fullName,
+        companyNip: company.nip,
+        fileName: activeResult.filename,
+        schemaVersion: activeResult.schemaVersion,
+        rowCount: activeResult.rowCount,
+        fileSize: activeResult.fileSize,
+        xmlOutput: activeResult.xml
+      })
       setToast(`Zapisano: ${savedPath}`)
     }
-  }, [summary, xml])
+  }, [activeResult, activeFile, company, addRecord])
 
   const handleCopy = useCallback(async () => {
-    await navigator.clipboard.writeText(xml)
+    if (!activeResult) return
+    await navigator.clipboard.writeText(activeResult.xml)
     setCopied(true)
     setToast('XML skopiowany do schowka')
     setTimeout(() => setCopied(false), 2000)
-  }, [xml])
+  }, [activeResult])
 
-  if (!vdekFile) {
+  const handleSaveAll = useCallback(async () => {
+    let saved = 0
+    for (const file of files) {
+      const result = results.get(file.id)
+      if (!result) continue
+      const savedPath = await window.api.saveFile(result.filename, result.xml)
+      if (savedPath) {
+        addRecord({
+          jpkType: file.jpkType,
+          companyName: company.fullName,
+          companyNip: company.nip,
+          fileName: result.filename,
+          schemaVersion: result.schemaVersion,
+          rowCount: result.rowCount,
+          fileSize: result.fileSize,
+          xmlOutput: result.xml
+        })
+        saved++
+      }
+    }
+    if (saved > 0) {
+      setToast(`Zapisano ${saved} ${saved === 1 ? 'plik' : saved < 5 ? 'pliki' : 'plików'} XML`)
+    }
+  }, [files, results, company, addRecord])
+
+  if (files.length === 0) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center gap-4">
         <FileText className="w-12 h-12 text-text-muted" />
-        <p className="text-sm text-text-secondary">Brak pliku JPK_VDEK do eksportu</p>
+        <p className="text-sm text-text-secondary">Brak plików do eksportu</p>
         <button
           onClick={() => setCurrentStep(1)}
           className="px-4 py-2 rounded-lg text-sm font-medium text-accent hover:bg-accent/10 transition-colors"
@@ -228,58 +272,92 @@ export function ExportStep(): React.JSX.Element {
           <h1 className="text-xl font-semibold text-text-primary">Eksport XML</h1>
         </div>
         <p className="text-sm text-text-secondary mb-4">
-          Podgląd wygenerowanego pliku JPK_V7M
+          Podgląd wygenerowanych plików JPK
         </p>
+
+        {/* File tabs */}
+        {files.length > 1 && (
+          <div className="flex gap-1 border-b border-border">
+            {files.map((file) => {
+              const isActive = file.id === activeFile?.id
+              const result = results.get(file.id)
+              return (
+                <button
+                  key={file.id}
+                  onClick={() => setActiveFileId(file.id)}
+                  className={`px-4 py-2 text-xs font-medium rounded-t-lg transition-colors ${
+                    isActive
+                      ? 'bg-bg-card text-text-primary border-b-2 border-accent'
+                      : 'text-text-muted hover:text-text-secondary hover:bg-bg-hover'
+                  }`}
+                >
+                  {TAB_LABELS[file.jpkType]}{' '}
+                  <span className="text-text-muted">
+                    ({result ? formatBytes(result.fileSize) : 'brak'})
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+        )}
       </div>
 
-      {/* Info cards */}
-      {summary && (
-        <div className="px-6 pb-4">
-          <div className="flex gap-3">
-            <div className="flex items-center gap-2 px-3 py-2 bg-bg-card rounded-lg border border-border">
-              <FileText className="w-3.5 h-3.5 text-accent" />
-              <span className="text-xs text-text-secondary">
-                Plik:{' '}
-                <span className="font-mono font-medium text-text-primary">{summary.filename}</span>
-              </span>
-            </div>
-            <div className="flex items-center gap-2 px-3 py-2 bg-bg-card rounded-lg border border-border">
-              <HardDrive className="w-3.5 h-3.5 text-text-muted" />
-              <span className="text-xs text-text-secondary">
-                Rozmiar:{' '}
-                <span className="font-mono font-medium text-text-primary">
-                  {formatBytes(summary.fileSize)}
+      {activeResult ? (
+        <>
+          {/* Info cards */}
+          <div className="px-6 py-3">
+            <div className="flex flex-wrap gap-3">
+              <div className="flex items-center gap-2 px-3 py-2 bg-bg-card rounded-lg border border-border">
+                <FileText className="w-3.5 h-3.5 text-accent" />
+                <span className="text-xs text-text-secondary">
+                  Plik:{' '}
+                  <span className="font-mono font-medium text-text-primary">
+                    {activeResult.filename}
+                  </span>
                 </span>
-              </span>
-            </div>
-            <div className="px-3 py-2 bg-bg-card rounded-lg border border-border">
-              <span className="text-xs text-text-secondary">
-                Wierszy:{' '}
-                <span className="font-mono font-medium text-text-primary">
-                  {summary.rowCount.toLocaleString('pl-PL')}
+              </div>
+              <div className="flex items-center gap-2 px-3 py-2 bg-bg-card rounded-lg border border-border">
+                <HardDrive className="w-3.5 h-3.5 text-text-muted" />
+                <span className="text-xs text-text-secondary">
+                  Rozmiar:{' '}
+                  <span className="font-mono font-medium text-text-primary">
+                    {formatBytes(activeResult.fileSize)}
+                  </span>
                 </span>
-              </span>
-            </div>
-            <div className="px-3 py-2 bg-bg-card rounded-lg border border-border">
-              <span className="text-xs text-text-secondary">
-                VAT:{' '}
-                <span className="font-mono font-medium text-text-primary">
-                  {summary.vatTotal.toLocaleString('pl-PL', {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2
-                  })}{' '}
-                  PLN
+              </div>
+              <div className="px-3 py-2 bg-bg-card rounded-lg border border-border">
+                <span className="text-xs text-text-secondary">
+                  Wierszy:{' '}
+                  <span className="font-mono font-medium text-text-primary">
+                    {activeResult.rowCount.toLocaleString('pl-PL')}
+                  </span>
                 </span>
-              </span>
+              </div>
+              <div className="flex items-center gap-2 px-3 py-2 bg-bg-card rounded-lg border border-border">
+                <Globe className="w-3.5 h-3.5 text-text-muted" />
+                <span className="text-xs text-text-secondary">
+                  Schemat:{' '}
+                  <span className="font-mono font-medium text-text-primary">
+                    {activeResult.jpkType} v{activeResult.schemaVersion}
+                  </span>
+                </span>
+              </div>
             </div>
+          </div>
+
+          {/* XML Preview */}
+          <div className="flex-1 mx-6 mb-4 overflow-auto bg-bg-card rounded-xl border border-border p-4">
+            <XmlHighlight xml={activeResult.xml} />
+          </div>
+        </>
+      ) : (
+        <div className="flex-1 flex items-center justify-center">
+          <div className="flex items-center gap-2 text-text-muted text-sm">
+            <Info className="w-4 h-4" />
+            Brak generatora dla tego typu JPK
           </div>
         </div>
       )}
-
-      {/* XML Preview */}
-      <div className="flex-1 mx-6 mb-4 overflow-auto bg-bg-card rounded-xl border border-border p-4">
-        <XmlHighlight xml={xml} />
-      </div>
 
       {/* Footer */}
       <div className="px-6 py-3 flex justify-between items-center border-t border-border bg-bg-app">
@@ -292,19 +370,44 @@ export function ExportStep(): React.JSX.Element {
         </button>
 
         <div className="flex items-center gap-2">
+          {activeResult && (
+            <>
+              <button
+                onClick={handleCopy}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium text-text-secondary hover:text-text-primary bg-bg-card border border-border hover:border-border-active transition-colors"
+              >
+                {copied ? (
+                  <Check className="w-4 h-4 text-success" />
+                ) : (
+                  <Copy className="w-4 h-4" />
+                )}
+                {copied ? 'Skopiowano' : 'Kopiuj XML'}
+              </button>
+              <button
+                onClick={handleSave}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium bg-accent hover:bg-accent-hover text-white transition-colors"
+              >
+                <Download className="w-4 h-4" />
+                Zapisz XML
+              </button>
+            </>
+          )}
+          {files.length > 1 && (
+            <button
+              onClick={handleSaveAll}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium bg-accent hover:bg-accent-hover text-white transition-colors"
+            >
+              <Download className="w-4 h-4" />
+              Zapisz wszystkie
+            </button>
+          )}
           <button
-            onClick={handleCopy}
+            onClick={() => setCurrentStep(7)}
             className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium text-text-secondary hover:text-text-primary bg-bg-card border border-border hover:border-border-active transition-colors"
           >
-            {copied ? <Check className="w-4 h-4 text-success" /> : <Copy className="w-4 h-4" />}
-            {copied ? 'Skopiowano' : 'Kopiuj XML'}
-          </button>
-          <button
-            onClick={handleSave}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium bg-accent hover:bg-accent-hover text-white transition-colors"
-          >
-            <Download className="w-4 h-4" />
-            Zapisz XML
+            <Clock className="w-4 h-4" />
+            Historia
+            <ChevronRight className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>

@@ -8,61 +8,45 @@ import {
 } from 'lucide-react'
 import { useImportStore } from '@renderer/stores/importStore'
 import { useAppStore } from '@renderer/stores/appStore'
+import { useMappingStore } from '@renderer/stores/mappingStore'
 import type { ParsedFile, JpkType } from '@renderer/types'
+import type { ColumnMapping } from '../../../../core/mapping/AutoMapper'
+import type { JpkFieldType } from '../../../../core/mapping/JpkFieldDefinitions'
+import { getFieldDefinitions } from '../../../../core/mapping/JpkFieldDefinitions'
 
-// Column definitions per JPK type
-interface ColumnDef {
+interface DynColumnDef {
   key: string
   label: string
+  fieldName: string
   dataIndex: number
-  type: 'text' | 'decimal' | 'nip' | 'date'
-  width?: string
-  summable?: boolean
+  fieldType: JpkFieldType
+  summable: boolean
 }
 
-const VDEK_COLUMNS: ColumnDef[] = [
-  { key: 'lp', label: 'Lp', dataIndex: 0, type: 'text', width: 'w-14' },
-  { key: 'kodKraju', label: 'Kraj', dataIndex: 1, type: 'text', width: 'w-14' },
-  { key: 'nip', label: 'NIP', dataIndex: 2, type: 'nip', width: 'w-32' },
-  { key: 'kontrahent', label: 'Kontrahent', dataIndex: 3, type: 'text' },
-  { key: 'nrDowodu', label: 'Nr dowodu', dataIndex: 4, type: 'text', width: 'w-40' },
-  { key: 'dataWyst', label: 'Data wyst.', dataIndex: 5, type: 'date', width: 'w-24' },
-  { key: 'typDok', label: 'Typ', dataIndex: 7, type: 'text', width: 'w-12' },
-  { key: 'k19', label: 'K_19 netto', dataIndex: 45, type: 'decimal', width: 'w-24', summable: true },
-  { key: 'k20', label: 'K_20 VAT', dataIndex: 46, type: 'decimal', width: 'w-24', summable: true }
-]
+const SUMMABLE_TYPES: JpkFieldType[] = ['decimal']
 
-const FA_COLUMNS: ColumnDef[] = [
-  { key: 'waluta', label: 'Waluta', dataIndex: 0, type: 'text', width: 'w-16' },
-  { key: 'dataWyst', label: 'Data wyst.', dataIndex: 1, type: 'date', width: 'w-24' },
-  { key: 'nrFaktury', label: 'Nr faktury', dataIndex: 2, type: 'text', width: 'w-40' },
-  { key: 'nabywca', label: 'Nabywca', dataIndex: 3, type: 'text' },
-  { key: 'nipNabywcy', label: 'NIP nabywcy', dataIndex: 10, type: 'nip', width: 'w-32' },
-  { key: 'netto23', label: 'Netto 23%', dataIndex: 12, type: 'decimal', width: 'w-24', summable: true },
-  { key: 'vat23', label: 'VAT 23%', dataIndex: 13, type: 'decimal', width: 'w-24', summable: true },
-  { key: 'brutto', label: 'Brutto', dataIndex: 27, type: 'decimal', width: 'w-24', summable: true },
-  { key: 'rodzaj', label: 'Rodzaj', dataIndex: 51, type: 'text', width: 'w-16' }
-]
+function buildColumnsFromMappings(
+  mappings: ColumnMapping[],
+  jpkType: string,
+  subType: string
+): DynColumnDef[] {
+  const fields = getFieldDefinitions(jpkType, subType)
+  const fieldMap = new Map(fields.map((f) => [f.name, f]))
 
-const MAG_COLUMNS: ColumnDef[] = [
-  { key: 'nrWZ', label: 'Nr WZ', dataIndex: 1, type: 'text', width: 'w-40' },
-  { key: 'dataWZ', label: 'Data WZ', dataIndex: 2, type: 'date', width: 'w-24' },
-  { key: 'wartoscWZ', label: 'Wartość WZ', dataIndex: 3, type: 'decimal', width: 'w-24' },
-  { key: 'kodTowaru', label: 'Kod towaru', dataIndex: 9, type: 'text', width: 'w-24' },
-  { key: 'nazwaTowaru', label: 'Nazwa towaru', dataIndex: 10, type: 'text' },
-  { key: 'ilosc', label: 'Ilość', dataIndex: 11, type: 'decimal', width: 'w-20' },
-  { key: 'jedn', label: 'Jdn.', dataIndex: 12, type: 'text', width: 'w-14' },
-  { key: 'cena', label: 'Cena', dataIndex: 13, type: 'decimal', width: 'w-20' },
-  { key: 'wartosc', label: 'Wartość', dataIndex: 14, type: 'decimal', width: 'w-20', summable: true }
-]
-
-function getColumnsForType(jpkType: JpkType): ColumnDef[] {
-  switch (jpkType) {
-    case 'JPK_VDEK': return VDEK_COLUMNS
-    case 'JPK_FA': return FA_COLUMNS
-    case 'JPK_MAG': return MAG_COLUMNS
-    case 'JPK_WB': return MAG_COLUMNS // placeholder until WB columns are defined
-  }
+  return mappings
+    .filter((m) => fieldMap.has(m.targetField))
+    .sort((a, b) => a.sourceColumn - b.sourceColumn)
+    .map((m) => {
+      const field = fieldMap.get(m.targetField)!
+      return {
+        key: m.targetField,
+        label: field.label,
+        fieldName: m.targetField,
+        dataIndex: m.sourceColumn,
+        fieldType: field.type,
+        summable: SUMMABLE_TYPES.includes(field.type)
+      }
+    })
 }
 
 function parseDecimal(value: string): number {
@@ -75,16 +59,30 @@ function formatDecimal(value: string): string {
   return num.toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
+function formatCellValue(value: string, type: JpkFieldType): string {
+  if (!value) return ''
+  if (type === 'decimal') return formatDecimal(value)
+  return value
+}
+
+function typeHighlightClass(type: JpkFieldType): string {
+  switch (type) {
+    case 'date': return 'text-blue-400'
+    case 'decimal': return 'text-emerald-400'
+    case 'nip': return 'text-amber-400'
+    default: return 'text-text-primary'
+  }
+}
+
 const ROWS_PER_PAGE = 50
 
-// Inline editable cell
 function EditableCell({
   value,
-  type,
+  fieldType,
   onSave
 }: {
   value: string
-  type: ColumnDef['type']
+  fieldType: JpkFieldType
   onSave: (newValue: string) => void
 }): React.JSX.Element {
   const [editing, setEditing] = useState(false)
@@ -97,9 +95,7 @@ function EditableCell({
 
   const handleSave = (): void => {
     setEditing(false)
-    if (editValue !== value) {
-      onSave(editValue)
-    }
+    if (editValue !== value) onSave(editValue)
   }
 
   const handleKeyDown = (e: React.KeyboardEvent): void => {
@@ -124,14 +120,14 @@ function EditableCell({
     )
   }
 
-  const isNipBrak = type === 'nip' && (value === 'brak' || value === '')
-  const displayValue = type === 'decimal' ? formatDecimal(value) : value
+  const isNipBrak = fieldType === 'nip' && (value === 'brak' || value === '')
+  const displayValue = formatCellValue(value, fieldType)
 
   return (
     <span
       onClick={handleStartEdit}
       className={`cursor-pointer hover:bg-bg-hover px-1 py-0.5 rounded transition-colors ${
-        isNipBrak ? 'text-warning bg-warning/10 rounded px-1.5' : ''
+        isNipBrak ? 'text-warning bg-warning/10 rounded px-1.5' : typeHighlightClass(fieldType)
       }`}
       title="Kliknij aby edytować"
     >
@@ -145,28 +141,28 @@ function SummaryBar({
   columns
 }: {
   file: ParsedFile
-  columns: ColumnDef[]
+  columns: DynColumnDef[]
 }): React.JSX.Element {
   const summableColumns = columns.filter((c) => c.summable)
 
   const sums = useMemo(() => {
     return summableColumns.map((col) => {
       const total = file.rows.reduce((acc, row) => acc + parseDecimal(row[col.dataIndex] || ''), 0)
-      return { label: col.label, total }
+      return { label: col.fieldName, total }
     })
   }, [file.rows, summableColumns])
 
+  const nipCol = columns.find((c) => c.fieldType === 'nip')
   const nipBrakCount = useMemo(() => {
-    const nipCol = columns.find((c) => c.type === 'nip')
     if (!nipCol) return 0
     return file.rows.filter((row) => {
       const v = row[nipCol.dataIndex] || ''
       return v === 'brak' || v === ''
     }).length
-  }, [file.rows, columns])
+  }, [file.rows, nipCol])
 
   return (
-    <div className="flex items-center gap-6 px-4 py-2.5 bg-bg-card border-t border-border text-xs">
+    <div className="shrink-0 flex items-center gap-6 px-4 py-2.5 bg-bg-card border-t border-border text-xs">
       <span className="text-text-secondary">
         Wierszy: <span className="font-medium text-text-primary font-mono">{file.rowCount.toLocaleString('pl-PL')}</span>
       </span>
@@ -181,15 +177,26 @@ function SummaryBar({
       {nipBrakCount > 0 && (
         <span className="flex items-center gap-1 text-warning">
           <AlertTriangle className="w-3 h-3" />
-          {nipBrakCount}x NIP „brak"
+          {nipBrakCount}x NIP \u201ebrak\u201d
         </span>
       )}
     </div>
   )
 }
 
-function DataTable({ file }: { file: ParsedFile }): React.JSX.Element {
-  const columns = getColumnsForType(file.jpkType)
+/**
+ * DataTable wraps scroll area + SummaryBar + pagination in a single
+ * overflow-hidden container. The table can be wider than the viewport —
+ * only the scroll area scrolls (both axes). SummaryBar and pagination
+ * stay pinned below with shrink-0.
+ */
+function DataTable({
+  file,
+  columns
+}: {
+  file: ParsedFile
+  columns: DynColumnDef[]
+}): React.JSX.Element {
   const [page, setPage] = useState(0)
   const totalPages = Math.ceil(file.rowCount / ROWS_PER_PAGE)
 
@@ -201,17 +208,16 @@ function DataTable({ file }: { file: ParsedFile }): React.JSX.Element {
   const handleCellEdit = useCallback(
     (rowIndex: number, colIndex: number, newValue: string) => {
       const globalRow = page * ROWS_PER_PAGE + rowIndex
-      // Mutate in place — rows are owned by importStore
       file.rows[globalRow][colIndex] = newValue
     },
     [file.rows, page]
   )
 
   return (
-    <div className="flex flex-col flex-1 min-h-0">
-      {/* Table */}
-      <div className="flex-1 overflow-auto">
-        <table className="w-full border-collapse">
+    <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+      {/* Scrollable table — flex-1 takes remaining space, scrolls both axes */}
+      <div className="flex-1 min-h-0 overflow-auto">
+        <table className="min-w-max border-collapse">
           <thead className="sticky top-0 z-10">
             <tr className="bg-bg-card">
               <th className="px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wider text-text-muted border-b border-border w-10">
@@ -220,9 +226,14 @@ function DataTable({ file }: { file: ParsedFile }): React.JSX.Element {
               {columns.map((col) => (
                 <th
                   key={col.key}
-                  className={`px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wider text-text-muted border-b border-border ${col.width || ''}`}
+                  className="px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wider border-b border-border whitespace-nowrap"
                 >
-                  {col.label}
+                  <div className="flex items-center gap-1">
+                    <span className={typeHighlightClass(col.fieldType)}>{col.fieldName}</span>
+                    <span className="text-text-muted font-normal normal-case">
+                      {col.label !== col.fieldName ? col.label : ''}
+                    </span>
+                  </div>
                 </th>
               ))}
             </tr>
@@ -235,17 +246,14 @@ function DataTable({ file }: { file: ParsedFile }): React.JSX.Element {
                   key={globalIdx}
                   className="border-b border-border/50 hover:bg-bg-hover/50 transition-colors"
                 >
-                  <td className="px-2 py-1.5 text-xs text-text-muted font-mono">
+                  <td className="px-2 py-1.5 text-xs text-text-muted font-mono whitespace-nowrap">
                     {globalIdx + 1}
                   </td>
                   {columns.map((col) => (
-                    <td
-                      key={col.key}
-                      className={`px-2 py-1.5 text-xs font-mono text-text-primary ${col.width || ''}`}
-                    >
+                    <td key={col.key} className="px-2 py-1.5 text-xs font-mono whitespace-nowrap">
                       <EditableCell
                         value={row[col.dataIndex] || ''}
-                        type={col.type}
+                        fieldType={col.fieldType}
                         onSave={(v) => handleCellEdit(rowIdx, col.dataIndex, v)}
                       />
                     </td>
@@ -257,12 +265,12 @@ function DataTable({ file }: { file: ParsedFile }): React.JSX.Element {
         </table>
       </div>
 
-      {/* Summary bar */}
+      {/* SummaryBar — pinned below table */}
       <SummaryBar file={file} columns={columns} />
 
-      {/* Pagination */}
+      {/* Pagination — pinned below summary */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-between px-4 py-2 bg-bg-app border-t border-border">
+        <div className="shrink-0 flex items-center justify-between px-4 py-2 bg-bg-app border-t border-border">
           <span className="text-xs text-text-muted">
             Strona {page + 1} z {totalPages}
           </span>
@@ -270,28 +278,52 @@ function DataTable({ file }: { file: ParsedFile }): React.JSX.Element {
             <button
               onClick={() => setPage(0)}
               disabled={page === 0}
-              className="p-1 rounded hover:bg-bg-hover disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              className="p-1.5 rounded hover:bg-bg-hover disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
             >
               <ChevronsLeft className="w-3.5 h-3.5 text-text-secondary" />
             </button>
             <button
               onClick={() => setPage((p) => Math.max(0, p - 1))}
               disabled={page === 0}
-              className="p-1 rounded hover:bg-bg-hover disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              className="p-1.5 rounded hover:bg-bg-hover disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
             >
               <ChevronLeft className="w-3.5 h-3.5 text-text-secondary" />
             </button>
+
+            {/* Clickable page numbers */}
+            {(() => {
+              const pages: number[] = []
+              const maxVisible = 5
+              let start = Math.max(0, page - Math.floor(maxVisible / 2))
+              const end = Math.min(totalPages, start + maxVisible)
+              start = Math.max(0, end - maxVisible)
+              for (let i = start; i < end; i++) pages.push(i)
+              return pages.map((p) => (
+                <button
+                  key={p}
+                  onClick={() => setPage(p)}
+                  className={`w-7 h-7 rounded text-xs font-medium transition-colors ${
+                    p === page
+                      ? 'bg-accent text-white'
+                      : 'text-text-secondary hover:bg-bg-hover'
+                  }`}
+                >
+                  {p + 1}
+                </button>
+              ))
+            })()}
+
             <button
               onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
               disabled={page === totalPages - 1}
-              className="p-1 rounded hover:bg-bg-hover disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              className="p-1.5 rounded hover:bg-bg-hover disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
             >
               <ChevronRight className="w-3.5 h-3.5 text-text-secondary" />
             </button>
             <button
               onClick={() => setPage(totalPages - 1)}
               disabled={page === totalPages - 1}
-              className="p-1 rounded hover:bg-bg-hover disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              className="p-1.5 rounded hover:bg-bg-hover disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
             >
               <ChevronsRight className="w-3.5 h-3.5 text-text-secondary" />
             </button>
@@ -312,20 +344,38 @@ const TAB_LABELS: Record<JpkType, string> = {
 export function PreviewStep(): React.JSX.Element {
   const { files } = useImportStore()
   const { setCurrentStep } = useAppStore()
+  const { activeMappings } = useMappingStore()
   const [activeFileId, setActiveFileId] = useState<string>(files[0]?.id || '')
 
   const activeFile = files.find((f) => f.id === activeFileId) || files[0]
 
+  const columns = useMemo(() => {
+    if (!activeFile) return []
+    const mappings = activeMappings[activeFile.id] || []
+    if (mappings.length > 0) {
+      return buildColumnsFromMappings(mappings, activeFile.jpkType, activeFile.subType)
+    }
+    // Fallback: show first N columns raw
+    const count = Math.min(activeFile.columnCount, 10)
+    return Array.from({ length: count }, (_, i): DynColumnDef => ({
+      key: `col_${i}`,
+      label: activeFile.headers?.[i] || `Kol ${i}`,
+      fieldName: activeFile.headers?.[i] || `Kol ${i}`,
+      dataIndex: i,
+      fieldType: 'string',
+      summable: false
+    }))
+  }, [activeFile, activeMappings])
+
   return (
-    <div className="flex-1 flex flex-col min-h-0">
-      {/* Header + tabs */}
-      <div className="px-6 pt-5 pb-0">
+    <div className="flex-1 flex flex-col overflow-hidden">
+      {/* Header — shrink-0 */}
+      <div className="shrink-0 px-6 pt-5 pb-0">
         <h1 className="text-xl font-semibold text-text-primary mb-1">Podgląd danych</h1>
         <p className="text-sm text-text-secondary mb-4">
           Sprawdź dane przed walidacją — kliknij komórkę aby edytować
         </p>
 
-        {/* Tabs */}
         {files.length > 1 && (
           <div className="flex gap-1 border-b border-border">
             {files.map((file) => {
@@ -349,17 +399,17 @@ export function PreviewStep(): React.JSX.Element {
         )}
       </div>
 
-      {/* Table */}
-      {activeFile ? (
-        <DataTable file={activeFile} />
+      {/* DataTable renders: scroll area (flex-1) + SummaryBar (shrink-0) + pagination (shrink-0) */}
+      {activeFile && columns.length > 0 ? (
+        <DataTable file={activeFile} columns={columns} />
       ) : (
         <div className="flex-1 flex items-center justify-center text-text-muted text-sm">
           Brak zaimportowanych plików
         </div>
       )}
 
-      {/* Footer */}
-      <div className="px-6 py-3 flex justify-between border-t border-border bg-bg-app">
+      {/* Navigation footer — shrink-0, always visible at bottom */}
+      <div className="shrink-0 px-6 py-3 flex justify-between border-t border-border bg-bg-app">
         <button
           onClick={() => setCurrentStep(3)}
           className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-colors"

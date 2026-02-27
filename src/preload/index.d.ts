@@ -34,6 +34,21 @@ interface AppAPI {
 }
 
 declare global {
+  interface SerializedSheet {
+    name: string
+    headers?: string[]
+    rows: string[][]
+    metadata: Record<string, string>
+  }
+
+  interface SerializedFileReadResult {
+    sheets: SerializedSheet[]
+    encoding: string
+    separator?: string
+    warnings: string[]
+    fileSize: number
+  }
+
   interface Window {
     electron: ElectronAPI
     api: AppAPI

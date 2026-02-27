@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import type { ColumnMapping, MappingResult } from '../../../core/mapping/AutoMapper'
 import { autoMap } from '../../../core/mapping/AutoMapper'
 import { getFieldDefinitions } from '../../../core/mapping/JpkFieldDefinitions'
+import { findProfile, applyProfile } from '../../../core/mapping/SystemProfiles'
 import type { RawSheet } from '../../../core/models/types'
 import type { ParsedFile } from '../types'
 
@@ -63,8 +64,25 @@ export const useMappingStore = create<MappingState>((set, get) => ({
 
   runAutoMap: (file: ParsedFile) => {
     const sheet = parsedFileToRawSheet(file)
-    const fields = getFieldDefinitions(file.jpkType, file.subType)
-    const result = autoMap(sheet, fields)
+
+    // Try known system profile first (NAMOS, ESO → 100% confidence positional mapping)
+    const profile = findProfile(file.system, file.jpkType, file.subType)
+    let result: MappingResult
+
+    if (profile) {
+      const profileResult = applyProfile(sheet)
+      if (profileResult) {
+        result = profileResult
+      } else {
+        // Profile found but applyProfile failed — fall back to autoMap
+        const fields = getFieldDefinitions(file.jpkType, file.subType)
+        result = autoMap(sheet, fields)
+      }
+    } else {
+      // No known profile — use header-based heuristic autoMap
+      const fields = getFieldDefinitions(file.jpkType, file.subType)
+      result = autoMap(sheet, fields)
+    }
 
     set((state) => ({
       autoMapResults: { ...state.autoMapResults, [file.id]: result },
@@ -75,7 +93,6 @@ export const useMappingStore = create<MappingState>((set, get) => ({
   updateMapping: (fileId: string, mapping: ColumnMapping) => {
     set((state) => {
       const current = state.activeMappings[fileId] || []
-      // Remove existing mapping for same source or same target
       const filtered = current.filter(
         (m) => m.sourceColumn !== mapping.sourceColumn && m.targetField !== mapping.targetField
       )

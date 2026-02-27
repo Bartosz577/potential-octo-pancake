@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import {
   ChevronLeft,
   ChevronRight,
@@ -9,18 +9,24 @@ import {
   XCircle,
   Info,
   ShieldCheck,
-  FileText
+  FileText,
+  Hash,
+  Search,
+  Wrench
 } from 'lucide-react'
 import { useImportStore } from '@renderer/stores/importStore'
 import { useAppStore } from '@renderer/stores/appStore'
+import { useMappingStore } from '@renderer/stores/mappingStore'
 import {
   validateFiles,
+  applyFixes,
   type ValidationReport,
-  type ValidationLevel,
+  type ValidationGroup,
   type ValidationItem,
+  type AutoFix,
   type Severity
 } from '@renderer/utils/validator'
-import type { JpkType } from '@renderer/types'
+import type { JpkType, ParsedFile } from '@renderer/types'
 
 const SEVERITY_CONFIG: Record<Severity, { icon: typeof CheckCircle2; color: string; bg: string }> =
   {
@@ -28,6 +34,12 @@ const SEVERITY_CONFIG: Record<Severity, { icon: typeof CheckCircle2; color: stri
     warning: { icon: AlertTriangle, color: 'text-warning', bg: 'bg-warning/10' },
     info: { icon: CheckCircle2, color: 'text-success', bg: 'bg-success/10' }
   }
+
+const CATEGORY_ICONS = {
+  STRUKTURA: FileText,
+  MERYTORYKA: Search,
+  SUMY_KONTROLNE: Hash
+}
 
 const TAB_LABELS: Record<JpkType, string> = {
   JPK_VDEK: 'V7M',
@@ -48,46 +60,67 @@ function SeverityIcon({
   return <Icon className={`${className} ${config.color}`} />
 }
 
-function ValidationItemRow({ item }: { item: ValidationItem }): React.JSX.Element {
+function ValidationItemRow({
+  item,
+  onApplyFixes
+}: {
+  item: ValidationItem
+  onApplyFixes?: (fixes: AutoFix[]) => void
+}): React.JSX.Element {
   const config = SEVERITY_CONFIG[item.severity]
 
   return (
     <div className={`flex items-start gap-3 px-4 py-2.5 rounded-lg ${config.bg}`}>
       <SeverityIcon severity={item.severity} className="w-4 h-4 mt-0.5 shrink-0" />
-      <div className="flex flex-col gap-0.5 min-w-0">
+      <div className="flex flex-col gap-0.5 min-w-0 flex-1">
         <span className="text-sm text-text-primary">{item.message}</span>
         {item.details && (
           <span className="text-xs text-text-muted break-words">{item.details}</span>
         )}
       </div>
+      {item.autoFixable && item.fixes.length > 0 && onApplyFixes && (
+        <button
+          onClick={() => onApplyFixes(item.fixes)}
+          className="shrink-0 flex items-center gap-1.5 px-3 py-1 text-xs font-medium bg-accent/10 text-accent rounded-lg hover:bg-accent/20 transition-colors"
+        >
+          <Wrench className="w-3 h-3" />
+          Napraw ({item.fixes.length})
+        </button>
+      )}
     </div>
   )
 }
 
-function LevelCard({ level }: { level: ValidationLevel }): React.JSX.Element {
+function GroupCard({
+  group,
+  onApplyFixes
+}: {
+  group: ValidationGroup
+  onApplyFixes: (fixes: AutoFix[]) => void
+}): React.JSX.Element {
   const [expanded, setExpanded] = useState(true)
 
-  const errorCount = level.items.filter((i) => i.severity === 'error').length
-  const warningCount = level.items.filter((i) => i.severity === 'warning').length
+  const errorCount = group.items.filter((i) => i.severity === 'error').length
+  const warningCount = group.items.filter((i) => i.severity === 'warning').length
+  const groupFixCount = group.items.reduce((acc, i) => acc + i.fixes.length, 0)
 
-  const levelIcon =
-    errorCount > 0 ? 'error' : warningCount > 0 ? 'warning' : ('info' as Severity)
+  const groupSeverity: Severity =
+    errorCount > 0 ? 'error' : warningCount > 0 ? 'warning' : 'info'
+
+  const CategoryIcon = CATEGORY_ICONS[group.category]
 
   return (
     <div className="bg-bg-card rounded-xl border border-border overflow-hidden">
-      {/* Header */}
       <button
         onClick={() => setExpanded(!expanded)}
         className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-bg-hover/50 transition-colors"
       >
         <div className="flex items-center gap-3">
-          <SeverityIcon severity={levelIcon} />
-          <span className="text-sm font-semibold text-text-primary">
-            Poziom {level.level} — {level.title}
-          </span>
+          <CategoryIcon className="w-4 h-4 text-accent" />
+          <span className="text-sm font-semibold text-text-primary">{group.title}</span>
           {errorCount > 0 && (
             <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-error/15 text-error">
-              {errorCount} {errorCount === 1 ? 'błąd' : errorCount < 5 ? 'błędy' : 'błędów'}
+              {errorCount} {errorCount === 1 ? 'bład' : errorCount < 5 ? 'błędy' : 'błędów'}
             </span>
           )}
           {warningCount > 0 && (
@@ -101,20 +134,37 @@ function LevelCard({ level }: { level: ValidationLevel }): React.JSX.Element {
             </span>
           )}
         </div>
-        {expanded ? (
-          <ChevronUp className="w-4 h-4 text-text-muted" />
-        ) : (
-          <ChevronDown className="w-4 h-4 text-text-muted" />
-        )}
+        <div className="flex items-center gap-2">
+          {groupFixCount > 0 && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                const allFixes = group.items.flatMap((i) => i.fixes)
+                onApplyFixes(allFixes)
+              }}
+              className="flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-medium bg-accent/10 text-accent rounded-md hover:bg-accent/20 transition-colors"
+            >
+              <Wrench className="w-3 h-3" />
+              Napraw wszystko ({groupFixCount})
+            </button>
+          )}
+          {groupSeverity === 'info' && errorCount === 0 && warningCount === 0 && (
+            <CheckCircle2 className="w-4 h-4 text-success" />
+          )}
+          {expanded ? (
+            <ChevronUp className="w-4 h-4 text-text-muted" />
+          ) : (
+            <ChevronDown className="w-4 h-4 text-text-muted" />
+          )}
+        </div>
       </button>
 
-      {/* Items */}
       {expanded && (
         <div className="px-4 pb-4 flex flex-col gap-1.5">
-          {level.items.map((item) => (
-            <ValidationItemRow key={item.id} item={item} />
+          {group.items.map((item) => (
+            <ValidationItemRow key={item.id} item={item} onApplyFixes={onApplyFixes} />
           ))}
-          {level.items.length === 0 && (
+          {group.items.length === 0 && (
             <div className="px-4 py-3 text-xs text-text-muted">Brak wyników do wyświetlenia</div>
           )}
         </div>
@@ -124,30 +174,26 @@ function LevelCard({ level }: { level: ValidationLevel }): React.JSX.Element {
 }
 
 function FileReport({
-  fileId,
-  filename,
-  jpkType,
-  report
+  file,
+  report,
+  onApplyFixes
 }: {
-  fileId: string
-  filename: string
-  jpkType: JpkType
+  file: ParsedFile
   report: ValidationReport
+  onApplyFixes: (fixes: AutoFix[]) => void
 }): React.JSX.Element {
   return (
-    <div className="flex flex-col gap-3" key={fileId}>
-      {/* File header */}
+    <div className="flex flex-col gap-3">
       <div className="flex items-center gap-2">
         <FileText className="w-4 h-4 text-accent" />
-        <span className="text-sm font-medium text-text-primary">{filename}</span>
+        <span className="text-sm font-medium text-text-primary">{file.filename}</span>
         <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-accent/15 text-accent">
-          {TAB_LABELS[jpkType]}
+          {TAB_LABELS[file.jpkType]}
         </span>
       </div>
 
-      {/* Level cards */}
-      {report.levels.map((level) => (
-        <LevelCard key={level.level} level={level} />
+      {report.groups.map((group) => (
+        <GroupCard key={group.category} group={group} onApplyFixes={onApplyFixes} />
       ))}
     </div>
   )
@@ -155,10 +201,14 @@ function FileReport({
 
 function SummaryBanner({
   totalErrors,
-  totalWarnings
+  totalWarnings,
+  totalAutoFixes,
+  onFixAll
 }: {
   totalErrors: number
   totalWarnings: number
+  totalAutoFixes: number
+  onFixAll: () => void
 }): React.JSX.Element {
   const allClear = totalErrors === 0 && totalWarnings === 0
   const hasErrors = totalErrors > 0
@@ -180,10 +230,10 @@ function SummaryBanner({
       ) : (
         <AlertTriangle className="w-5 h-5 text-warning shrink-0" />
       )}
-      <div>
+      <div className="flex-1">
         <p className="text-sm font-semibold text-text-primary">
           {hasErrors
-            ? `Walidacja nieudana`
+            ? 'Walidacja nieudana'
             : allClear
               ? 'Walidacja zakończona — brak problemów'
               : 'Walidacja zakończona z ostrzeżeniami'}
@@ -191,7 +241,7 @@ function SummaryBanner({
         <p className="text-xs text-text-secondary mt-0.5">
           {totalErrors > 0 && (
             <span className="text-error font-medium">
-              {totalErrors} {totalErrors === 1 ? 'błąd' : totalErrors < 5 ? 'błędy' : 'błędów'}
+              {totalErrors} {totalErrors === 1 ? 'bład' : totalErrors < 5 ? 'błędy' : 'błędów'}
             </span>
           )}
           {totalErrors > 0 && totalWarnings > 0 && <span>, </span>}
@@ -210,6 +260,15 @@ function SummaryBanner({
           )}
         </p>
       </div>
+      {totalAutoFixes > 0 && (
+        <button
+          onClick={onFixAll}
+          className="shrink-0 flex items-center gap-2 px-4 py-2 text-xs font-medium bg-accent text-white rounded-lg hover:bg-accent-hover transition-colors"
+        >
+          <Wrench className="w-3.5 h-3.5" />
+          Napraw automatycznie ({totalAutoFixes})
+        </button>
+      )}
     </div>
   )
 }
@@ -217,10 +276,35 @@ function SummaryBanner({
 export function ValidationStep(): React.JSX.Element {
   const { files } = useImportStore()
   const { setCurrentStep } = useAppStore()
+  const { activeMappings } = useMappingStore()
+  const [fixVersion, setFixVersion] = useState(0)
 
-  const { reports, totalErrors, totalWarnings } = useMemo(() => validateFiles(files), [files])
+  const { reports, totalErrors, totalWarnings, totalAutoFixes } = useMemo(
+    () => validateFiles(files, activeMappings),
+    [files, activeMappings, fixVersion]
+  )
 
   const canExport = totalErrors === 0
+
+  const handleApplyFixes = useCallback(
+    (file: ParsedFile, fixes: AutoFix[]) => {
+      applyFixes(file, fixes)
+      setFixVersion((v) => v + 1)
+    },
+    []
+  )
+
+  const handleFixAll = useCallback(() => {
+    for (const file of files) {
+      const report = reports.get(file.id)
+      if (!report) continue
+      const allFixes = report.groups.flatMap((g) => g.items.flatMap((i) => i.fixes))
+      if (allFixes.length > 0) {
+        applyFixes(file, allFixes)
+      }
+    }
+    setFixVersion((v) => v + 1)
+  }, [files, reports])
 
   return (
     <div className="flex-1 flex flex-col min-h-0">
@@ -238,7 +322,12 @@ export function ValidationStep(): React.JSX.Element {
       {/* Scrollable content */}
       <div className="flex-1 overflow-auto px-6 pb-4 flex flex-col gap-5">
         {/* Summary */}
-        <SummaryBanner totalErrors={totalErrors} totalWarnings={totalWarnings} />
+        <SummaryBanner
+          totalErrors={totalErrors}
+          totalWarnings={totalWarnings}
+          totalAutoFixes={totalAutoFixes}
+          onFixAll={handleFixAll}
+        />
 
         {/* Per-file reports */}
         {files.map((file) => {
@@ -247,10 +336,9 @@ export function ValidationStep(): React.JSX.Element {
           return (
             <FileReport
               key={file.id}
-              fileId={file.id}
-              filename={file.filename}
-              jpkType={file.jpkType}
+              file={file}
               report={report}
+              onApplyFixes={(fixes) => handleApplyFixes(file, fixes)}
             />
           )
         })}
