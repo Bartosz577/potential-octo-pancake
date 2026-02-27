@@ -1,10 +1,11 @@
-import { FileText, FileSpreadsheet, Package, Clock } from 'lucide-react'
+import { FileText, FileSpreadsheet, Package, Clock, Wallet } from 'lucide-react'
 import { useAppStore, type JpkType } from '@renderer/stores/appStore'
 
 const NAV_ITEMS: { type: JpkType; label: string; sublabel: string; icon: typeof FileText }[] = [
   { type: 'V7M', label: 'JPK V7M', sublabel: 'Ewidencja VAT', icon: FileText },
   { type: 'FA', label: 'JPK FA', sublabel: 'Faktury', icon: FileSpreadsheet },
-  { type: 'MAG', label: 'JPK MAG', sublabel: 'Magazyn', icon: Package }
+  { type: 'MAG', label: 'JPK MAG', sublabel: 'Magazyn', icon: Package },
+  { type: 'WB', label: 'JPK WB', sublabel: 'Wyciągi bankowe', icon: Wallet }
 ]
 
 export function Sidebar(): React.JSX.Element {

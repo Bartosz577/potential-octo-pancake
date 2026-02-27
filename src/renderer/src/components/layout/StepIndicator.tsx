@@ -1,15 +1,17 @@
-import { Upload, Building2, Table, ShieldCheck, Download } from 'lucide-react'
+import { Upload, GitBranch, Building2, Table, ShieldCheck, Download, Clock } from 'lucide-react'
 import { useAppStore, STEP_LABELS, type Step } from '@renderer/stores/appStore'
 
 const STEP_ICONS: Record<Step, typeof Upload> = {
   1: Upload,
-  2: Building2,
-  3: Table,
-  4: ShieldCheck,
-  5: Download
+  2: GitBranch,
+  3: Building2,
+  4: Table,
+  5: ShieldCheck,
+  6: Download,
+  7: Clock
 }
 
-const STEPS: Step[] = [1, 2, 3, 4, 5]
+const STEPS: Step[] = [1, 2, 3, 4, 5, 6, 7]
 
 export function StepIndicator(): React.JSX.Element {
   const { currentStep } = useAppStore()
@@ -53,7 +55,7 @@ export function StepIndicator(): React.JSX.Element {
             {/* Connector line */}
             {!isLast && (
               <div
-                className={`w-12 h-px mx-3 ${
+                className={`w-8 h-px mx-2 ${
                   isCompleted ? 'bg-accent/40' : 'bg-border'
                 }`}
               />

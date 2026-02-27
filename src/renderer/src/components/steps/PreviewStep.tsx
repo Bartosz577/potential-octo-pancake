@@ -61,6 +61,7 @@ function getColumnsForType(jpkType: JpkType): ColumnDef[] {
     case 'JPK_VDEK': return VDEK_COLUMNS
     case 'JPK_FA': return FA_COLUMNS
     case 'JPK_MAG': return MAG_COLUMNS
+    case 'JPK_WB': return MAG_COLUMNS // placeholder until WB columns are defined
   }
 }
 
@@ -304,7 +305,8 @@ function DataTable({ file }: { file: ParsedFile }): React.JSX.Element {
 const TAB_LABELS: Record<JpkType, string> = {
   JPK_VDEK: 'Sprzedaż V7M',
   JPK_FA: 'Faktury',
-  JPK_MAG: 'Magazyn'
+  JPK_MAG: 'Magazyn',
+  JPK_WB: 'Wyciągi bankowe'
 }
 
 export function PreviewStep(): React.JSX.Element {
@@ -359,14 +361,14 @@ export function PreviewStep(): React.JSX.Element {
       {/* Footer */}
       <div className="px-6 py-3 flex justify-between border-t border-border bg-bg-app">
         <button
-          onClick={() => setCurrentStep(2)}
+          onClick={() => setCurrentStep(3)}
           className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-colors"
         >
           <ChevronLeft className="w-4 h-4" />
           Wstecz
         </button>
         <button
-          onClick={() => setCurrentStep(4)}
+          onClick={() => setCurrentStep(5)}
           className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium bg-accent hover:bg-accent-hover text-white transition-colors"
         >
           Dalej

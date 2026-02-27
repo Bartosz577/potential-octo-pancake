@@ -32,7 +32,8 @@ const SEVERITY_CONFIG: Record<Severity, { icon: typeof CheckCircle2; color: stri
 const TAB_LABELS: Record<JpkType, string> = {
   JPK_VDEK: 'V7M',
   JPK_FA: 'FA',
-  JPK_MAG: 'MAG'
+  JPK_MAG: 'MAG',
+  JPK_WB: 'WB'
 }
 
 function SeverityIcon({
@@ -267,14 +268,14 @@ export function ValidationStep(): React.JSX.Element {
       {/* Footer */}
       <div className="px-6 py-3 flex justify-between border-t border-border bg-bg-app">
         <button
-          onClick={() => setCurrentStep(3)}
+          onClick={() => setCurrentStep(4)}
           className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-colors"
         >
           <ChevronLeft className="w-4 h-4" />
           Wstecz
         </button>
         <button
-          onClick={() => setCurrentStep(5)}
+          onClick={() => setCurrentStep(6)}
           disabled={!canExport}
           className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-colors ${
             canExport

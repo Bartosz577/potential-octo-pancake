@@ -36,7 +36,7 @@ export function parseTxtFile(content: string, filename: string, fileSize = 0): P
     throw new Error(`Nieznany system ERP: ${system}`)
   }
 
-  if (!['JPK_VDEK', 'JPK_FA', 'JPK_MAG'].includes(jpkType)) {
+  if (!['JPK_VDEK', 'JPK_FA', 'JPK_MAG', 'JPK_WB'].includes(jpkType)) {
     throw new Error(`Nieznany typ JPK: ${jpkType}`)
   }
 

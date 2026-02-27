@@ -1,6 +1,7 @@
-export type JpkType = 'JPK_VDEK' | 'JPK_FA' | 'JPK_MAG'
-export type SubType = 'SprzedazWiersz' | 'Faktura' | 'WZ' | 'RW'
-export type ErpSystem = 'NAMOS' | 'ESO'
+export type JpkType = 'JPK_VDEK' | 'JPK_FA' | 'JPK_MAG' | 'JPK_WB'
+export type SubType = 'SprzedazWiersz' | 'Faktura' | 'WZ' | 'RW' | 'ZakupWiersz' | 'FakturaWiersz' | 'PZ' | 'MM'
+export type ErpSystem = 'NAMOS' | 'ESO' | 'UNKNOWN'
+export type FileFormat = 'txt' | 'csv' | 'xlsx' | 'json' | 'xml'
 
 export interface ParsedFile {
   id: string
@@ -15,4 +16,8 @@ export interface ParsedFile {
   rowCount: number
   columnCount: number
   fileSize: number
+  format?: FileFormat
+  encoding?: string
+  warnings?: string[]
+  headers?: string[]
 }

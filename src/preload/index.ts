@@ -6,6 +6,8 @@ const api = {
   openFileDialog: (): Promise<string[]> => ipcRenderer.invoke('dialog:openFiles'),
   readFile: (filePath: string): Promise<{ content: string; size: number }> =>
     ipcRenderer.invoke('file:read', filePath),
+  readFileAsBuffer: (filePath: string): Promise<{ buffer: number[]; size: number }> =>
+    ipcRenderer.invoke('file:readBuffer', filePath),
   saveFile: (defaultName: string, content: string): Promise<string | null> =>
     ipcRenderer.invoke('dialog:saveFile', defaultName, content),
   window: {

@@ -2,6 +2,7 @@ import { TitleBar } from './TitleBar'
 import { Sidebar } from './Sidebar'
 import { StepIndicator } from './StepIndicator'
 import { ImportStep } from '@renderer/components/steps/ImportStep'
+import { MappingStep } from '@renderer/components/steps/MappingStep'
 import { CompanyStep } from '@renderer/components/steps/CompanyStep'
 import { PreviewStep } from '@renderer/components/steps/PreviewStep'
 import { ValidationStep } from '@renderer/components/steps/ValidationStep'
@@ -22,7 +23,7 @@ function StepPlaceholder(): React.JSX.Element {
           {STEP_LABELS[currentStep]}
         </h2>
         <p className="text-sm text-text-secondary">
-          JPK {activeJpkType} — Krok {currentStep} z 5
+          JPK {activeJpkType} — Krok {currentStep} z 7
         </p>
       </div>
     </div>
@@ -36,12 +37,14 @@ function MainContent(): React.JSX.Element {
     case 1:
       return <ImportStep />
     case 2:
-      return <CompanyStep />
+      return <MappingStep />
     case 3:
-      return <PreviewStep />
+      return <CompanyStep />
     case 4:
-      return <ValidationStep />
+      return <PreviewStep />
     case 5:
+      return <ValidationStep />
+    case 6:
       return <ExportStep />
     default:
       return <StepPlaceholder />

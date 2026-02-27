@@ -54,8 +54,13 @@ function createWindow(): void {
   // File dialog IPC handler
   ipcMain.handle('dialog:openFiles', async () => {
     const result = await dialog.showOpenDialog(mainWindow, {
-      title: 'Wybierz pliki TXT',
-      filters: [{ name: 'Pliki tekstowe', extensions: ['txt'] }],
+      title: 'Wybierz pliki danych',
+      filters: [
+        {
+          name: 'Pliki danych',
+          extensions: ['txt', 'csv', 'xlsx', 'xls', 'json', 'xml', 'dat', 'tsv']
+        }
+      ],
       properties: ['openFile', 'multiSelections']
     })
     return result.canceled ? [] : result.filePaths
@@ -66,6 +71,13 @@ function createWindow(): void {
     const content = await readFile(filePath, 'utf-8')
     const stats = await stat(filePath)
     return { content, size: stats.size }
+  })
+
+  // Read file as buffer IPC handler (for binary files like xlsx)
+  ipcMain.handle('file:readBuffer', async (_event, filePath: string) => {
+    const buffer = await readFile(filePath)
+    const stats = await stat(filePath)
+    return { buffer: Array.from(buffer), size: stats.size }
   })
 
   // Save XML file IPC handler

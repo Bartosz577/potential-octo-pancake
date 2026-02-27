@@ -1,0 +1,128 @@
+import { create } from 'zustand'
+import type { ColumnMapping, MappingResult } from '../../../core/mapping/AutoMapper'
+import { autoMap } from '../../../core/mapping/AutoMapper'
+import { getFieldDefinitions } from '../../../core/mapping/JpkFieldDefinitions'
+import type { RawSheet } from '../../../core/models/types'
+import type { ParsedFile } from '../types'
+
+export interface SavedMappingProfile {
+  id: string
+  name: string
+  jpkType: string
+  subType: string
+  mappings: ColumnMapping[]
+  createdAt: string
+}
+
+const PROFILES_KEY = 'jpk-mapping-profiles'
+
+function loadSavedProfiles(): SavedMappingProfile[] {
+  try {
+    const data = localStorage.getItem(PROFILES_KEY)
+    return data ? JSON.parse(data) : []
+  } catch {
+    return []
+  }
+}
+
+function persistProfiles(profiles: SavedMappingProfile[]): void {
+  localStorage.setItem(PROFILES_KEY, JSON.stringify(profiles))
+}
+
+/** Convert a ParsedFile to a RawSheet for the AutoMapper */
+function parsedFileToRawSheet(file: ParsedFile): RawSheet {
+  return {
+    name: file.filename,
+    headers: file.headers,
+    rows: file.rows.map((cells, index) => ({ index, cells })),
+    metadata: {
+      system: file.system,
+      jpkType: file.jpkType,
+      subType: file.subType
+    }
+  }
+}
+
+interface MappingState {
+  activeMappings: Record<string, ColumnMapping[]>
+  autoMapResults: Record<string, MappingResult>
+  savedProfiles: SavedMappingProfile[]
+
+  runAutoMap: (file: ParsedFile) => void
+  updateMapping: (fileId: string, mapping: ColumnMapping) => void
+  removeMapping: (fileId: string, sourceColumn: number) => void
+  saveProfile: (name: string, fileId: string, jpkType: string, subType: string) => void
+  loadProfile: (profileId: string, fileId: string) => void
+  clearMappings: () => void
+}
+
+export const useMappingStore = create<MappingState>((set, get) => ({
+  activeMappings: {},
+  autoMapResults: {},
+  savedProfiles: loadSavedProfiles(),
+
+  runAutoMap: (file: ParsedFile) => {
+    const sheet = parsedFileToRawSheet(file)
+    const fields = getFieldDefinitions(file.jpkType, file.subType)
+    const result = autoMap(sheet, fields)
+
+    set((state) => ({
+      autoMapResults: { ...state.autoMapResults, [file.id]: result },
+      activeMappings: { ...state.activeMappings, [file.id]: result.mappings }
+    }))
+  },
+
+  updateMapping: (fileId: string, mapping: ColumnMapping) => {
+    set((state) => {
+      const current = state.activeMappings[fileId] || []
+      // Remove existing mapping for same source or same target
+      const filtered = current.filter(
+        (m) => m.sourceColumn !== mapping.sourceColumn && m.targetField !== mapping.targetField
+      )
+      return {
+        activeMappings: { ...state.activeMappings, [fileId]: [...filtered, mapping] }
+      }
+    })
+  },
+
+  removeMapping: (fileId: string, sourceColumn: number) => {
+    set((state) => {
+      const current = state.activeMappings[fileId] || []
+      return {
+        activeMappings: {
+          ...state.activeMappings,
+          [fileId]: current.filter((m) => m.sourceColumn !== sourceColumn)
+        }
+      }
+    })
+  },
+
+  saveProfile: (name: string, fileId: string, jpkType: string, subType: string) => {
+    const mappings = get().activeMappings[fileId] || []
+    const profile: SavedMappingProfile = {
+      id: `profile_${Date.now()}`,
+      name,
+      jpkType,
+      subType,
+      mappings,
+      createdAt: new Date().toISOString()
+    }
+    set((state) => {
+      const updated = [...state.savedProfiles, profile]
+      persistProfiles(updated)
+      return { savedProfiles: updated }
+    })
+  },
+
+  loadProfile: (profileId: string, fileId: string) => {
+    const profile = get().savedProfiles.find((p) => p.id === profileId)
+    if (!profile) return
+    set((state) => ({
+      activeMappings: { ...state.activeMappings, [fileId]: [...profile.mappings] }
+    }))
+  },
+
+  clearMappings: () => {
+    set({ activeMappings: {}, autoMapResults: {} })
+  }
+}))

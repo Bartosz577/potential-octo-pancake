@@ -284,7 +284,7 @@ export function ExportStep(): React.JSX.Element {
       {/* Footer */}
       <div className="px-6 py-3 flex justify-between items-center border-t border-border bg-bg-app">
         <button
-          onClick={() => setCurrentStep(4)}
+          onClick={() => setCurrentStep(5)}
           className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-colors"
         >
           <ChevronLeft className="w-4 h-4" />

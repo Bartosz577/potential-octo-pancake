@@ -45,6 +45,11 @@ const TYPE_CONFIGS: Record<JpkType, TypeValidationConfig> = {
     nipIndex: null,
     dateIndices: [2, 4],
     decimalIndices: [3, 11, 13, 14]
+  },
+  JPK_WB: {
+    nipIndex: null,
+    dateIndices: [],
+    decimalIndices: []
   }
 }
 

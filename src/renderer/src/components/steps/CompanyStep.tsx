@@ -399,14 +399,14 @@ export function CompanyStep(): React.JSX.Element {
       {/* Footer */}
       <div className="mt-auto pt-4 flex justify-between">
         <button
-          onClick={() => setCurrentStep(1)}
+          onClick={() => setCurrentStep(2)}
           className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-colors"
         >
           <ChevronLeft className="w-4 h-4" />
           Wstecz
         </button>
         <button
-          onClick={() => setCurrentStep(3)}
+          onClick={() => setCurrentStep(4)}
           disabled={!canProceed}
           className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-colors ${
             canProceed
