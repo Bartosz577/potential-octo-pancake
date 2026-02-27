@@ -57,12 +57,12 @@
 - [x] Testy: `JpkFaGenerator.test.ts`
 - [x] Walidacja XSD
 
-### 2.3 JPK_MAG(1) — nowy generator
-- [ ] Przeanalizuj schemat XSD JPK_MAG(1) z gov.pl
-- [ ] Zaimplementuj `JpkMagGenerator.ts`
-- [ ] Obsługa typów dokumentów: WZ, PZ, RW, MM
-- [ ] Testy: `JpkMagGenerator.test.ts`
-- [ ] Walidacja XSD
+### 2.3 JPK_MAG(2) — nowy generator
+- [x] Przeanalizuj schemat XSD JPK_MAG(2) z gov.pl
+- [x] Zaimplementuj `JpkMagGenerator.ts`
+- [x] Obsługa typów dokumentów: PZ, PW, WZ, RW, MMWE, MMWY + INW
+- [x] Testy: `JpkMagGenerator.test.ts`
+- [x] Walidacja XSD
 
 ### 2.4 JPK_WB(1) — nowy generator
 - [ ] Przeanalizuj schemat XSD JPK_WB(1)
