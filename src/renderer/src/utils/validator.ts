@@ -49,6 +49,7 @@ const DATE_FIXABLE_REGEX = /^(\d{2})[./](\d{2})[./](\d{4})$/
 
 interface MappedColumns {
   nip: number[]
+  nipCountryCol: number | null  // KodKontrahenta column index (if mapped)
   date: number[]
   decimal: number[]
 }
@@ -62,6 +63,7 @@ function getMappedColumnsByType(
   const fieldMap = new Map(fields.map((f) => [f.name, f]))
 
   const nip: number[] = []
+  let nipCountryCol: number | null = null
   const date: number[] = []
   const decimal: number[] = []
 
@@ -72,6 +74,9 @@ function getMappedColumnsByType(
       case 'nip':
         nip.push(m.sourceColumn)
         break
+      case 'country':
+        nipCountryCol = m.sourceColumn
+        break
       case 'date':
         date.push(m.sourceColumn)
         break
@@ -81,7 +86,7 @@ function getMappedColumnsByType(
     }
   }
 
-  return { nip, date, decimal }
+  return { nip, nipCountryCol, date, decimal }
 }
 
 // Key sum fields per JPK type
@@ -186,11 +191,13 @@ function validateMerytoryka(
   subType: string
 ): ValidationItem[] {
   const items: ValidationItem[] = []
-  const { nip, date, decimal } = getMappedColumnsByType(mappings, jpkType, subType)
+  const { nip, nipCountryCol, date, decimal } = getMappedColumnsByType(mappings, jpkType, subType)
 
   // NIP validation
   for (const colIdx of nip) {
     let valid = 0
+    let pesel = 0
+    let foreign = 0
     let brak = 0
     let invalid = 0
     const invalidSamples: { row: number; nip: string }[] = []
@@ -199,11 +206,22 @@ function validateMerytoryka(
       const raw = file.rows[i][colIdx] || ''
       const normalized = normalizeNip(raw)
 
+      // Check country code if mapped
+      const countryCode = nipCountryCol !== null
+        ? (file.rows[i][nipCountryCol] || '').trim().toUpperCase()
+        : ''
+
       if (raw === 'brak' || raw.trim() === '') {
+        // Empty or "brak" — warning, not error
         brak++
+      } else if (countryCode && countryCode !== 'PL' && countryCode !== '') {
+        // Foreign NIP — accept any format
+        foreign++
+      } else if (normalized.length === 11 && /^\d{11}$/.test(normalized)) {
+        // 11 digits = PESEL (osoby fizyczne), not a NIP — valid
+        pesel++
       } else if (normalized.length === 10 && validatePolishNip(normalized)) {
-        valid++
-      } else if (/^[A-Z]{2}\d+$/.test(raw.replace(/[\s-]/g, ''))) {
+        // 10-digit Polish NIP with valid checksum
         valid++
       } else {
         invalid++
@@ -217,6 +235,26 @@ function validateMerytoryka(
         category: 'MERYTORYKA',
         severity: 'info',
         message: `${valid} poprawnych NIP-ów`,
+        autoFixable: false,
+        fixes: []
+      })
+    }
+    if (pesel > 0) {
+      items.push({
+        id: `mer-nip-pesel-${colIdx}`,
+        category: 'MERYTORYKA',
+        severity: 'info',
+        message: `${pesel}\u00d7 PESEL (osoby fizyczne)`,
+        autoFixable: false,
+        fixes: []
+      })
+    }
+    if (foreign > 0) {
+      items.push({
+        id: `mer-nip-foreign-${colIdx}`,
+        category: 'MERYTORYKA',
+        severity: 'info',
+        message: `${foreign}\u00d7 NIP zagraniczny`,
         autoFixable: false,
         fixes: []
       })
