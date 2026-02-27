@@ -48,14 +48,14 @@
 - [x] Walidacja wygenerowanego XML przeciw schematowi XSD
 
 ### 2.2 JPK_FA(4) — nowy generator
-- [ ] Przeanalizuj schemat XSD JPK_FA(4) z gov.pl
-- [ ] Zaimplementuj `JpkFaGenerator.ts`
-- [ ] Sekcja nagłówkowa: Naglowek, Podmiot1
-- [ ] Sekcja Faktura: dane nagłówkowe faktury
-- [ ] Sekcja FakturaWiersz: pozycje faktury
-- [ ] Sekcja FakturaCtrl: sumy kontrolne
-- [ ] Testy: `JpkFaGenerator.test.ts`
-- [ ] Walidacja XSD
+- [x] Przeanalizuj schemat XSD JPK_FA(4) z gov.pl
+- [x] Zaimplementuj `JpkFaGenerator.ts`
+- [x] Sekcja nagłówkowa: Naglowek, Podmiot1
+- [x] Sekcja Faktura: dane nagłówkowe faktury
+- [x] Sekcja FakturaWiersz: pozycje faktury
+- [x] Sekcja FakturaCtrl: sumy kontrolne
+- [x] Testy: `JpkFaGenerator.test.ts`
+- [x] Walidacja XSD
 
 ### 2.3 JPK_MAG(1) — nowy generator
 - [ ] Przeanalizuj schemat XSD JPK_MAG(1) z gov.pl
