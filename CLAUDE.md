@@ -1,47 +1,84 @@
-# JPK Converter
+# JPK Universal Converter v2
 
-## Opis projektu
-Desktopowa aplikacja Electron + React do konwersji plików TXT (eksportowanych z systemów ERP: NAMOS, ESO) na format XML (JPK) wymagany przez polskie Ministerstwo Finansów.
+## Projekt
+Aplikacja desktopowa Electron + React do konwersji plików z systemów ERP (dowolny format) na XML w formacie JPK wymaganym przez Ministerstwo Finansów RP. Docelowo: uniwersalne narzędzie obsługujące wszystkie formaty wejściowe i wszystkie struktury JPK.
 
-## Stack technologiczny
-- Electron 28+ (desktop shell)
-- React 18 + TypeScript
-- Vite (bundler)
-- Tailwind CSS (stylowanie)
-- Zustand (state management)
-- shadcn/ui (komponenty UI)
+## Stack
+- Electron 39 (frameless window, custom titlebar)
+- React 19 + TypeScript 5.9
+- Vite 7 via electron-vite 5
+- Tailwind CSS 4 + custom CSS variables (dark theme)
+- Zustand 5 (state management)
 - Lucide React (ikony)
-- JetBrains Mono + Plus Jakarta Sans (fonty)
+- Plus Jakarta Sans (UI font), JetBrains Mono (dane/tabele)
 
-## Obsługiwane typy JPK
-- JPK_V7M (VDEK) — ewidencja sprzedaży VAT (miesięczna)
-- JPK_FA — faktury VAT
-- JPK_MAG — dokumenty magazynowe (WZ, RW)
+## Architektura
 
-## Kluczowe pliki
-- `docs/JPK_Converter_Specyfikacja_v2.md` — pełna specyfikacja z mapowaniem kolumn
-- `test-data/` — prawdziwe pliki TXT do testowania
+### Workflow 7-krokowy
+```
+Import → Mapowanie → Firma → Podgląd → Walidacja → Eksport → Historia
+  (1)       (2)       (3)      (4)        (5)        (6)       (7)
+```
+Każdy krok = osobny komponent React. Nawigacja przez `appStore.currentStep`.
 
-## Format plików wejściowych (TXT)
-- Separator: | (pipe)
-- Bez nagłówka (dane od pierwszego wiersza)
-- Kodowanie: UTF-8 (NAMOS), ASCII (ESO)
-- Separator dziesiętny: , (przecinek) — w XML musi być . (kropka)
-- Kolumny 1-6: metadane (kod_punktu|system|typ_jpk|podtyp|data_od|data_do)
-- Kolumny 7+: dane właściwe (różne per typ JPK)
+### Warstwy core
+```
+src/core/
+├── readers/         # Pluginy odczytu plików (TxtFileReader, CsvFileReader, XlsxFileReader, JsonFileReader, XmlFileReader)
+├── mapping/         # AutoMapper, SystemProfiles, TransformEngine, JpkFieldDefinitions
+├── models/          # TypeScript interfaces (types.ts + canonical models per JPK type)
+├── validation/      # ValidationEngine + rules (structural, business, checksums, xsd)
+├── generators/      # XML generators per typ JPK
+├── encoding/        # EncodingDetector (windows-1250, ISO-8859-2, CP852)
+└── ConversionPipeline.ts  # Orkiestrator: parse → map → transform → validate → generate
+```
+
+### UI
+```
+src/renderer/components/
+├── layout/          # AppShell, TitleBar, Sidebar, StepIndicator
+├── steps/           # ImportStep, MappingStep, CompanyStep, PreviewStep, ValidationStep, ExportStep, HistoryStep
+├── mapping/         # ColumnMappingUI, FieldPreview, TransformConfig, SavedMappings
+└── shared/          # FormatBadge, EncodingSelector
+```
+
+### State (Zustand stores)
+- `appStore` — aktywny typ JPK, bieżący krok (1-7)
+- `importStore` — zaimportowane pliki (ParsedFile[])
+- `companyStore` — dane firmy, okres, zapamiętane firmy (localStorage)
+- `mappingStore` — aktywne mapowanie kolumn, zapisane profile
+
+## Komendy
+- `npm run dev` — development
+- `npm run build` — production build
+- `npm run build:win` / `build:mac` / `build:linux` — platform builds
+- `npm run lint` — ESLint
+- `npm run typecheck` — tsc --noEmit
+- `npm test` — Vitest
 
 ## Konwencje
+- Nazwy plików: PascalCase dla komponentów React, camelCase dla utils
+- Eksport: named exports (nie default) dla utils, default dla komponentów React
 - Język kodu: angielski (nazwy zmiennych, komentarze)
-- Język UI: polski (labele, komunikaty)
-- Dark theme (paleta kolorów w specyfikacji)
-- Monospace font na dane/tabele (JetBrains Mono)
+- Język UI: polski (labels, komunikaty, walidacja)
+- Kwoty: zawsze 2 miejsca dziesiętne, separator dziesiętny `.` w XML
+- Daty: format `YYYY-MM-DD` w modelu kanonicznym i XML wyjściowym
+- NIP: 10 cyfr bez separatorów w modelu, `XXX-XXX-XX-XX` w UI
 
-## Struktura katalogów
-electron/          — Electron main process + services
-src/               — React frontend (renderer)
-src/components/    — komponenty React
-src/stores/        — Zustand stores
-src/utils/         — helpery (parser, validator, generator XML)
-src/types/         — TypeScript types
-docs/              — specyfikacja
-test-data/         — pliki TXT do testów
+## Zasady
+- NIGDY nie modyfikuj istniejących plików w `src/core/models/types.ts` bez aktualizacji importów we wszystkich zależnych modułach
+- Każdy nowy FileReader MUSI implementować interfejs `FileReaderPlugin` i być zarejestrowany w `FileReaderRegistry`
+- Każdy nowy generator XML MUSI generować XML zgodny ze schematem XSD Ministerstwa Finansów
+- Walidacja NIP: zawsze checksum (wagi: 6,5,7,2,3,4,5,6,7)
+- Testy: pisz testy Vitest dla każdego nowego modułu w `src/core/`
+- XML escaping: zawsze escape `&`, `<`, `>`, `"`, `'` w wartościach
+- Kodowanie plików wejściowych: auto-detect przez EncodingDetector, fallback windows-1250
+
+## Kontekst biznesowy
+- JPK = Jednolity Plik Kontrolny (polska regulacja podatkowa)
+- Od lutego 2026: obowiązkowy KSeF (e-fakturowanie), nowa wersja JPK_V7M(3) z polami KSeF
+- Szczegółowa dokumentacja: `docs/jpk-regulations.md`, `docs/ksef-requirements.md`
+- Schematy XSD: `schemas/` — pobrane z gov.pl
+
+## Priorytety implementacji
+Szczegółowy plan w `docs/implementation-plan.md` (checkboxy [ ] do odhaczania)
