@@ -16,11 +16,11 @@
 - [x] Zintegruj istniejący `fileParser.ts` z nowym `TxtFileReader.ts`
 - [x] Testy: `TxtFileReader.test.ts` — parsowanie pliku NAMOS VDEK (pipe separator)
 - [x] Testy: `TxtFileReader.test.ts` — parsowanie pliku ESO MAG (windows-1250)
-- [ ] Testy: `CsvFileReader.test.ts` — CSV z separatorem `;` i `,`
-- [ ] Testy: `CsvFileReader.test.ts` — CSV z polskimi znakami (windows-1250)
-- [ ] Testy: `XlsxFileReader.test.ts` — plik Excel z wieloma arkuszami
-- [ ] Testy: `XlsxFileReader.test.ts` — plik XLS (stary format)
-- [ ] Testy: `JsonFileReader.test.ts` — tablica obiektów + zagnieżdżony JSON
+- [x] Testy: `CsvFileReader.test.ts` — CSV z separatorem `;` i `,`
+- [x] Testy: `CsvFileReader.test.ts` — CSV z polskimi znakami (windows-1250)
+- [x] Testy: `XlsxFileReader.test.ts` — plik Excel z wieloma arkuszami
+- [x] Testy: `XlsxFileReader.test.ts` — plik XLS (stary format)
+- [x] Testy: `JsonFileReader.test.ts` — tablica obiektów + zagnieżdżony JSON
 - [ ] Testy: `XmlFileReader.test.ts` — generyczny XML z powtarzającymi się elementami
 - [ ] Testy: `FileReaderRegistry.test.ts` — auto-detection formatu
 - [x] Testy: `EncodingDetector.test.ts` — detekcja UTF-8, windows-1250, CP852
