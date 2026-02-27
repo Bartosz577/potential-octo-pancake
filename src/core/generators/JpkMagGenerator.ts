@@ -1,7 +1,17 @@
 // ── JPK_MAG(2) XML Generator ──
 // Generates XML conforming to schema: http://jpk.mf.gov.pl/wzor/2025/11/24/11242/
 
-import { escapeXml, formatAmount } from './JpkV7mGenerator'
+import {
+  escapeXml,
+  formatAmount,
+  formatQuantity,
+  formatDateTime,
+  buildElement,
+  buildAmountElement,
+  buildQuantityElement,
+  XmlGenerator,
+  generatorRegistry,
+} from './XmlGeneratorEngine'
 
 // ── Constants ──
 
@@ -79,24 +89,15 @@ export interface MagGeneratorInput {
 // ── XML helpers ──
 
 function tag(name: string, value: string): string {
-  return `<${name}>${escapeXml(value)}</${name}>`
+  return buildElement(name, value)
 }
 
 function amountTag(name: string, value: string | undefined): string {
-  return `<${name}>${formatAmount(value)}</${name}>`
-}
-
-export function formatQuantity(value: string | number | undefined): string {
-  if (value === undefined || value === '' || value === null) return '0'
-  const num = typeof value === 'number' ? value : parseFloat(String(value))
-  if (isNaN(num)) return '0'
-  let formatted = num.toFixed(6)
-  formatted = formatted.replace(/(\.\d*?)0+$/, '$1').replace(/\.$/, '')
-  return formatted
+  return buildAmountElement(name, value)
 }
 
 function quantityTag(name: string, value: string | undefined): string {
-  return `<${name}>${formatQuantity(value)}</${name}>`
+  return buildQuantityElement(name, value)
 }
 
 function push(lines: string[], indent: string, content: string): void {
@@ -153,8 +154,7 @@ export function generateJpkMag(input: MagGeneratorInput): string {
 // ── Section generators ──
 
 function generateNaglowek(n: MagNaglowek): string {
-  const now = new Date()
-  const iso = now.toISOString().replace(/\.\d{3}Z$/, 'Z')
+  const iso = formatDateTime()
 
   const lines: string[] = []
   lines.push('  <Naglowek>')
@@ -468,5 +468,16 @@ function generateINW(inv: MagInwentaryzacja): string {
   return lines.join('\n')
 }
 
-// Re-export shared helpers
-export { escapeXml, formatAmount }
+// ── XmlGenerator implementation ──
+
+export const jpkMagGenerator: XmlGenerator = {
+  jpkType: 'JPK_MAG',
+  version: WARIANT,
+  namespace: MAG_NAMESPACE,
+  generate: (input: unknown) => generateJpkMag(input as MagGeneratorInput),
+}
+
+generatorRegistry.register(jpkMagGenerator)
+
+// Re-export shared helpers from engine
+export { escapeXml, formatAmount, formatQuantity }

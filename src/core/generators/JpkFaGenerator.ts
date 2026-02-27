@@ -1,7 +1,15 @@
 // ── JPK_FA(4) XML Generator ──
 // Generates XML conforming to schema: http://jpk.mf.gov.pl/wzor/2022/02/17/02171/
 
-import { escapeXml, formatAmount } from './JpkV7mGenerator'
+import {
+  escapeXml,
+  formatAmount,
+  formatDateTime,
+  buildElement,
+  parseAmount,
+  XmlGenerator,
+  generatorRegistry,
+} from './XmlGeneratorEngine'
 
 // ── Constants ──
 
@@ -57,20 +65,11 @@ export interface FaGeneratorInput {
 // ── XML helpers ──
 
 function tag(name: string, value: string, attrs?: Record<string, string>): string {
-  const attrStr = attrs
-    ? ' ' + Object.entries(attrs).map(([k, v]) => `${k}="${escapeXml(v)}"`).join(' ')
-    : ''
-  return `<${name}${attrStr}>${escapeXml(value)}</${name}>`
+  return buildElement(name, value, attrs)
 }
 
 function boolField(name: string, value: string | undefined): string {
   return `<${name}>${value === '1' || value === 'true' ? 'true' : 'false'}</${name}>`
-}
-
-function parseAmount(value: string | undefined): number {
-  if (!value || value === '') return 0
-  const num = parseFloat(value)
-  return isNaN(num) ? 0 : num
 }
 
 // ── VAT rate pair definitions ──
@@ -115,8 +114,7 @@ export function generateJpkFa(input: FaGeneratorInput): string {
 // ── Section generators ──
 
 function generateNaglowek(n: FaNaglowek): string {
-  const now = new Date()
-  const iso = now.toISOString().replace(/\.\d{3}Z$/, 'Z')
+  const iso = formatDateTime()
 
   const lines: string[] = []
   lines.push('  <Naglowek>')
@@ -365,5 +363,16 @@ function generateFakturaWierszCtrl(wiersze: Record<string, string>[]): string {
   return lines.join('\n')
 }
 
-// Re-export shared helpers
+// ── XmlGenerator implementation ──
+
+export const jpkFaGenerator: XmlGenerator = {
+  jpkType: 'JPK_FA',
+  version: WARIANT,
+  namespace: FA_NAMESPACE,
+  generate: (input: unknown) => generateJpkFa(input as FaGeneratorInput),
+}
+
+generatorRegistry.register(jpkFaGenerator)
+
+// Re-export shared helpers from engine
 export { escapeXml, formatAmount }

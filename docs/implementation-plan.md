@@ -65,13 +65,13 @@
 - [x] Walidacja XSD
 
 ### 2.4 JPK_WB(1) — nowy generator
-- [ ] Przeanalizuj schemat XSD JPK_WB(1)
-- [ ] Zaimplementuj `JpkWbGenerator.ts`
-- [ ] Testy + walidacja XSD
+- [x] Przeanalizuj schemat XSD JPK_WB(1)
+- [x] Zaimplementuj `JpkWbGenerator.ts`
+- [x] Testy + walidacja XSD
 
 ### 2.5 Generyczny silnik XML
-- [ ] Refaktor: wydziel wspólną logikę (nagłówek, escape, formatowanie) do `XmlGeneratorEngine.ts`
-- [ ] Zdefiniuj interfejs `XmlGenerator` i zarejestruj generatory w registry
+- [x] Refaktor: wydziel wspólną logikę (nagłówek, escape, formatowanie) do `XmlGeneratorEngine.ts`
+- [x] Zdefiniuj interfejs `XmlGenerator` i zarejestruj generatory w registry
 
 ## Faza 3 — UI rozszerzenia
 

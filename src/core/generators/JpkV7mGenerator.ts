@@ -1,6 +1,17 @@
 // ── JPK_V7M(3) XML Generator ──
 // Generates XML conforming to schema: http://crd.gov.pl/wzor/2025/12/19/14090/
 
+import {
+  escapeXml,
+  formatAmount,
+  formatDeclAmount,
+  formatDateTime,
+  buildElement,
+  parseAmount,
+  XmlGenerator,
+  generatorRegistry,
+} from './XmlGeneratorEngine'
+
 // ── Constants ──
 
 export const V7M_NAMESPACE = 'http://crd.gov.pl/wzor/2025/12/19/14090/'
@@ -46,40 +57,8 @@ export interface V7mGeneratorInput {
 
 // ── XML helpers ──
 
-export function escapeXml(value: string): string {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&apos;')
-}
-
-export function formatAmount(value: string | number | undefined): string {
-  if (value === undefined || value === '' || value === null) return '0.00'
-  const num = typeof value === 'number' ? value : parseFloat(String(value))
-  if (isNaN(num)) return '0.00'
-  return num.toFixed(2)
-}
-
-export function formatDeclAmount(value: string | number | undefined): string {
-  if (value === undefined || value === '' || value === null) return '0'
-  const num = typeof value === 'number' ? value : parseFloat(String(value))
-  if (isNaN(num)) return '0'
-  return String(Math.round(num))
-}
-
-function parseAmount(value: string | undefined): number {
-  if (!value || value === '') return 0
-  const num = parseFloat(value)
-  return isNaN(num) ? 0 : num
-}
-
 function tag(name: string, value: string, attrs?: Record<string, string>): string {
-  const attrStr = attrs
-    ? ' ' + Object.entries(attrs).map(([k, v]) => `${k}="${escapeXml(v)}"`).join(' ')
-    : ''
-  return `<${name}${attrStr}>${escapeXml(value)}</${name}>`
+  return buildElement(name, value, attrs)
 }
 
 function boolTag(name: string, value: string | undefined): string {
@@ -226,8 +205,7 @@ export function generateJpkV7m(input: V7mGeneratorInput): string {
 // ── Section generators ──
 
 function generateNaglowek(n: V7mNaglowek): string {
-  const now = new Date()
-  const iso = now.toISOString().replace(/\.\d{3}Z$/, 'Z')
+  const iso = formatDateTime()
 
   const lines: string[] = []
   lines.push('  <Naglowek>')
@@ -528,3 +506,17 @@ function generateZakupCtrl(rows: Record<string, string>[]): string {
   lines.push('    </ZakupCtrl>')
   return lines.join('\n')
 }
+
+// ── XmlGenerator implementation ──
+
+export const jpkV7mGenerator: XmlGenerator = {
+  jpkType: 'JPK_V7M',
+  version: WARIANT,
+  namespace: V7M_NAMESPACE,
+  generate: (input: unknown) => generateJpkV7m(input as V7mGeneratorInput),
+}
+
+generatorRegistry.register(jpkV7mGenerator)
+
+// Re-export shared helpers from engine
+export { escapeXml, formatAmount, formatDeclAmount }
