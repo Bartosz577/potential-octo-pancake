@@ -21,8 +21,8 @@
 - [x] Testy: `XlsxFileReader.test.ts` — plik Excel z wieloma arkuszami
 - [x] Testy: `XlsxFileReader.test.ts` — plik XLS (stary format)
 - [x] Testy: `JsonFileReader.test.ts` — tablica obiektów + zagnieżdżony JSON
-- [ ] Testy: `XmlFileReader.test.ts` — generyczny XML z powtarzającymi się elementami
-- [ ] Testy: `FileReaderRegistry.test.ts` — auto-detection formatu
+- [x] Testy: `XmlFileReader.test.ts` — generyczny XML z powtarzającymi się elementami
+- [x] Testy: `FileReaderRegistry.test.ts` — auto-detection formatu
 - [x] Testy: `EncodingDetector.test.ts` — detekcja UTF-8, windows-1250, CP852
 
 ### 1.2 Mapowanie
