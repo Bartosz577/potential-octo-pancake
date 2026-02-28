@@ -2,16 +2,35 @@ import { useState, useEffect, useMemo } from 'react'
 import {
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   CheckCircle2,
   AlertCircle,
   Link2,
-  Unlink
+  Unlink,
+  Settings2,
+  Save,
+  Trash2,
+  ArrowRight
 } from 'lucide-react'
 import { useImportStore } from '@renderer/stores/importStore'
 import { useAppStore } from '@renderer/stores/appStore'
-import { useMappingStore } from '@renderer/stores/mappingStore'
-import { getFieldDefinitions, type JpkFieldDef } from '../../../../core/mapping/JpkFieldDefinitions'
+import {
+  useMappingStore,
+  DEFAULT_TRANSFORM_CONFIG,
+  type TransformConfig,
+  type SavedMappingProfile,
+  type DateFormatOption,
+  type DecimalSeparatorOption,
+  type NipFormatOption
+} from '@renderer/stores/mappingStore'
+import {
+  getFieldDefinitions,
+  type JpkFieldDef,
+  type JpkFieldType
+} from '../../../../core/mapping/JpkFieldDefinitions'
+import { transformValue } from '../../../../core/mapping/TransformEngine'
 import type { ColumnMapping } from '../../../../core/mapping/AutoMapper'
+import type { ParsedFile } from '@renderer/types'
 
 const SAMPLE_COUNT = 5
 
@@ -181,10 +200,343 @@ function FileTabs({
   )
 }
 
+// ── Transform preview helpers ──
+
+function getTransformSamples(
+  file: ParsedFile,
+  mappings: ColumnMapping[],
+  targetFields: JpkFieldDef[],
+  fieldType: JpkFieldType
+): { before: string; after: string }[] {
+  const relevantMappings = mappings.filter((m) => {
+    const field = targetFields.find((f) => f.name === m.targetField)
+    return field?.type === fieldType
+  })
+  if (relevantMappings.length === 0) return []
+
+  const col = relevantMappings[0].sourceColumn
+  const samples: { before: string; after: string }[] = []
+
+  for (const row of file.rows) {
+    const raw = row[col] || ''
+    if (raw.trim() === '') continue
+    const result = transformValue(raw, fieldType)
+    samples.push({ before: raw, after: result.value })
+    if (samples.length >= 3) break
+  }
+
+  return samples
+}
+
+// ── TransformField — single dropdown with before→after preview ──
+
+function TransformField({
+  label,
+  value,
+  options,
+  onChange,
+  samples
+}: {
+  label: string
+  value: string
+  options: { value: string; label: string }[]
+  onChange: (value: string) => void
+  samples: { before: string; after: string }[]
+}): React.JSX.Element {
+  return (
+    <div>
+      <label className="text-[10px] font-semibold uppercase tracking-wider text-text-muted mb-1.5 block">
+        {label}
+      </label>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full px-3 py-2 rounded-lg bg-bg-card border border-border text-xs text-text-primary focus:border-accent focus:outline-none"
+      >
+        {options.map((opt) => (
+          <option key={opt.value} value={opt.value}>
+            {opt.label}
+          </option>
+        ))}
+      </select>
+      {samples.length > 0 ? (
+        <div className="mt-2 flex flex-col gap-1">
+          {samples.map((s, i) => (
+            <div key={i} className="flex items-center gap-1.5 text-[11px]">
+              <span className="font-mono text-text-muted truncate max-w-[100px]">
+                {s.before}
+              </span>
+              <ArrowRight className="w-3 h-3 text-text-muted shrink-0" />
+              <span
+                className={`font-mono truncate max-w-[100px] ${
+                  s.before !== s.after ? 'text-success' : 'text-text-secondary'
+                }`}
+              >
+                {s.after}
+              </span>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="mt-2 text-[10px] text-text-muted italic">Brak danych do podglądu</p>
+      )}
+    </div>
+  )
+}
+
+// ── TransformConfigPanel — collapsible section with 3 transform fields ──
+
+function TransformConfigPanel({
+  file,
+  mappings,
+  targetFields,
+  config,
+  onConfigChange
+}: {
+  file: ParsedFile
+  mappings: ColumnMapping[]
+  targetFields: JpkFieldDef[]
+  config: TransformConfig
+  onConfigChange: (config: TransformConfig) => void
+}): React.JSX.Element {
+  const [isOpen, setIsOpen] = useState(false)
+
+  const dateSamples = useMemo(
+    () => getTransformSamples(file, mappings, targetFields, 'date'),
+    [file, mappings, targetFields]
+  )
+  const decimalSamples = useMemo(
+    () => getTransformSamples(file, mappings, targetFields, 'decimal'),
+    [file, mappings, targetFields]
+  )
+  const nipSamples = useMemo(
+    () => getTransformSamples(file, mappings, targetFields, 'nip'),
+    [file, mappings, targetFields]
+  )
+
+  return (
+    <div className="border-t border-border">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full flex items-center justify-between px-6 py-2.5 text-sm hover:bg-bg-hover transition-colors"
+      >
+        <div className="flex items-center gap-2">
+          <Settings2 className="w-4 h-4 text-text-muted" />
+          <span className="font-medium text-text-secondary">Transformacje</span>
+        </div>
+        <ChevronDown
+          className={`w-4 h-4 text-text-muted transition-transform ${isOpen ? 'rotate-180' : ''}`}
+        />
+      </button>
+      {isOpen && (
+        <div className="px-6 pb-4 grid grid-cols-3 gap-6">
+          <TransformField
+            label="Format daty źródłowej"
+            value={config.dateFormat}
+            options={[
+              { value: 'auto', label: 'Auto-detect' },
+              { value: 'DD.MM.YYYY', label: 'DD.MM.YYYY' },
+              { value: 'DD-MM-YYYY', label: 'DD-MM-YYYY' },
+              { value: 'DD/MM/YYYY', label: 'DD/MM/YYYY' },
+              { value: 'YYYY-MM-DD', label: 'YYYY-MM-DD' },
+              { value: 'YYYY.MM.DD', label: 'YYYY.MM.DD' },
+              { value: 'YYYYMMDD', label: 'YYYYMMDD' }
+            ]}
+            onChange={(v) =>
+              onConfigChange({ ...config, dateFormat: v as DateFormatOption })
+            }
+            samples={dateSamples}
+          />
+          <TransformField
+            label="Separator dziesiętny"
+            value={config.decimalSeparator}
+            options={[
+              { value: 'auto', label: 'Auto-detect' },
+              { value: 'comma', label: 'Przecinek (1 234,56)' },
+              { value: 'dot', label: 'Kropka (1,234.56)' }
+            ]}
+            onChange={(v) =>
+              onConfigChange({ ...config, decimalSeparator: v as DecimalSeparatorOption })
+            }
+            samples={decimalSamples}
+          />
+          <TransformField
+            label="Format NIP"
+            value={config.nipFormat}
+            options={[
+              { value: 'auto', label: 'Auto (normalizacja)' },
+              { value: 'with-dashes', label: 'Z myślnikami (XXX-XX-XX-XXX)' },
+              { value: 'without', label: 'Bez separatorów (XXXXXXXXXX)' }
+            ]}
+            onChange={(v) =>
+              onConfigChange({ ...config, nipFormat: v as NipFormatOption })
+            }
+            samples={nipSamples}
+          />
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── ProfileManager — save/load/delete mapping profiles ──
+
+function ProfileManager({
+  savedProfiles,
+  jpkType,
+  onSave,
+  onLoad,
+  onDelete
+}: {
+  savedProfiles: SavedMappingProfile[]
+  jpkType: string
+  onSave: (name: string) => void
+  onLoad: (profileId: string) => void
+  onDelete: (profileId: string) => void
+}): React.JSX.Element {
+  const [showSave, setShowSave] = useState(false)
+  const [profileName, setProfileName] = useState('')
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
+  const [selectedProfileId, setSelectedProfileId] = useState('')
+
+  const relevantProfiles = savedProfiles.filter((p) => p.jpkType === jpkType)
+
+  const handleSave = (): void => {
+    if (profileName.trim()) {
+      onSave(profileName.trim())
+      setProfileName('')
+      setShowSave(false)
+    }
+  }
+
+  const handleDelete = (): void => {
+    if (confirmDeleteId) {
+      onDelete(confirmDeleteId)
+      setConfirmDeleteId(null)
+      setSelectedProfileId('')
+    }
+  }
+
+  // Delete confirmation view
+  if (confirmDeleteId) {
+    const profile = savedProfiles.find((p) => p.id === confirmDeleteId)
+    return (
+      <div className="flex items-center gap-2 text-xs">
+        <span className="text-text-muted">
+          Usunąć &bdquo;{profile?.name}&rdquo;?
+        </span>
+        <button
+          onClick={handleDelete}
+          className="px-2 py-1 rounded text-error hover:bg-error/10 font-medium transition-colors"
+        >
+          Tak
+        </button>
+        <button
+          onClick={() => setConfirmDeleteId(null)}
+          className="px-2 py-1 rounded text-text-muted hover:text-text-primary transition-colors"
+        >
+          Nie
+        </button>
+      </div>
+    )
+  }
+
+  // Save input view
+  if (showSave) {
+    return (
+      <div className="flex items-center gap-2 text-xs">
+        <input
+          type="text"
+          value={profileName}
+          onChange={(e) => setProfileName(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') handleSave()
+            if (e.key === 'Escape') setShowSave(false)
+          }}
+          placeholder="Nazwa profilu..."
+          className="px-2.5 py-1.5 rounded-lg bg-bg-card border border-border text-text-primary text-xs w-40 focus:border-accent focus:outline-none"
+          autoFocus
+        />
+        <button
+          onClick={handleSave}
+          disabled={!profileName.trim()}
+          className="px-2.5 py-1.5 rounded-lg bg-accent text-white text-xs font-medium hover:bg-accent-hover disabled:opacity-50 transition-colors"
+        >
+          Zapisz
+        </button>
+        <button
+          onClick={() => {
+            setShowSave(false)
+            setProfileName('')
+          }}
+          className="px-2.5 py-1.5 rounded-lg text-xs text-text-muted hover:text-text-primary transition-colors"
+        >
+          Anuluj
+        </button>
+      </div>
+    )
+  }
+
+  // Default view: load dropdown + save button
+  return (
+    <div className="flex items-center gap-2 text-xs">
+      {relevantProfiles.length > 0 && (
+        <>
+          <select
+            value={selectedProfileId}
+            onChange={(e) => {
+              const id = e.target.value
+              setSelectedProfileId(id)
+              if (id) onLoad(id)
+            }}
+            className="px-2.5 py-1.5 rounded-lg bg-bg-card border border-border text-text-primary text-xs focus:border-accent focus:outline-none"
+          >
+            <option value="">Załaduj profil...</option>
+            {relevantProfiles.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+          {selectedProfileId && (
+            <button
+              onClick={() => setConfirmDeleteId(selectedProfileId)}
+              className="p-1.5 rounded-lg text-text-muted hover:text-error hover:bg-error/10 transition-colors"
+              title="Usuń profil"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </>
+      )}
+      <button
+        onClick={() => setShowSave(true)}
+        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-colors"
+      >
+        <Save className="w-3.5 h-3.5" />
+        Zapisz profil
+      </button>
+    </div>
+  )
+}
+
+// ── MappingStep — main component ──
+
 export function MappingStep(): React.JSX.Element {
   const { files } = useImportStore()
   const { setCurrentStep } = useAppStore()
-  const { activeMappings, runAutoMap, updateMapping, removeMapping } = useMappingStore()
+  const {
+    activeMappings,
+    runAutoMap,
+    updateMapping,
+    removeMapping,
+    savedProfiles,
+    saveProfile,
+    loadProfile,
+    deleteProfile,
+    transformConfigs,
+    setTransformConfig
+  } = useMappingStore()
 
   const [activeFileId, setActiveFileId] = useState<string>(files[0]?.id || '')
   const [selectedSource, setSelectedSource] = useState<number | null>(null)
@@ -192,6 +544,9 @@ export function MappingStep(): React.JSX.Element {
 
   const activeFile = files.find((f) => f.id === activeFileId) || files[0]
   const mappings = activeFile ? (activeMappings[activeFile.id] || []) : []
+  const transformConfig = activeFile
+    ? (transformConfigs[activeFile.id] || DEFAULT_TRANSFORM_CONFIG)
+    : DEFAULT_TRANSFORM_CONFIG
 
   // Run automap on mount for each file
   useEffect(() => {
@@ -230,7 +585,6 @@ export function MappingStep(): React.JSX.Element {
   // Handle click on source column
   const handleSourceClick = (index: number): void => {
     if (selectedSource === index) {
-      // Deselect
       setSelectedSource(null)
       return
     }
@@ -330,27 +684,42 @@ export function MappingStep(): React.JSX.Element {
           }}
         />
 
-        {/* Stats bar */}
-        <div className="flex items-center gap-4 mb-4 text-xs">
-          <span className="text-text-secondary">
-            Zmapowane: <span className="font-medium text-text-primary">{mappedCount}</span>
-          </span>
-          <span className="text-text-secondary">
-            Wymagane:{' '}
-            <span className={`font-medium ${mappedRequiredCount === requiredCount ? 'text-success' : 'text-warning'}`}>
-              {mappedRequiredCount}/{requiredCount}
+        {/* Stats bar + Profile manager */}
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-4 text-xs">
+            <span className="text-text-secondary">
+              Zmapowane: <span className="font-medium text-text-primary">{mappedCount}</span>
             </span>
-          </span>
-          {selectedSource !== null && (
-            <span className="text-accent text-xs">
-              Wybrano kolumnę {selectedSource} — kliknij pole docelowe
+            <span className="text-text-secondary">
+              Wymagane:{' '}
+              <span
+                className={`font-medium ${
+                  mappedRequiredCount === requiredCount ? 'text-success' : 'text-warning'
+                }`}
+              >
+                {mappedRequiredCount}/{requiredCount}
+              </span>
             </span>
-          )}
-          {selectedTarget !== null && (
-            <span className="text-accent text-xs">
-              Wybrano pole {selectedTarget} — kliknij kolumnę źródłową
-            </span>
-          )}
+            {selectedSource !== null && (
+              <span className="text-accent text-xs">
+                Wybrano kolumnę {selectedSource} — kliknij pole docelowe
+              </span>
+            )}
+            {selectedTarget !== null && (
+              <span className="text-accent text-xs">
+                Wybrano pole {selectedTarget} — kliknij kolumnę źródłową
+              </span>
+            )}
+          </div>
+          <ProfileManager
+            savedProfiles={savedProfiles}
+            jpkType={activeFile?.jpkType || ''}
+            onSave={(name) =>
+              saveProfile(name, activeFile!.id, activeFile!.jpkType, activeFile!.subType)
+            }
+            onLoad={(profileId) => loadProfile(profileId, activeFile!.id)}
+            onDelete={deleteProfile}
+          />
         </div>
       </div>
 
@@ -410,6 +779,17 @@ export function MappingStep(): React.JSX.Element {
           </div>
         </div>
       </div>
+
+      {/* Transform config panel */}
+      {activeFile && (
+        <TransformConfigPanel
+          file={activeFile}
+          mappings={mappings}
+          targetFields={targetFields}
+          config={transformConfig}
+          onConfigChange={(config) => setTransformConfig(activeFile.id, config)}
+        />
+      )}
 
       {/* Footer */}
       <div className="px-6 py-3 flex justify-between border-t border-border bg-bg-app">

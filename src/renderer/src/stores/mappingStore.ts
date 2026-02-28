@@ -6,12 +6,30 @@ import { findProfile, applyProfile } from '../../../core/mapping/SystemProfiles'
 import type { ParsedFile } from '../types'
 import { parsedFileToRawSheet } from '../bridge/PipelineBridge'
 
+// Transform configuration types
+export type DateFormatOption = 'auto' | 'DD.MM.YYYY' | 'DD-MM-YYYY' | 'DD/MM/YYYY' | 'YYYY-MM-DD' | 'YYYY.MM.DD' | 'YYYYMMDD'
+export type DecimalSeparatorOption = 'auto' | 'comma' | 'dot'
+export type NipFormatOption = 'auto' | 'with-dashes' | 'without'
+
+export interface TransformConfig {
+  dateFormat: DateFormatOption
+  decimalSeparator: DecimalSeparatorOption
+  nipFormat: NipFormatOption
+}
+
+export const DEFAULT_TRANSFORM_CONFIG: TransformConfig = {
+  dateFormat: 'auto',
+  decimalSeparator: 'auto',
+  nipFormat: 'auto'
+}
+
 export interface SavedMappingProfile {
   id: string
   name: string
   jpkType: string
   subType: string
   mappings: ColumnMapping[]
+  transformConfig?: TransformConfig
   createdAt: string
 }
 
@@ -34,12 +52,15 @@ interface MappingState {
   activeMappings: Record<string, ColumnMapping[]>
   autoMapResults: Record<string, MappingResult>
   savedProfiles: SavedMappingProfile[]
+  transformConfigs: Record<string, TransformConfig>
 
   runAutoMap: (file: ParsedFile) => void
   updateMapping: (fileId: string, mapping: ColumnMapping) => void
   removeMapping: (fileId: string, sourceColumn: number) => void
+  setTransformConfig: (fileId: string, config: TransformConfig) => void
   saveProfile: (name: string, fileId: string, jpkType: string, subType: string) => void
   loadProfile: (profileId: string, fileId: string) => void
+  deleteProfile: (profileId: string) => void
   clearMappings: () => void
 }
 
@@ -47,6 +68,7 @@ export const useMappingStore = create<MappingState>((set, get) => ({
   activeMappings: {},
   autoMapResults: {},
   savedProfiles: loadSavedProfiles(),
+  transformConfigs: {},
 
   runAutoMap: (file: ParsedFile) => {
     const sheet = parsedFileToRawSheet(file)
@@ -100,14 +122,22 @@ export const useMappingStore = create<MappingState>((set, get) => ({
     })
   },
 
+  setTransformConfig: (fileId: string, config: TransformConfig) => {
+    set((state) => ({
+      transformConfigs: { ...state.transformConfigs, [fileId]: config }
+    }))
+  },
+
   saveProfile: (name: string, fileId: string, jpkType: string, subType: string) => {
     const mappings = get().activeMappings[fileId] || []
+    const transformConfig = get().transformConfigs[fileId]
     const profile: SavedMappingProfile = {
       id: `profile_${Date.now()}`,
       name,
       jpkType,
       subType,
       mappings,
+      transformConfig,
       createdAt: new Date().toISOString()
     }
     set((state) => {
@@ -121,11 +151,22 @@ export const useMappingStore = create<MappingState>((set, get) => ({
     const profile = get().savedProfiles.find((p) => p.id === profileId)
     if (!profile) return
     set((state) => ({
-      activeMappings: { ...state.activeMappings, [fileId]: [...profile.mappings] }
+      activeMappings: { ...state.activeMappings, [fileId]: [...profile.mappings] },
+      transformConfigs: profile.transformConfig
+        ? { ...state.transformConfigs, [fileId]: profile.transformConfig }
+        : state.transformConfigs
     }))
   },
 
+  deleteProfile: (profileId: string) => {
+    set((state) => {
+      const updated = state.savedProfiles.filter((p) => p.id !== profileId)
+      persistProfiles(updated)
+      return { savedProfiles: updated }
+    })
+  },
+
   clearMappings: () => {
-    set({ activeMappings: {}, autoMapResults: {} })
+    set({ activeMappings: {}, autoMapResults: {}, transformConfigs: {} })
   }
 }))

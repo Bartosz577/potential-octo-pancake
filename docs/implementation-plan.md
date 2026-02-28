@@ -91,8 +91,8 @@
 - [x] Utwórz `mappingStore.ts` — aktywne mapowania, autoMap, profile
 - [x] SystemProfiles: 100% confidence dla NAMOS/ESO (pozycyjne mapowanie)
 - [x] Obsługa niezmapowanych pól wymaganych (czerwone podświetlenie, blokada "Dalej")
-- [ ] Konfiguracja transformacji (data format, decimal separator) — osobny panel
-- [ ] Zapisywanie/ładowanie profili mapowań — UI (backend gotowy w mappingStore)
+- [x] Konfiguracja transformacji (data format, decimal separator, NIP) — collapsible panel z podglądem przed→po
+- [x] Zapisywanie/ładowanie profili mapowań — UI (save/load/delete z potwierdzeniem)
 
 ### 3.3 Preview Step — rozszerzenie
 - [x] Dynamiczne kolumny w tabeli na podstawie aktywnego mapowania (mappingStore)
@@ -185,8 +185,8 @@
 
 ### Pozostałe zadania (Faza 3-5)
 - Wybór kodowania w ImportStep (dropdown fallback)
-- Konfiguracja transformacji w MappingStep (data format, decimal separator)
-- UI do zapisywania/ładowania profili mapowań
+- ~~Konfiguracja transformacji w MappingStep (data format, decimal separator)~~ ✅
+- ~~UI do zapisywania/ładowania profili mapowań~~ ✅
 - ~~Walidacja XSD w ValidationStep (poziom 4)~~ ✅
 - ~~Podłączenie ConversionPipeline do stores~~ ✅
 - Error handling + auto-update w Electron
