@@ -4,12 +4,14 @@ import path from 'path'
 import os from 'os'
 
 const FIXTURE_PATH = path.resolve(__dirname, '../fixtures/namos-vdek-5rows.txt')
+const IS_CI = !!process.env.CI
 
 let electronApp: ElectronApplication
 let page: Page
 
 test.beforeAll(async () => {
-  electronApp = await electron.launch({ args: ['.'] })
+  const args = IS_CI ? ['.', '--no-sandbox'] : ['.']
+  electronApp = await electron.launch({ args })
   page = await electronApp.firstWindow()
 
   // Mock native dialogs in the main process
@@ -30,7 +32,7 @@ test.beforeAll(async () => {
 })
 
 test.afterAll(async () => {
-  await electronApp.close()
+  if (electronApp) await electronApp.close()
 })
 
 test('full 7-step import-to-export wizard', async () => {
