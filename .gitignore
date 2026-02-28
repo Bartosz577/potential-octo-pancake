@@ -5,3 +5,5 @@ coverage
 .DS_Store
 .eslintcache
 *.log*
+test-results/
+playwright-report/
