@@ -5,8 +5,7 @@ import {
   JPK_MAG_WZ_FIELDS,
   JPK_MAG_WZ_DOC_FIELDS,
   JPK_SECTIONS,
-  getFieldDefinitions,
-  type JpkFieldDef,
+  getFieldDefinitions
 } from '../../../src/core/mapping/JpkFieldDefinitions'
 
 describe('JpkFieldDefinitions', () => {

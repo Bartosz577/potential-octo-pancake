@@ -162,7 +162,7 @@ export function transformNip(raw: string): TransformResult {
   if (trimmed === '') return { value: '', changed: false }
 
   // Strip PL prefix, dashes, spaces
-  let cleaned = trimmed.replace(/^PL/i, '').replace(/[\s\-]/g, '')
+  const cleaned = trimmed.replace(/^PL/i, '').replace(/[\s-]/g, '')
 
   if (!/^\d{10}$/.test(cleaned)) {
     return { value: trimmed, changed: false, warning: `NIP musi mieć 10 cyfr: ${trimmed}` }

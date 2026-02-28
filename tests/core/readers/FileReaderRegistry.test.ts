@@ -2,13 +2,9 @@ import { describe, it, expect, beforeAll } from 'vitest'
 import { readFileSync } from 'fs'
 import { join } from 'path'
 import * as XLSX from 'xlsx'
-import * as iconv from 'iconv-lite'
 import { FileReaderRegistry, createDefaultRegistry } from '../../../src/core/readers/FileReaderRegistry'
 import { TxtFileReader } from '../../../src/core/readers/TxtFileReader'
 import { CsvFileReader } from '../../../src/core/readers/CsvFileReader'
-import { XlsxFileReader } from '../../../src/core/readers/XlsxFileReader'
-import { JsonFileReader } from '../../../src/core/readers/JsonFileReader'
-import { XmlFileReader } from '../../../src/core/readers/XmlFileReader'
 
 const TEST_DATA_DIR = join(__dirname, '..', '..', '..', 'test-data')
 

@@ -4,7 +4,7 @@ import { join } from 'path'
 import { autoMap, applyPositionalMapping } from '../../../src/core/mapping/AutoMapper'
 import { JPK_V7M_SPRZEDAZ_FIELDS, JPK_FA_FAKTURA_FIELDS, JPK_MAG_WZ_FIELDS } from '../../../src/core/mapping/JpkFieldDefinitions'
 import { TxtFileReader } from '../../../src/core/readers/TxtFileReader'
-import type { RawSheet, ParsedRow } from '../../../src/core/models/types'
+import type { RawSheet } from '../../../src/core/models/types'
 
 const TEST_DATA_DIR = join(__dirname, '..', '..', '..', 'test-data')
 

@@ -1,15 +1,10 @@
 import { describe, it, expect } from 'vitest'
 import type {
-  FileReaderPlugin,
   RawSheet,
   ParsedRow,
   FileReadResult,
-  EncodingResult,
-  SeparatorResult,
-  ParseWarning,
   FileEncoding,
   JpkType,
-  SubType,
   ErpSystem
 } from '../../../src/core/models/types'
 

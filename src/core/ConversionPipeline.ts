@@ -317,7 +317,7 @@ export class ConversionPipeline {
         const value = row.values[field.name]
         if (!value || value === '') continue
 
-        const cleaned = value.replace(/[\s\-]/g, '').replace(/^PL/i, '')
+        const cleaned = value.replace(/[\s-]/g, '').replace(/^PL/i, '')
         if (/^\d{10}$/.test(cleaned)) {
           const weights = [6, 5, 7, 2, 3, 4, 5, 6, 7]
           const digits = cleaned.split('').map(Number)

@@ -208,6 +208,7 @@ function DataTable({
   const handleCellEdit = useCallback(
     (rowIndex: number, colIndex: number, newValue: string) => {
       const globalRow = page * ROWS_PER_PAGE + rowIndex
+      // eslint-disable-next-line react-hooks/immutability -- intentional in-place edit for cell editing
       file.rows[globalRow][colIndex] = newValue
     },
     [file.rows, page]
