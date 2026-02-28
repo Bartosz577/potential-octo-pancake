@@ -1,5 +1,7 @@
 # JPK Converter
 
+![CI](https://github.com/Bartosz577/potential-octo-pancake/actions/workflows/ci.yml/badge.svg)
+
 ## Opis projektu
 Desktopowa aplikacja Electron + React do konwersji plików TXT (eksportowanych z systemów ERP: NAMOS, ESO) na format XML (JPK) wymagany przez polskie Ministerstwo Finansów.
 
