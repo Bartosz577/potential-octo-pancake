@@ -109,7 +109,7 @@
 - [x] Przycisk "Napraw automatycznie" per item i per grupa
 - [x] Globalny przycisk "Napraw automatycznie" w SummaryBanner
 - [x] Walidacja NIP: PESEL (11 cyfr) rozpoznawany jako OK, NIP zagraniczny akceptowany, brak/pusty = warning
-- [ ] Walidacja XSD (poziom 4) — wymaga integracji z parserem XSD
+- [x] Walidacja XSD (poziom 4) — XsdValidator.ts z regułami ze schematów XSD
 
 ### 3.5 Export Step — rozszerzenie
 - [x] Obsługa wszystkich typów JPK via generatorRegistry (V7M, FA, MAG, WB)
@@ -141,7 +141,7 @@
 - [x] Utwórz `mappingStore`: aktywne mapowanie, zapisane profile, wynik AutoMapper
 - [x] Rozszerz `importStore`: obsługa format/encoding/warnings/headers w ParsedFile
 - [x] Utwórz `historyStore`: lista ConversionRecord[], persistowany w localStorage
-- [ ] Podłącz ConversionPipeline do stores (bridge pattern)
+- [x] Podłącz ConversionPipeline do stores (bridge pattern)
 
 ## Faza 5 — Electron main process
 
@@ -177,8 +177,8 @@
 | 0 — Przygotowanie | ✅ Done | — |
 | 1 — Core (parsery + mapowanie) | ✅ Done | 309 tests |
 | 2 — Generatory XML | ✅ Done | 594 tests (14 XSD) |
-| 3 — UI rozszerzenia | ✅ ~95% | Web typecheck OK |
-| 4 — Zustand stores | ✅ ~90% | — |
+| 3 — UI rozszerzenia | ✅ ~98% | Web typecheck OK |
+| 4 — Zustand stores | ✅ Done | 632 tests |
 | 5 — Electron main | 🔶 ~70% | Build OK |
 | 6 — Jakość | ⬜ Not started | — |
 | 7 — Release | ⬜ Not started | — |
@@ -187,6 +187,6 @@
 - Wybór kodowania w ImportStep (dropdown fallback)
 - Konfiguracja transformacji w MappingStep (data format, decimal separator)
 - UI do zapisywania/ładowania profili mapowań
-- Walidacja XSD w ValidationStep (poziom 4)
-- Podłączenie ConversionPipeline do stores
+- ~~Walidacja XSD w ValidationStep (poziom 4)~~ ✅
+- ~~Podłączenie ConversionPipeline do stores~~ ✅
 - Error handling + auto-update w Electron

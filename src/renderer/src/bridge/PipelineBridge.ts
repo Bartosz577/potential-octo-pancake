@@ -96,8 +96,8 @@ export function processFile(
     // Step 1: Run core pipeline
     const pipelineResult = runPipelineForFile(file, mappings)
 
-    // Step 2: Run UI validator
-    const validationReport: ValidationReport = validateFile(file, mappings)
+    // Step 2: Run UI validator (with XSD validation)
+    const validationReport: ValidationReport = validateFile(file, mappings, company, period)
 
     // Count pipeline errors + validation errors
     const pipelineErrors = pipelineResult.issues.filter((i) => i.severity === 'error').length

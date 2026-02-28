@@ -1,10 +1,10 @@
 // ── ConversionPipeline — orchestrator: parse → map → transform → validate ──
 
-import type { FileReadResult, RawSheet, ParseWarning } from './models/types'
+import type { FileReadResult, RawSheet } from './models/types'
 import type { FileReaderRegistry } from './readers/FileReaderRegistry'
 import type { JpkFieldDef, JpkFieldType } from './mapping/JpkFieldDefinitions'
 import { getFieldDefinitions } from './mapping/JpkFieldDefinitions'
-import { autoMap, type MappingResult, type ColumnMapping } from './mapping/AutoMapper'
+import { autoMap, type MappingResult } from './mapping/AutoMapper'
 import { applyProfile } from './mapping/SystemProfiles'
 import { transformRows, type TransformedRow, type TransformOptions } from './mapping/TransformEngine'
 

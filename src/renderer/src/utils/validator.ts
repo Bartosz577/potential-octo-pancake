@@ -2,9 +2,11 @@ import type { ParsedFile, JpkType } from '../types'
 import type { ColumnMapping } from '../../../core/mapping/AutoMapper'
 import { getFieldDefinitions } from '../../../core/mapping/JpkFieldDefinitions'
 import { validatePolishNip, normalizeNip } from './nipValidator'
+import { validateXsd } from '../../../core/validation/XsdValidator'
+import { generateXmlForFile } from './xmlExporter'
 
 export type Severity = 'error' | 'warning' | 'info'
-export type ValidationCategory = 'STRUKTURA' | 'MERYTORYKA' | 'SUMY_KONTROLNE'
+export type ValidationCategory = 'STRUKTURA' | 'MERYTORYKA' | 'SUMY_KONTROLNE' | 'SCHEMAT_XSD'
 
 export interface AutoFix {
   rowIndex: number
@@ -450,20 +452,94 @@ function validateSumyKontrolne(
   return items
 }
 
+// --- SCHEMAT XSD ---
+
+function validateSchematXsd(
+  file: ParsedFile,
+  mappings: ColumnMapping[],
+  company?: { nip: string; fullName: string; regon: string; kodUrzedu: string; email: string; phone: string },
+  period?: { year: number; month: number; celZlozenia: 1 | 2 }
+): ValidationItem[] {
+  const items: ValidationItem[] = []
+
+  if (!company || !period || !company.nip || !company.fullName) {
+    items.push({
+      id: 'xsd-skip',
+      category: 'SCHEMAT_XSD',
+      severity: 'info',
+      message: 'Walidacja XSD pominięta — brak danych firmy/okresu',
+      autoFixable: false,
+      fixes: []
+    })
+    return items
+  }
+
+  // Generate XML to validate
+  const xmlResult = generateXmlForFile(file, mappings, company, period)
+  if (!xmlResult) {
+    items.push({
+      id: 'xsd-no-xml',
+      category: 'SCHEMAT_XSD',
+      severity: 'warning',
+      message: 'Nie można wygenerować XML do walidacji — brak generatora dla tego typu JPK',
+      autoFixable: false,
+      fixes: []
+    })
+    return items
+  }
+
+  const result = validateXsd(xmlResult.xml)
+
+  for (const issue of result.issues) {
+    items.push({
+      id: `xsd-${issue.code}-${issue.path || 'root'}`,
+      category: 'SCHEMAT_XSD',
+      severity: issue.severity,
+      message: issue.message,
+      details: issue.path ? `Ścieżka: ${issue.path}` : undefined,
+      autoFixable: false,
+      fixes: []
+    })
+  }
+
+  if (result.valid && result.issues.filter((i) => i.severity === 'error').length === 0) {
+    const infoCount = result.issues.filter((i) => i.severity === 'info').length
+    if (infoCount === result.issues.length) {
+      items.push({
+        id: 'xsd-valid',
+        category: 'SCHEMAT_XSD',
+        severity: 'info',
+        message: `Dokument zgodny ze schematem XSD ${result.jpkType || file.jpkType}`,
+        autoFixable: false,
+        fixes: []
+      })
+    }
+  }
+
+  return items
+}
+
 // --- Public API ---
 
-export function validateFile(file: ParsedFile, mappings: ColumnMapping[]): ValidationReport {
+export function validateFile(
+  file: ParsedFile,
+  mappings: ColumnMapping[],
+  company?: { nip: string; fullName: string; regon: string; kodUrzedu: string; email: string; phone: string },
+  period?: { year: number; month: number; celZlozenia: 1 | 2 }
+): ValidationReport {
   const struktura = validateStruktura(file, mappings, file.jpkType, file.subType)
   const merytoryka = validateMerytoryka(file, mappings, file.jpkType, file.subType)
   const sumy = validateSumyKontrolne(file, mappings)
+  const xsd = validateSchematXsd(file, mappings, company, period)
 
-  const all = [...struktura, ...merytoryka, ...sumy]
+  const all = [...struktura, ...merytoryka, ...sumy, ...xsd]
 
   return {
     groups: [
       { category: 'STRUKTURA', title: 'Struktura pliku', items: struktura },
       { category: 'MERYTORYKA', title: 'Dane merytoryczne', items: merytoryka },
-      { category: 'SUMY_KONTROLNE', title: 'Sumy kontrolne', items: sumy }
+      { category: 'SUMY_KONTROLNE', title: 'Sumy kontrolne', items: sumy },
+      { category: 'SCHEMAT_XSD', title: 'Zgodność ze schematem XSD', items: xsd }
     ],
     errorCount: all.filter((i) => i.severity === 'error').length,
     warningCount: all.filter((i) => i.severity === 'warning').length,
@@ -474,7 +550,9 @@ export function validateFile(file: ParsedFile, mappings: ColumnMapping[]): Valid
 
 export function validateFiles(
   files: ParsedFile[],
-  allMappings: Record<string, ColumnMapping[]>
+  allMappings: Record<string, ColumnMapping[]>,
+  company?: { nip: string; fullName: string; regon: string; kodUrzedu: string; email: string; phone: string },
+  period?: { year: number; month: number; celZlozenia: 1 | 2 }
 ): {
   reports: Map<string, ValidationReport>
   totalErrors: number
@@ -488,7 +566,7 @@ export function validateFiles(
 
   for (const file of files) {
     const mappings = allMappings[file.id] || []
-    const report = validateFile(file, mappings)
+    const report = validateFile(file, mappings, company, period)
     reports.set(file.id, report)
     totalErrors += report.errorCount
     totalWarnings += report.warningCount

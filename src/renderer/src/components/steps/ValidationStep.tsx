@@ -17,6 +17,7 @@ import {
 import { useImportStore } from '@renderer/stores/importStore'
 import { useAppStore } from '@renderer/stores/appStore'
 import { useMappingStore } from '@renderer/stores/mappingStore'
+import { useCompanyStore } from '@renderer/stores/companyStore'
 import {
   validateFiles,
   applyFixes,
@@ -35,10 +36,11 @@ const SEVERITY_CONFIG: Record<Severity, { icon: typeof CheckCircle2; color: stri
     info: { icon: CheckCircle2, color: 'text-success', bg: 'bg-success/10' }
   }
 
-const CATEGORY_ICONS = {
+const CATEGORY_ICONS: Record<string, typeof FileText> = {
   STRUKTURA: FileText,
   MERYTORYKA: Search,
-  SUMY_KONTROLNE: Hash
+  SUMY_KONTROLNE: Hash,
+  SCHEMAT_XSD: ShieldCheck
 }
 
 const TAB_LABELS: Record<JpkType, string> = {
@@ -277,11 +279,13 @@ export function ValidationStep(): React.JSX.Element {
   const { files } = useImportStore()
   const { setCurrentStep } = useAppStore()
   const { activeMappings } = useMappingStore()
+  const company = useCompanyStore((s) => s.company)
+  const period = useCompanyStore((s) => s.period)
   const [fixVersion, setFixVersion] = useState(0)
 
   const { reports, totalErrors, totalWarnings, totalAutoFixes } = useMemo(
-    () => validateFiles(files, activeMappings),
-    [files, activeMappings, fixVersion]
+    () => validateFiles(files, activeMappings, company, period),
+    [files, activeMappings, company, period, fixVersion]
   )
 
   const canExport = totalErrors === 0
