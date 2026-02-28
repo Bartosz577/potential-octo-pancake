@@ -75,3 +75,38 @@ jobs:
       - run: npm ci
       - run: npm run build
       - run: echo "Build succeeded"
+
+  e2e:
+    needs: lint-and-typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Cache node_modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: node-modules-${{ runner.os }}-
+
+      - run: npm ci
+
+      - name: Build Electron app
+        run: npm run build
+
+      - name: Run E2E tests
+        run: xvfb-run --auto-servernum npx playwright test
+
+      - name: Upload test artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-test-results
+          path: |
+            test-results/
+            playwright-report/
+          retention-days: 7
