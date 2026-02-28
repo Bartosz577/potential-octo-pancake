@@ -159,7 +159,7 @@
 - [ ] CI: GitHub Actions (lint + typecheck + test)
 - [ ] E2E test: Playwright — pełny flow import → export
 - [ ] Dokumentacja użytkownika: README.md z screenshotami
-- [ ] Obsługa błędów graceful: toast notifications w UI
+- [x] Obsługa błędów graceful: toast notifications w UI
 
 ## Faza 7 — Release
 
@@ -177,7 +177,7 @@
 | 0 — Przygotowanie | ✅ Done | — |
 | 1 — Core (parsery + mapowanie) | ✅ Done | 309 tests |
 | 2 — Generatory XML | ✅ Done | 594 tests (14 XSD) |
-| 3 — UI rozszerzenia | ✅ ~98% | Web typecheck OK |
+| 3 — UI rozszerzenia | ✅ Done | Web typecheck OK |
 | 4 — Zustand stores | ✅ Done | 632 tests |
 | 5 — Electron main | ✅ Done | Build OK |
 | 6 — Jakość | ⬜ Not started | — |
