@@ -3,8 +3,8 @@ import type { ColumnMapping, MappingResult } from '../../../core/mapping/AutoMap
 import { autoMap } from '../../../core/mapping/AutoMapper'
 import { getFieldDefinitions } from '../../../core/mapping/JpkFieldDefinitions'
 import { findProfile, applyProfile } from '../../../core/mapping/SystemProfiles'
-import type { RawSheet } from '../../../core/models/types'
 import type { ParsedFile } from '../types'
+import { parsedFileToRawSheet } from '../bridge/PipelineBridge'
 
 export interface SavedMappingProfile {
   id: string
@@ -28,20 +28,6 @@ function loadSavedProfiles(): SavedMappingProfile[] {
 
 function persistProfiles(profiles: SavedMappingProfile[]): void {
   localStorage.setItem(PROFILES_KEY, JSON.stringify(profiles))
-}
-
-/** Convert a ParsedFile to a RawSheet for the AutoMapper */
-function parsedFileToRawSheet(file: ParsedFile): RawSheet {
-  return {
-    name: file.filename,
-    headers: file.headers,
-    rows: file.rows.map((cells, index) => ({ index, cells })),
-    metadata: {
-      system: file.system,
-      jpkType: file.jpkType,
-      subType: file.subType
-    }
-  }
 }
 
 interface MappingState {
