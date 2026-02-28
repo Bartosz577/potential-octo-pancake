@@ -5,6 +5,7 @@ import {
   FolderOpen,
   X,
   ChevronRight,
+  ChevronDown,
   AlertCircle,
   FileSpreadsheet,
   Package,
@@ -18,6 +19,18 @@ import { FormatBadge } from '@renderer/components/shared/FormatBadge'
 import type { ParsedFile, JpkType, FileFormat } from '@renderer/types'
 
 const ACCEPTED_EXTENSIONS = ['.txt', '.csv', '.xlsx', '.xls', '.json', '.xml', '.dat', '.tsv']
+
+const ENCODING_OPTIONS = [
+  { value: 'auto', label: 'Auto-detect' },
+  { value: 'utf-8', label: 'UTF-8' },
+  { value: 'utf-8-bom', label: 'UTF-8 BOM' },
+  { value: 'windows-1250', label: 'Windows-1250' },
+  { value: 'iso-8859-2', label: 'ISO-8859-2' },
+  { value: 'cp852', label: 'CP852' }
+]
+
+// Text-based file formats that support encoding override
+const TEXT_FORMATS: Set<string> = new Set(['txt', 'csv', 'tsv', 'dat'])
 
 const JPK_BADGE_CONFIG: Record<JpkType, { label: string; className: string; icon: typeof FileText }> = {
   JPK_VDEK: { label: 'V7M', className: 'bg-accent/15 text-accent', icon: FileText },
@@ -43,50 +56,156 @@ function extensionToFormat(filename: string): FileFormat {
   }
 }
 
-function FileCard({ file, onRemove }: { file: ParsedFile; onRemove: () => void }): React.JSX.Element {
-  const badge = JPK_BADGE_CONFIG[file.jpkType] || JPK_BADGE_CONFIG.JPK_VDEK
+function isTextFormat(filename: string): boolean {
+  const ext = filename.split('.').pop()?.toLowerCase() || ''
+  return TEXT_FORMATS.has(ext)
+}
+
+// ── EncodingPreview — shows 5 sample rows for encoding verification ──
+
+function EncodingPreview({ rows }: { rows: string[][] }): React.JSX.Element {
+  if (rows.length === 0) return <></>
 
   return (
-    <div className="flex items-center gap-4 px-4 py-3 bg-bg-card rounded-lg border border-border hover:border-border-active transition-colors group">
-      <div className="w-9 h-9 rounded-lg bg-bg-hover flex items-center justify-center shrink-0">
-        <badge.icon className="w-4 h-4 text-text-secondary" />
+    <div className="mt-2 rounded-lg bg-bg-hover/50 border border-border overflow-hidden">
+      <div className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-text-muted border-b border-border">
+        Podgląd kodowania (5 wierszy)
       </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-[11px] font-mono">
+          <tbody>
+            {rows.slice(0, 5).map((row, i) => (
+              <tr key={i} className="border-b border-border/50 last:border-0">
+                <td className="px-2 py-1 text-text-muted w-8 text-right shrink-0">{i + 1}</td>
+                {row.slice(0, 8).map((cell, j) => (
+                  <td key={j} className="px-2 py-1 text-text-secondary truncate max-w-[120px]">
+                    {cell || '—'}
+                  </td>
+                ))}
+                {row.length > 8 && (
+                  <td className="px-2 py-1 text-text-muted">…</td>
+                )}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )
+}
 
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-0.5">
-          <span className="text-sm font-medium text-text-primary truncate font-mono">
-            {file.filename}
-          </span>
+// ── FileCard — single imported file with encoding controls ──
+
+function FileCard({
+  file,
+  onRemove,
+  onEncodingChange,
+  isReloading
+}: {
+  file: ParsedFile
+  onRemove: () => void
+  onEncodingChange: (encoding: string) => void
+  isReloading: boolean
+}): React.JSX.Element {
+  const badge = JPK_BADGE_CONFIG[file.jpkType] || JPK_BADGE_CONFIG.JPK_VDEK
+  const [showPreview, setShowPreview] = useState(false)
+  const [selectedEncoding, setSelectedEncoding] = useState(file.encoding || 'auto')
+  const canChangeEncoding = isTextFormat(file.filename)
+
+  const handleEncodingChange = (encoding: string): void => {
+    setSelectedEncoding(encoding)
+    onEncodingChange(encoding)
+    setShowPreview(true)
+  }
+
+  return (
+    <div>
+      <div className="flex items-center gap-4 px-4 py-3 bg-bg-card rounded-lg border border-border hover:border-border-active transition-colors group">
+        <div className="w-9 h-9 rounded-lg bg-bg-hover flex items-center justify-center shrink-0">
+          <badge.icon className="w-4 h-4 text-text-secondary" />
         </div>
-        <div className="flex items-center gap-3 text-xs text-text-muted">
-          <span>{file.rowCount.toLocaleString('pl-PL')} wierszy</span>
-          <span>{file.columnCount} kolumn</span>
-          {file.fileSize > 0 && <span>{formatFileSize(file.fileSize)}</span>}
-          {file.encoding && (
-            <span className="text-text-muted">
-              {file.encoding}
+
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-0.5">
+            <span className="text-sm font-medium text-text-primary truncate font-mono">
+              {file.filename}
             </span>
+          </div>
+          <div className="flex items-center gap-3 text-xs text-text-muted">
+            <span>{file.rowCount.toLocaleString('pl-PL')} wierszy</span>
+            <span>{file.columnCount} kolumn</span>
+            {file.fileSize > 0 && <span>{formatFileSize(file.fileSize)}</span>}
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 shrink-0">
+          {file.format && <FormatBadge format={file.format} />}
+
+          {/* Encoding dropdown */}
+          {canChangeEncoding ? (
+            <select
+              value={selectedEncoding}
+              onChange={(e) => handleEncodingChange(e.target.value)}
+              disabled={isReloading}
+              className="px-2 py-0.5 rounded text-[11px] font-medium bg-bg-hover border border-border text-text-secondary focus:border-accent focus:outline-none disabled:opacity-50 cursor-pointer"
+              title="Kodowanie pliku"
+            >
+              {ENCODING_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          ) : (
+            file.encoding && (
+              <span className="px-2 py-0.5 rounded text-[11px] font-medium bg-bg-hover text-text-muted">
+                {file.encoding}
+              </span>
+            )
+          )}
+
+          <span className={`px-2 py-0.5 rounded text-[11px] font-semibold ${badge.className}`}>
+            {badge.label}
+          </span>
+          <span className="px-2 py-0.5 rounded text-[11px] font-medium bg-bg-hover text-text-secondary">
+            {file.system}
+          </span>
+
+          {/* Preview toggle for text files */}
+          {canChangeEncoding && (
+            <button
+              onClick={() => setShowPreview(!showPreview)}
+              className="p-1 rounded text-text-muted hover:text-text-primary hover:bg-bg-hover transition-colors"
+              title={showPreview ? 'Ukryj podgląd' : 'Pokaż podgląd kodowania'}
+            >
+              <ChevronDown
+                className={`w-3.5 h-3.5 transition-transform ${showPreview ? 'rotate-180' : ''}`}
+              />
+            </button>
           )}
         </div>
+
+        <button
+          onClick={onRemove}
+          className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-error/15 hover:text-error text-text-muted transition-all"
+          aria-label="Usuń plik"
+        >
+          <X className="w-3.5 h-3.5" />
+        </button>
       </div>
 
-      <div className="flex items-center gap-2 shrink-0">
-        {file.format && <FormatBadge format={file.format} />}
-        <span className={`px-2 py-0.5 rounded text-[11px] font-semibold ${badge.className}`}>
-          {badge.label}
-        </span>
-        <span className="px-2 py-0.5 rounded text-[11px] font-medium bg-bg-hover text-text-secondary">
-          {file.system}
-        </span>
-      </div>
-
-      <button
-        onClick={onRemove}
-        className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-error/15 hover:text-error text-text-muted transition-all"
-        aria-label="Usuń plik"
-      >
-        <X className="w-3.5 h-3.5" />
-      </button>
+      {/* Encoding preview */}
+      {showPreview && canChangeEncoding && (
+        <div className="ml-13 mr-4">
+          {isReloading ? (
+            <div className="mt-2 px-3 py-2 rounded-lg bg-bg-hover/50 border border-border text-xs text-text-muted">
+              Przeładowywanie z kodowaniem {selectedEncoding}…
+            </div>
+          ) : (
+            <EncodingPreview rows={file.rows} />
+          )}
+        </div>
+      )}
     </div>
   )
 }
@@ -149,7 +268,8 @@ function AutoDetectPanel({ files }: { files: ParsedFile[] }): React.JSX.Element 
 /** Convert serialized IPC result into a ParsedFile */
 function resultToParsedFile(
   result: SerializedFileReadResult,
-  filename: string
+  filename: string,
+  filePath: string
 ): ParsedFile | null {
   if (result.sheets.length === 0) return null
 
@@ -160,6 +280,7 @@ function resultToParsedFile(
   return {
     id: `file_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
     filename,
+    filePath,
     system: (meta.system as ParsedFile['system']) || 'UNKNOWN',
     jpkType: (meta.jpkType as ParsedFile['jpkType']) || 'JPK_VDEK',
     subType: (meta.subType as ParsedFile['subType']) || 'SprzedazWiersz',
@@ -178,11 +299,12 @@ function resultToParsedFile(
 }
 
 export function ImportStep(): React.JSX.Element {
-  const { files, addFile, removeFile } = useImportStore()
+  const { files, addFile, updateFile, removeFile } = useImportStore()
   const { setCurrentStep } = useAppStore()
   const [isDragOver, setIsDragOver] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [reloadingFileId, setReloadingFileId] = useState<string | null>(null)
 
   const importFile = useCallback(
     async (filePath: string, filename: string) => {
@@ -193,7 +315,7 @@ export function ImportStep(): React.JSX.Element {
       }
 
       const result = await window.api.parseFile(filePath)
-      const parsed = resultToParsedFile(result, filename)
+      const parsed = resultToParsedFile(result, filename, filePath)
 
       if (!parsed) {
         setError(`Nie udało się sparsować pliku "${filename}"`)
@@ -204,6 +326,33 @@ export function ImportStep(): React.JSX.Element {
       setError(null)
     },
     [files, addFile]
+  )
+
+  const handleEncodingChange = useCallback(
+    async (fileId: string, encoding: string) => {
+      const file = files.find((f) => f.id === fileId)
+      if (!file || !file.filePath) return
+
+      setReloadingFileId(fileId)
+      try {
+        const result = await window.api.parseFile(
+          file.filePath,
+          encoding === 'auto' ? undefined : encoding
+        )
+        const updated = resultToParsedFile(result, file.filename, file.filePath)
+        if (updated) {
+          updated.id = fileId // keep the same ID
+          updateFile(fileId, updated)
+        }
+      } catch (err) {
+        setError(
+          `Błąd zmiany kodowania: ${err instanceof Error ? err.message : String(err)}`
+        )
+      } finally {
+        setReloadingFileId(null)
+      }
+    },
+    [files, updateFile]
   )
 
   const handleFilesSelected = useCallback(
@@ -339,7 +488,13 @@ export function ImportStep(): React.JSX.Element {
             Zaimportowane pliki ({files.length})
           </h2>
           {files.map((file) => (
-            <FileCard key={file.id} file={file} onRemove={() => removeFile(file.id)} />
+            <FileCard
+              key={file.id}
+              file={file}
+              onRemove={() => removeFile(file.id)}
+              onEncodingChange={(encoding) => handleEncodingChange(file.id, encoding)}
+              isReloading={reloadingFileId === file.id}
+            />
           ))}
         </div>
       )}

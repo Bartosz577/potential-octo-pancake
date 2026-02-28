@@ -18,6 +18,7 @@ export interface ParsedFile {
   fileSize: number
   format?: FileFormat
   encoding?: string
+  filePath?: string
   warnings?: string[]
   headers?: string[]
 }

@@ -5,6 +5,8 @@ import { readFileSync } from 'fs'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { createDefaultRegistry } from '../core/readers/FileReaderRegistry'
+import { decodeBuffer } from '../core/encoding/EncodingDetector'
+import type { FileEncoding } from '../core/models/types'
 
 const fileRegistry = createDefaultRegistry()
 
@@ -85,10 +87,23 @@ function createWindow(): void {
   })
 
   // Parse file in main process (avoids Node.js modules in renderer)
-  ipcMain.handle('file:parse', async (_event, filePath: string) => {
-    const buffer = readFileSync(filePath)
+  ipcMain.handle('file:parse', async (_event, filePath: string, encoding?: string) => {
+    let buffer = readFileSync(filePath)
     const filename = basename(filePath)
     const stats = await stat(filePath)
+
+    let effectiveEncoding = ''
+
+    // If custom encoding specified, re-decode text-based files
+    if (encoding && encoding !== 'auto') {
+      const ext = filename.split('.').pop()?.toLowerCase() || ''
+      if (['txt', 'csv', 'tsv', 'dat'].includes(ext)) {
+        const enc = (encoding === 'utf-8-bom' ? 'utf-8' : encoding) as FileEncoding
+        const text = decodeBuffer(buffer, enc)
+        buffer = Buffer.from(text, 'utf-8')
+        effectiveEncoding = encoding
+      }
+    }
 
     const result = fileRegistry.read(buffer, filename)
 
@@ -100,7 +115,7 @@ function createWindow(): void {
         rows: sheet.rows.map((r) => r.cells),
         metadata: sheet.metadata
       })),
-      encoding: result.encoding,
+      encoding: effectiveEncoding || result.encoding,
       separator: result.separator,
       warnings: result.warnings.map((w) => w.message),
       fileSize: stats.size

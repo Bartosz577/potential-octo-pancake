@@ -16,8 +16,8 @@ const api = {
     ipcRenderer.invoke('file:read', filePath),
   readFileAsBuffer: (filePath: string): Promise<{ buffer: number[]; size: number }> =>
     ipcRenderer.invoke('file:readBuffer', filePath),
-  parseFile: (filePath: string): Promise<ParseFileResult> =>
-    ipcRenderer.invoke('file:parse', filePath),
+  parseFile: (filePath: string, encoding?: string): Promise<ParseFileResult> =>
+    ipcRenderer.invoke('file:parse', filePath, encoding),
   saveFile: (defaultName: string, content: string): Promise<string | null> =>
     ipcRenderer.invoke('dialog:saveFile', defaultName, content),
   window: {

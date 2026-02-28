@@ -81,7 +81,7 @@
 - [x] Pokaż ostrzeżenia parsowania (encoding, malformed rows)
 - [x] Obsługa wielu plików jednocześnie (batch import)
 - [x] Przeniesienie parsowania plików do main process (IPC `file:parse`)
-- [ ] Wybór kodowania (dropdown) jeśli auto-detect zawodzi
+- [x] Wybór kodowania (dropdown) jeśli auto-detect zawodzi — z podglądem na żywo i re-parse
 
 ### 3.2 Mapping Step — NOWY
 - [x] Utwórz `MappingStep.tsx` — dwukolumnowy layout
@@ -184,7 +184,7 @@
 | 7 — Release | ⬜ Not started | — |
 
 ### Pozostałe zadania (Faza 3-5)
-- Wybór kodowania w ImportStep (dropdown fallback)
+- ~~Wybór kodowania w ImportStep (dropdown fallback)~~ ✅
 - ~~Konfiguracja transformacji w MappingStep (data format, decimal separator)~~ ✅
 - ~~UI do zapisywania/ładowania profili mapowań~~ ✅
 - ~~Walidacja XSD w ValidationStep (poziom 4)~~ ✅
