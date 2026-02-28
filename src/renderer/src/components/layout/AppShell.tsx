@@ -8,6 +8,7 @@ import { PreviewStep } from '@renderer/components/steps/PreviewStep'
 import { ValidationStep } from '@renderer/components/steps/ValidationStep'
 import { ExportStep } from '@renderer/components/steps/ExportStep'
 import { HistoryStep } from '@renderer/components/steps/HistoryStep'
+import { UpdateNotification } from '@renderer/components/shared/UpdateNotification'
 import { useAppStore, STEP_LABELS } from '@renderer/stores/appStore'
 import { Upload } from 'lucide-react'
 
@@ -72,6 +73,9 @@ export function AppShell(): React.JSX.Element {
 
       {/* Step indicator */}
       <StepIndicator />
+
+      {/* Auto-update toast */}
+      <UpdateNotification />
     </div>
   )
 }

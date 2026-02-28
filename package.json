@@ -23,6 +23,7 @@
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.2",
     "@electron-toolkit/utils": "^4.0.0",
+    "electron-updater": "^6.8.3",
     "fast-xml-parser": "^5.4.1",
     "iconv-lite": "^0.7.2",
     "lucide-react": "^0.468.0",

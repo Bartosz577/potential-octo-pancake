@@ -150,8 +150,8 @@
 - [x] Dodaj IPC handler: `file:parse` — parsowanie plików w main process (FileReaderRegistry)
 - [x] Rozszerz preload API: `parseFile()`, `readFileAsBuffer()`
 - [x] Typy globalne w `index.d.ts`: SerializedSheet, SerializedFileReadResult
-- [ ] Obsługa błędów: globalny error handler z logowaniem
-- [ ] Auto-update: electron-updater
+- [x] Obsługa błędów: globalny error handler z logowaniem
+- [x] Auto-update: electron-updater
 
 ## Faza 6 — Jakość
 
@@ -179,7 +179,7 @@
 | 2 — Generatory XML | ✅ Done | 594 tests (14 XSD) |
 | 3 — UI rozszerzenia | ✅ ~98% | Web typecheck OK |
 | 4 — Zustand stores | ✅ Done | 632 tests |
-| 5 — Electron main | 🔶 ~70% | Build OK |
+| 5 — Electron main | ✅ Done | Build OK |
 | 6 — Jakość | ⬜ Not started | — |
 | 7 — Release | ⬜ Not started | — |
 
@@ -189,4 +189,4 @@
 - ~~UI do zapisywania/ładowania profili mapowań~~ ✅
 - ~~Walidacja XSD w ValidationStep (poziom 4)~~ ✅
 - ~~Podłączenie ConversionPipeline do stores~~ ✅
-- Error handling + auto-update w Electron
+- ~~Error handling + auto-update w Electron~~ ✅

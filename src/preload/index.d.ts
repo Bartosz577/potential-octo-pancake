@@ -8,6 +8,13 @@ interface WindowAPI {
   onMaximizedChanged: (callback: (maximized: boolean) => void) => () => void
 }
 
+interface UpdateAPI {
+  onAvailable: (callback: (info: { version: string }) => void) => () => void
+  onProgress: (callback: (info: { percent: number }) => void) => () => void
+  onDownloaded: (callback: (info: { version: string }) => void) => () => void
+  installAndRestart: () => void
+}
+
 interface SerializedSheet {
   name: string
   headers?: string[]
@@ -30,6 +37,8 @@ interface AppAPI {
   readFileAsBuffer: (filePath: string) => Promise<{ buffer: number[]; size: number }>
   parseFile: (filePath: string, encoding?: string) => Promise<SerializedFileReadResult>
   saveFile: (defaultName: string, content: string) => Promise<string | null>
+  logError: (message: string, stack?: string) => void
+  update: UpdateAPI
   window: WindowAPI
 }
 

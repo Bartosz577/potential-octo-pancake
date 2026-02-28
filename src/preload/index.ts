@@ -20,6 +20,31 @@ const api = {
     ipcRenderer.invoke('file:parse', filePath, encoding),
   saveFile: (defaultName: string, content: string): Promise<string | null> =>
     ipcRenderer.invoke('dialog:saveFile', defaultName, content),
+
+  // Error reporting — renderer → main
+  logError: (message: string, stack?: string): void =>
+    ipcRenderer.send('error:report', message, stack),
+
+  // Auto-update events — main → renderer
+  update: {
+    onAvailable: (callback: (info: { version: string }) => void): (() => void) => {
+      const handler = (_: unknown, info: { version: string }): void => callback(info)
+      ipcRenderer.on('update:available', handler)
+      return () => ipcRenderer.removeListener('update:available', handler)
+    },
+    onProgress: (callback: (info: { percent: number }) => void): (() => void) => {
+      const handler = (_: unknown, info: { percent: number }): void => callback(info)
+      ipcRenderer.on('update:progress', handler)
+      return () => ipcRenderer.removeListener('update:progress', handler)
+    },
+    onDownloaded: (callback: (info: { version: string }) => void): (() => void) => {
+      const handler = (_: unknown, info: { version: string }): void => callback(info)
+      ipcRenderer.on('update:downloaded', handler)
+      return () => ipcRenderer.removeListener('update:downloaded', handler)
+    },
+    installAndRestart: (): void => ipcRenderer.send('update:install')
+  },
+
   window: {
     minimize: (): void => ipcRenderer.send('window:minimize'),
     maximize: (): void => ipcRenderer.send('window:maximize'),

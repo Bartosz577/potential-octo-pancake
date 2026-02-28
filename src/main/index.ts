@@ -7,8 +7,25 @@ import icon from '../../resources/icon.png?asset'
 import { createDefaultRegistry } from '../core/readers/FileReaderRegistry'
 import { decodeBuffer } from '../core/encoding/EncodingDetector'
 import type { FileEncoding } from '../core/models/types'
+import { logError, logInfo } from './logger'
+import { initAutoUpdater, installUpdate } from './updater'
 
 const fileRegistry = createDefaultRegistry()
+
+// ── Global error handlers (before app.whenReady) ──
+
+process.on('uncaughtException', (error) => {
+  logError('Nieobsługiwany wyjątek w procesie głównym', error)
+  dialog.showErrorBox(
+    'Błąd aplikacji',
+    `Wystąpił nieoczekiwany błąd. Aplikacja może działać niestabilnie.\n\n${error.message}`
+  )
+})
+
+process.on('unhandledRejection', (reason) => {
+  const error = reason instanceof Error ? reason : new Error(String(reason))
+  logError('Nieobsłużone odrzucenie Promise', error)
+})
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -55,6 +72,16 @@ function createWindow(): void {
   })
   mainWindow.on('unmaximize', () => {
     mainWindow.webContents.send('window:maximized-changed', false)
+  })
+
+  // ── Renderer error reporting IPC ──
+  ipcMain.on('error:report', (_event, message: string, stack?: string) => {
+    logError(`[Renderer] ${message}`, stack)
+  })
+
+  // ── Auto-update IPC ──
+  ipcMain.on('update:install', () => {
+    installUpdate()
   })
 
   // File dialog IPC handler
@@ -142,6 +169,13 @@ function createWindow(): void {
   } else {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
   }
+
+  // ── Initialize auto-updater (production only) ──
+  if (!is.dev) {
+    initAutoUpdater(mainWindow)
+  }
+
+  logInfo('Aplikacja uruchomiona')
 }
 
 app.whenReady().then(() => {
