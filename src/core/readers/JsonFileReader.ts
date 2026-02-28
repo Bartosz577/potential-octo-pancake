@@ -84,7 +84,7 @@ export class JsonFileReader implements FileReaderPlugin {
     }
 
     // 4. Convert to tabular format
-    const sheet = arrayToSheet(dataArray, filename, warnings)
+    const sheet = arrayToSheet(dataArray, filename)
 
     // 5. Extract top-level metadata (non-array properties)
     if (parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed)) {
@@ -142,17 +142,17 @@ function findDataArray(parsed: unknown): { dataArray: unknown[] | null; path: st
  * Convert an array of items to a RawSheet.
  * Handles both array-of-objects and array-of-arrays.
  */
-function arrayToSheet(dataArray: unknown[], filename: string, warnings: ParseWarning[]): RawSheet {
+function arrayToSheet(dataArray: unknown[], filename: string): RawSheet {
   const first = dataArray[0]
 
   // Array of objects → extract keys as headers, values as cells
   if (first !== null && typeof first === 'object' && !Array.isArray(first)) {
-    return objectArrayToSheet(dataArray as Record<string, unknown>[], filename, warnings)
+    return objectArrayToSheet(dataArray as Record<string, unknown>[], filename)
   }
 
   // Array of arrays → use as-is
   if (Array.isArray(first)) {
-    return arrayOfArraysToSheet(dataArray as unknown[][], filename, warnings)
+    return arrayOfArraysToSheet(dataArray as unknown[][], filename)
   }
 
   // Array of primitives → single column
@@ -169,8 +169,7 @@ function arrayToSheet(dataArray: unknown[], filename: string, warnings: ParseWar
  */
 function objectArrayToSheet(
   items: Record<string, unknown>[],
-  filename: string,
-  warnings: ParseWarning[]
+  filename: string
 ): RawSheet {
   // Collect all unique keys across all objects (preserve order from first object)
   const keySet = new Set<string>()
@@ -194,8 +193,7 @@ function objectArrayToSheet(
  */
 function arrayOfArraysToSheet(
   items: unknown[][],
-  filename: string,
-  warnings: ParseWarning[]
+  filename: string
 ): RawSheet {
   // Check if first row looks like a header (all strings, no numbers)
   const firstRow = items[0]

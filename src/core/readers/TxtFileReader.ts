@@ -84,7 +84,7 @@ function hasMetadataPrefix(lines: string[], separator: string): boolean {
 /**
  * Extract metadata from the first row's metadata columns.
  */
-function extractMetadata(firstRow: string[], separator: string): Record<string, string> {
+function extractMetadata(firstRow: string[]): Record<string, string> {
   if (firstRow.length <= META_COLUMNS) return {}
 
   return {
@@ -158,7 +158,7 @@ export class TxtFileReader implements FileReaderPlugin {
 
     // 5. Extract metadata from first row
     const firstRowCols = lines[0].split(separator)
-    const metadata = hasMeta ? extractMetadata(firstRowCols, separator) : {}
+    const metadata = hasMeta ? extractMetadata(firstRowCols) : {}
 
     // 6. Determine expected column count (data columns only)
     const expectedDataCols = firstRowCols.length - metaOffset

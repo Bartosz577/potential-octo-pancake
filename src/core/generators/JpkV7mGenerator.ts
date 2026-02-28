@@ -121,10 +121,8 @@ const DEKL_STANDALONE_6 = ['P_44', 'P_45', 'P_46', 'P_47', 'P_48', 'P_49', 'P_50
 const DEKL_REQUIRED_2 = ['P_51']
 const DEKL_STANDALONE_7 = ['P_52', 'P_53', 'P_54']
 const DEKL_CHOICE = ['P_540', 'P_55', 'P_56', 'P_560', 'P_58']
-const DEKL_OPTIONAL_GROUP = ['P_59', 'P_60', 'P_61']
 const DEKL_STANDALONE_8 = ['P_62', 'P_63', 'P_64', 'P_65', 'P_66', 'P_660', 'P_67']
 const DEKL_PAIRS_4: [string, string][] = [['P_68', 'P_69']]
-const DEKL_STANDALONE_9 = ['P_ORDZU']
 
 // ── K field output helpers ──
 

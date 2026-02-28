@@ -31,7 +31,7 @@ export class XmlFileReader implements FileReaderPlugin {
     return sample.startsWith('<?xml') || sample.startsWith('<')
   }
 
-  read(buffer: Buffer, filename: string): FileReadResult {
+  read(buffer: Buffer, _filename: string): FileReadResult {
     const warnings: ParseWarning[] = []
 
     // 1. Detect and decode encoding
@@ -94,7 +94,7 @@ export class XmlFileReader implements FileReaderPlugin {
       )
       if (objectItems.length === 0) continue
 
-      const sheet = objectArrayToSheet(objectItems, path, warnings)
+      const sheet = objectArrayToSheet(objectItems, path)
       sheets.push(sheet)
     }
 
@@ -156,8 +156,7 @@ function findAllArrays(obj: unknown, currentPath = ''): FoundArray[] {
  */
 function objectArrayToSheet(
   items: Record<string, unknown>[],
-  sheetName: string,
-  warnings: ParseWarning[]
+  sheetName: string
 ): RawSheet {
   // Collect all unique keys (flattened) across all items
   const keySet = new Set<string>()

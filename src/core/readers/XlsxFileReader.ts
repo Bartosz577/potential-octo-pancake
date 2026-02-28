@@ -76,7 +76,7 @@ export class XlsxFileReader implements FileReaderPlugin {
     return false
   }
 
-  read(buffer: Buffer, filename: string): FileReadResult {
+  read(buffer: Buffer, _filename: string): FileReadResult {
     const warnings: ParseWarning[] = []
 
     let workbook: XLSX.WorkBook
