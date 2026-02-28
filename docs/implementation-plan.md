@@ -155,9 +155,9 @@
 
 ## Faza 6 — Jakość
 
-- [ ] Konfiguracja Vitest: pokrycie kodu, threshold 80%
-- [ ] CI: GitHub Actions (lint + typecheck + test)
-- [ ] E2E test: Playwright — pełny flow import → export
+- [x] Konfiguracja Vitest: pokrycie kodu, threshold 80%
+- [x] CI: GitHub Actions (lint + typecheck + test + e2e + build)
+- [x] E2E test: Playwright — pełny flow import → export (Electron + dialog mocking)
 - [ ] Dokumentacja użytkownika: README.md z screenshotami
 - [x] Obsługa błędów graceful: toast notifications w UI
 
@@ -180,7 +180,7 @@
 | 3 — UI rozszerzenia | ✅ Done | Web typecheck OK |
 | 4 — Zustand stores | ✅ Done | 632 tests |
 | 5 — Electron main | ✅ Done | Build OK |
-| 6 — Jakość | ⬜ Not started | — |
+| 6 — Jakość | 🔶 In progress | 761 unit + 1 E2E |
 | 7 — Release | ⬜ Not started | — |
 
 ### Pozostałe zadania (Faza 3-5)
