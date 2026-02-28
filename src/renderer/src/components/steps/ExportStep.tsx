@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import {
   ChevronLeft,
   ChevronRight,
@@ -17,6 +17,7 @@ import { useCompanyStore } from '@renderer/stores/companyStore'
 import { useAppStore } from '@renderer/stores/appStore'
 import { useMappingStore } from '@renderer/stores/mappingStore'
 import { useHistoryStore } from '@renderer/stores/historyStore'
+import { useToast } from '@renderer/stores/toastStore'
 import { generateXmlForFile, type XmlExportResult } from '@renderer/utils/xmlExporter'
 import type { JpkType } from '@renderer/types'
 
@@ -158,28 +159,14 @@ function HighlightedLine({ line }: { line: string }): React.JSX.Element {
   return <>{parts}</>
 }
 
-function Toast({ message, onDone }: { message: string; onDone: () => void }): React.JSX.Element {
-  useEffect(() => {
-    const timer = setTimeout(onDone, 3000)
-    return () => clearTimeout(timer)
-  }, [onDone])
-
-  return (
-    <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 bg-success/90 text-white text-sm font-medium rounded-lg shadow-lg flex items-center gap-2 animate-in">
-      <Check className="w-4 h-4" />
-      {message}
-    </div>
-  )
-}
-
 export function ExportStep(): React.JSX.Element {
   const { files } = useImportStore()
   const { company, period } = useCompanyStore()
   const { setCurrentStep } = useAppStore()
   const { activeMappings } = useMappingStore()
   const { addRecord } = useHistoryStore()
+  const toast = useToast()
 
-  const [toast, setToast] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
   const [activeFileId, setActiveFileId] = useState<string>(files[0]?.id || '')
 
@@ -211,17 +198,17 @@ export function ExportStep(): React.JSX.Element {
         fileSize: activeResult.fileSize,
         xmlOutput: activeResult.xml
       })
-      setToast(`Zapisano: ${savedPath}`)
+      toast.success(`Zapisano: ${savedPath}`)
     }
-  }, [activeResult, activeFile, company, addRecord])
+  }, [activeResult, activeFile, company, addRecord, toast])
 
   const handleCopy = useCallback(async () => {
     if (!activeResult) return
     await navigator.clipboard.writeText(activeResult.xml)
     setCopied(true)
-    setToast('XML skopiowany do schowka')
+    toast.success('XML skopiowany do schowka')
     setTimeout(() => setCopied(false), 2000)
-  }, [activeResult])
+  }, [activeResult, toast])
 
   const handleSaveAll = useCallback(async () => {
     let saved = 0
@@ -244,9 +231,9 @@ export function ExportStep(): React.JSX.Element {
       }
     }
     if (saved > 0) {
-      setToast(`Zapisano ${saved} ${saved === 1 ? 'plik' : saved < 5 ? 'pliki' : 'plików'} XML`)
+      toast.success(`Zapisano ${saved} ${saved === 1 ? 'plik' : saved < 5 ? 'pliki' : 'plików'} XML`)
     }
-  }, [files, results, company, addRecord])
+  }, [files, results, company, addRecord, toast])
 
   if (files.length === 0) {
     return (
@@ -412,8 +399,6 @@ export function ExportStep(): React.JSX.Element {
         </div>
       </div>
 
-      {/* Toast */}
-      {toast && <Toast message={toast} onDone={() => setToast(null)} />}
     </div>
   )
 }

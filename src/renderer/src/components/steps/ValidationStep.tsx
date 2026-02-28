@@ -27,6 +27,7 @@ import {
   type AutoFix,
   type Severity
 } from '@renderer/utils/validator'
+import { useToast } from '@renderer/stores/toastStore'
 import type { JpkType, ParsedFile } from '@renderer/types'
 
 const SEVERITY_CONFIG: Record<Severity, { icon: typeof CheckCircle2; color: string; bg: string }> =
@@ -281,6 +282,7 @@ export function ValidationStep(): React.JSX.Element {
   const { activeMappings } = useMappingStore()
   const company = useCompanyStore((s) => s.company)
   const period = useCompanyStore((s) => s.period)
+  const toast = useToast()
   const [fixVersion, setFixVersion] = useState(0)
 
   const { reports, totalErrors, totalWarnings, totalAutoFixes } = useMemo(
@@ -294,8 +296,9 @@ export function ValidationStep(): React.JSX.Element {
     (file: ParsedFile, fixes: AutoFix[]) => {
       applyFixes(file, fixes)
       setFixVersion((v) => v + 1)
+      toast.success(`Naprawiono ${fixes.length} ${fixes.length === 1 ? 'problem' : fixes.length < 5 ? 'problemy' : 'problemów'} w pliku ${file.filename}`)
     },
-    []
+    [toast]
   )
 
   const handleFixAll = useCallback(() => {
@@ -308,7 +311,8 @@ export function ValidationStep(): React.JSX.Element {
       }
     }
     setFixVersion((v) => v + 1)
-  }, [files, reports])
+    toast.success('Naprawiono automatycznie wszystkie problemy')
+  }, [files, reports, toast])
 
   return (
     <div className="flex-1 flex flex-col min-h-0">

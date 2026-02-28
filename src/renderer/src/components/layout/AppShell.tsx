@@ -9,6 +9,7 @@ import { ValidationStep } from '@renderer/components/steps/ValidationStep'
 import { ExportStep } from '@renderer/components/steps/ExportStep'
 import { HistoryStep } from '@renderer/components/steps/HistoryStep'
 import { UpdateNotification } from '@renderer/components/shared/UpdateNotification'
+import { ToastContainer } from '@renderer/components/shared/ToastContainer'
 import { useAppStore, STEP_LABELS } from '@renderer/stores/appStore'
 import { Upload } from 'lucide-react'
 
@@ -76,6 +77,9 @@ export function AppShell(): React.JSX.Element {
 
       {/* Auto-update toast */}
       <UpdateNotification />
+
+      {/* Global toast notifications */}
+      <ToastContainer />
     </div>
   )
 }

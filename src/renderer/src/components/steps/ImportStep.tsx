@@ -6,7 +6,6 @@ import {
   X,
   ChevronRight,
   ChevronDown,
-  AlertCircle,
   FileSpreadsheet,
   Package,
   Info,
@@ -15,6 +14,7 @@ import {
 } from 'lucide-react'
 import { useImportStore } from '@renderer/stores/importStore'
 import { useAppStore } from '@renderer/stores/appStore'
+import { useToast } from '@renderer/stores/toastStore'
 import { FormatBadge } from '@renderer/components/shared/FormatBadge'
 import type { ParsedFile, JpkType, FileFormat } from '@renderer/types'
 
@@ -301,8 +301,8 @@ function resultToParsedFile(
 export function ImportStep(): React.JSX.Element {
   const { files, addFile, updateFile, removeFile } = useImportStore()
   const { setCurrentStep } = useAppStore()
+  const toast = useToast()
   const [isDragOver, setIsDragOver] = useState(false)
-  const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [reloadingFileId, setReloadingFileId] = useState<string | null>(null)
 
@@ -310,7 +310,7 @@ export function ImportStep(): React.JSX.Element {
     async (filePath: string, filename: string) => {
       const alreadyImported = files.some((f) => f.filename === filename)
       if (alreadyImported) {
-        setError(`Plik "${filename}" jest już zaimportowany`)
+        toast.warning(`Plik "${filename}" jest już zaimportowany`)
         return
       }
 
@@ -318,14 +318,14 @@ export function ImportStep(): React.JSX.Element {
       const parsed = resultToParsedFile(result, filename, filePath)
 
       if (!parsed) {
-        setError(`Nie udało się sparsować pliku "${filename}"`)
+        toast.error(`Nie udało się sparsować pliku "${filename}"`)
         return
       }
 
       addFile(parsed)
-      setError(null)
+      toast.success(`Zaimportowano: ${filename}`)
     },
-    [files, addFile]
+    [files, addFile, toast]
   )
 
   const handleEncodingChange = useCallback(
@@ -345,32 +345,31 @@ export function ImportStep(): React.JSX.Element {
           updateFile(fileId, updated)
         }
       } catch (err) {
-        setError(
+        toast.error(
           `Błąd zmiany kodowania: ${err instanceof Error ? err.message : String(err)}`
         )
       } finally {
         setReloadingFileId(null)
       }
     },
-    [files, updateFile]
+    [files, updateFile, toast]
   )
 
   const handleFilesSelected = useCallback(
     async (filePaths: string[]) => {
       setIsLoading(true)
-      setError(null)
       try {
         for (const filePath of filePaths) {
           const filename = filePath.split(/[/\\]/).pop() || filePath
           await importFile(filePath, filename)
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Błąd parsowania pliku')
+        toast.error(err instanceof Error ? err.message : 'Błąd parsowania pliku')
       } finally {
         setIsLoading(false)
       }
     },
-    [importFile]
+    [importFile, toast]
   )
 
   const handleDrop = useCallback(
@@ -384,29 +383,28 @@ export function ImportStep(): React.JSX.Element {
       })
 
       if (droppedFiles.length === 0) {
-        setError(`Obsługiwane formaty: ${ACCEPTED_EXTENSIONS.join(', ')}`)
+        toast.warning(`Obsługiwane formaty: ${ACCEPTED_EXTENSIONS.join(', ')}`)
         return
       }
 
       setIsLoading(true)
-      setError(null)
       try {
         for (const file of droppedFiles) {
           // Electron File objects have a `path` property with the full filesystem path
           const filePath = (file as File & { path: string }).path
           if (!filePath) {
-            setError(`Nie można odczytać ścieżki pliku "${file.name}"`)
+            toast.error(`Nie można odczytać ścieżki pliku "${file.name}"`)
             continue
           }
           await importFile(filePath, file.name)
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Błąd parsowania pliku')
+        toast.error(err instanceof Error ? err.message : 'Błąd parsowania pliku')
       } finally {
         setIsLoading(false)
       }
     },
-    [importFile]
+    [importFile, toast]
   )
 
   const handleDragOver = useCallback((e: DragEvent<HTMLDivElement>) => {
@@ -472,14 +470,6 @@ export function ImportStep(): React.JSX.Element {
           </p>
         </div>
       </div>
-
-      {/* Error */}
-      {error && (
-        <div className="flex items-center gap-2 px-4 py-2.5 bg-error/10 border border-error/20 rounded-lg">
-          <AlertCircle className="w-4 h-4 text-error shrink-0" />
-          <span className="text-sm text-error">{error}</span>
-        </div>
-      )}
 
       {/* File list */}
       {files.length > 0 && (
