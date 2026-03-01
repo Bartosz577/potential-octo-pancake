@@ -55,14 +55,17 @@ export function detectSeparator(lines: string[]): SeparatorResult {
 }
 
 /**
- * Check if lines follow the NAMOS/ESO metadata format:
+ * Check if lines follow the metadata-prefix format:
  * cols[0] = point code, cols[1] = system name, cols[2] = JPK type, etc.
+ *
+ * Detection is based on JPK type pattern in col[2], NOT on system name.
+ * This allows any ERP system (NAMOS, ESO, SAP_RE, etc.) to be recognized
+ * as long as the data structure matches the expected JPK format.
  */
 function hasMetadataPrefix(lines: string[], separator: string): boolean {
   if (lines.length === 0) return false
 
-  const KNOWN_SYSTEMS = ['NAMOS', 'ESO']
-  const KNOWN_JPK_TYPES = ['JPK_VDEK', 'JPK_FA', 'JPK_MAG', 'JPK_WB', 'JPK_V7M']
+  const JPK_TYPE_PATTERN = /^JPK_(VDEK|FA|MAG|WB|V7M|KR|PKPIR|EWP)/
 
   const sample = lines.slice(0, Math.min(5, lines.length))
   let matchCount = 0
@@ -70,9 +73,8 @@ function hasMetadataPrefix(lines: string[], separator: string): boolean {
   for (const line of sample) {
     const cols = line.split(separator)
     if (cols.length > META_COLUMNS) {
-      const system = cols[1]
       const jpkType = cols[2]
-      if (KNOWN_SYSTEMS.includes(system) && KNOWN_JPK_TYPES.some((t) => jpkType.startsWith(t))) {
+      if (JPK_TYPE_PATTERN.test(jpkType)) {
         matchCount++
       }
     }

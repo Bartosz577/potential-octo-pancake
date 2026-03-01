@@ -219,17 +219,41 @@ export function findProfile(system: string, jpkType: string, subType: string): S
 }
 
 /**
- * Auto-detect and apply the best profile for a RawSheet.
- * Uses sheet metadata (system, jpkType, subType) when available.
+ * Find a profile by data structure (jpkType + subType), ignoring system name.
+ *
+ * This allows files from unknown ERP systems (e.g. SAP_RE) to be mapped
+ * using a known profile if the column structure is compatible.
+ * The jpkType comparison normalizes JPK_VDEK ↔ JPK_V7M equivalence.
  */
-export function applyProfile(sheet: RawSheet): MappingResult | null {
-  const { system, jpkType, subType } = sheet.metadata
+export function findProfileByStructure(jpkType: string, subType: string): SystemProfile | null {
+  const normalizedType = normalizeJpkType(jpkType)
+  return SYSTEM_PROFILES.find(
+    (p) => normalizeJpkType(p.jpkType) === normalizedType && p.subType === subType
+  ) ?? null
+}
 
-  if (!system || !jpkType || !subType) return null
+/** Normalize JPK type aliases (JPK_VDEK ↔ JPK_V7M are the same structure) */
+function normalizeJpkType(jpkType: string): string {
+  if (jpkType === 'JPK_V7M' || jpkType === 'JPK_VDEK') return 'JPK_VDEK'
+  return jpkType
+}
 
-  const profile = findProfile(system, jpkType, subType)
+/**
+ * Auto-detect and apply the best profile for a RawSheet.
+ *
+ * Matching is based on data STRUCTURE (jpkType + subType), not system name.
+ * This means a file from SAP_RE with JPK_VDEK/SprzedazWiersz structure
+ * will match the NAMOS VDEK profile automatically.
+ */
+export function applyProfile(sheet: RawSheet): { result: MappingResult; profile: SystemProfile } | null {
+  const { jpkType, subType } = sheet.metadata
+
+  if (!jpkType || !subType) return null
+
+  const profile = findProfileByStructure(jpkType, subType)
   if (!profile) return null
 
   const columnCount = sheet.rows.length > 0 ? sheet.rows[0].cells.length : 0
-  return applyPositionalMapping(columnCount, profile.columnMap, profile.fields)
+  const result = applyPositionalMapping(columnCount, profile.columnMap, profile.fields)
+  return { result, profile }
 }

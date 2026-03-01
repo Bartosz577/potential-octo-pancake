@@ -133,6 +133,25 @@ describe('TxtFileReader', () => {
       expect(sheet.rows[0].cells[2]).toBe('1234567890')
     })
 
+    it('detects metadata prefix for unknown system name (SAP_RE)', () => {
+      const lines = [
+        '0P549|SAP_RE|JPK_VDEK|SprzedazWiersz|2026-01-01|2026-01-31|1|PL|1234567890|Firma ABC|FV/001|2026-01-15',
+        '0P549|SAP_RE|JPK_VDEK|SprzedazWiersz|2026-01-01|2026-01-31|2|PL|9876543210|Firma XYZ|FV/002|2026-01-16'
+      ]
+      const buf = Buffer.from(lines.join('\n'), 'utf-8')
+      const result = reader.read(buf, 'sap_re.txt')
+
+      const sheet = result.sheets[0]
+      expect(sheet.metadata.system).toBe('SAP_RE')
+      expect(sheet.metadata.jpkType).toBe('JPK_VDEK')
+      expect(sheet.metadata.subType).toBe('SprzedazWiersz')
+
+      // Data columns should exclude the 6 metadata columns
+      expect(sheet.rows[0].cells[0]).toBe('1')
+      expect(sheet.rows[0].cells[1]).toBe('PL')
+      expect(sheet.rows[0].cells[2]).toBe('1234567890')
+    })
+
     it('handles empty file', () => {
       const buf = Buffer.from('', 'utf-8')
       const result = reader.read(buf, 'empty.txt')

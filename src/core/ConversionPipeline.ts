@@ -121,10 +121,10 @@ export class ConversionPipeline {
     if (config.customMapping) {
       mapping = config.customMapping
     } else {
-      // Try system profile first
-      const profileMapping = applyProfile(sheet)
-      if (profileMapping) {
-        mapping = profileMapping
+      // Try structure-based profile matching first
+      const profileMatch = applyProfile(sheet)
+      if (profileMatch) {
+        mapping = profileMatch.result
       } else {
         mapping = autoMap(sheet, fields)
       }
@@ -208,8 +208,8 @@ export class ConversionPipeline {
     if (config.customMapping) {
       mapping = config.customMapping
     } else {
-      const profileMapping = applyProfile(sheet)
-      mapping = profileMapping ?? autoMap(sheet, fields)
+      const profileMatch = applyProfile(sheet)
+      mapping = profileMatch ? profileMatch.result : autoMap(sheet, fields)
     }
 
     if (mapping.mappings.length === 0) {

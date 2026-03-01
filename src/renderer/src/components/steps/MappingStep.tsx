@@ -19,6 +19,7 @@ import {
   DEFAULT_TRANSFORM_CONFIG,
   type TransformConfig,
   type SavedMappingProfile,
+  type MatchedProfileInfo,
   type DateFormatOption,
   type DecimalSeparatorOption,
   type NipFormatOption
@@ -530,6 +531,7 @@ export function MappingStep(): React.JSX.Element {
     runAutoMap,
     updateMapping,
     removeMapping,
+    matchedProfiles,
     savedProfiles,
     saveProfile,
     loadProfile,
@@ -544,6 +546,9 @@ export function MappingStep(): React.JSX.Element {
 
   const activeFile = files.find((f) => f.id === activeFileId) || files[0]
   const mappings = activeFile ? (activeMappings[activeFile.id] || []) : []
+  const matchedProfile: MatchedProfileInfo | undefined = activeFile
+    ? matchedProfiles[activeFile.id]
+    : undefined
   const transformConfig = activeFile
     ? (transformConfigs[activeFile.id] || DEFAULT_TRANSFORM_CONFIG)
     : DEFAULT_TRANSFORM_CONFIG
@@ -683,6 +688,22 @@ export function MappingStep(): React.JSX.Element {
             setSelectedTarget(null)
           }}
         />
+
+        {/* Structure match info */}
+        {matchedProfile && (
+          <div className="mb-3 px-3 py-2 rounded-lg bg-success/5 border border-success/20 flex items-center gap-2 text-xs">
+            <CheckCircle2 className="w-3.5 h-3.5 text-success shrink-0" />
+            <span className="text-text-secondary">
+              Rozpoznano struktur&#x119;:{' '}
+              <span className="font-medium text-text-primary">{matchedProfile.profileName}</span>
+              {matchedProfile.fileSystem !== matchedProfile.profileSystem && (
+                <span className="text-text-muted ml-1">
+                  (system: {matchedProfile.fileSystem})
+                </span>
+              )}
+            </span>
+          </div>
+        )}
 
         {/* Stats bar + Profile manager */}
         <div className="flex items-center justify-between mb-4">

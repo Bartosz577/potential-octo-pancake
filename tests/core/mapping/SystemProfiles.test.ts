@@ -4,6 +4,7 @@ import { join } from 'path'
 import {
   SYSTEM_PROFILES,
   findProfile,
+  findProfileByStructure,
   applyProfile,
 } from '../../../src/core/mapping/SystemProfiles'
 import { TxtFileReader } from '../../../src/core/readers/TxtFileReader'
@@ -51,6 +52,40 @@ describe('SystemProfiles', () => {
 
     it('returns null for unknown combination', () => {
       expect(findProfile('UNKNOWN', 'JPK_X', 'Y')).toBeNull()
+    })
+
+    it('returns null for unknown system even with valid jpkType/subType', () => {
+      expect(findProfile('SAP_RE', 'JPK_VDEK', 'SprzedazWiersz')).toBeNull()
+    })
+  })
+
+  describe('findProfileByStructure', () => {
+    it('finds VDEK SprzedazWiersz profile regardless of system name', () => {
+      const p = findProfileByStructure('JPK_VDEK', 'SprzedazWiersz')
+      expect(p).not.toBeNull()
+      expect(p!.id).toBe('NAMOS_JPK_VDEK_SprzedazWiersz')
+    })
+
+    it('finds FA Faktura profile regardless of system name', () => {
+      const p = findProfileByStructure('JPK_FA', 'Faktura')
+      expect(p).not.toBeNull()
+      expect(p!.id).toBe('NAMOS_JPK_FA_Faktura')
+    })
+
+    it('finds MAG WZ profile regardless of system name', () => {
+      const p = findProfileByStructure('JPK_MAG', 'WZ')
+      expect(p).not.toBeNull()
+      expect(p!.id).toBe('ESO_JPK_MAG_WZ')
+    })
+
+    it('normalizes JPK_V7M to JPK_VDEK', () => {
+      const p = findProfileByStructure('JPK_V7M', 'SprzedazWiersz')
+      expect(p).not.toBeNull()
+      expect(p!.id).toBe('NAMOS_JPK_VDEK_SprzedazWiersz')
+    })
+
+    it('returns null for unknown jpkType/subType', () => {
+      expect(findProfileByStructure('JPK_UNKNOWN', 'Test')).toBeNull()
     })
   })
 
@@ -167,11 +202,12 @@ describe('SystemProfiles', () => {
       const fileResult = reader.read(buffer, 'namos_vdek.txt')
       const sheet = fileResult.sheets[0]
 
-      const result = applyProfile(sheet)
-      expect(result).not.toBeNull()
+      const match = applyProfile(sheet)
+      expect(match).not.toBeNull()
+      expect(match!.profile.id).toBe('NAMOS_JPK_VDEK_SprzedazWiersz')
 
       // Verify K_10 mapping: col 45 should contain netto 23% values
-      const k10 = result!.mappings.find((m) => m.targetField === 'K_10')
+      const k10 = match!.result.mappings.find((m) => m.targetField === 'K_10')
       expect(k10).toBeDefined()
       expect(k10!.sourceColumn).toBe(45)
       expect(k10!.confidence).toBe(1.0)
@@ -187,11 +223,11 @@ describe('SystemProfiles', () => {
       const fileResult = reader.read(buffer, 'namos_fa.txt')
       const sheet = fileResult.sheets[0]
 
-      const result = applyProfile(sheet)
-      expect(result).not.toBeNull()
+      const match = applyProfile(sheet)
+      expect(match).not.toBeNull()
 
       // Verify P_15 (brutto razem) at col 27
-      const p15 = result!.mappings.find((m) => m.targetField === 'P_15')
+      const p15 = match!.result.mappings.find((m) => m.targetField === 'P_15')
       expect(p15).toBeDefined()
       expect(p15!.sourceColumn).toBe(27)
 
@@ -206,11 +242,11 @@ describe('SystemProfiles', () => {
       const fileResult = reader.read(buffer, 'eso_mag.txt')
       const sheet = fileResult.sheets[0]
 
-      const result = applyProfile(sheet)
-      expect(result).not.toBeNull()
+      const match = applyProfile(sheet)
+      expect(match).not.toBeNull()
 
       // Product code at col 9
-      const kodTowaru = result!.mappings.find((m) => m.targetField === 'KodTowaru')
+      const kodTowaru = match!.result.mappings.find((m) => m.targetField === 'KodTowaru')
       expect(kodTowaru).toBeDefined()
       expect(sheet.rows[0].cells[9]).toBe('1004115')
 
@@ -228,6 +264,45 @@ describe('SystemProfiles', () => {
         metadata: {},
       }
       expect(applyProfile(sheet)).toBeNull()
+    })
+
+    it('matches profile by structure for unknown system (SAP_RE)', () => {
+      // Simulate a SAP_RE file with JPK_VDEK structure
+      const sheet: import('../../../src/core/models/types').RawSheet = {
+        name: 'sap_re_vdek.txt',
+        rows: [{ index: 0, cells: Array.from({ length: 70 }, (_, i) => `val_${i}`) }],
+        metadata: {
+          system: 'SAP_RE',
+          jpkType: 'JPK_VDEK',
+          subType: 'SprzedazWiersz',
+        },
+      }
+
+      const match = applyProfile(sheet)
+      expect(match).not.toBeNull()
+      expect(match!.profile.id).toBe('NAMOS_JPK_VDEK_SprzedazWiersz')
+      expect(match!.profile.system).toBe('NAMOS')
+
+      // Verify correct positional mapping applied
+      const k10 = match!.result.mappings.find((m) => m.targetField === 'K_10')
+      expect(k10).toBeDefined()
+      expect(k10!.sourceColumn).toBe(45)
+    })
+
+    it('matches JPK_V7M alias to JPK_VDEK profile', () => {
+      const sheet: import('../../../src/core/models/types').RawSheet = {
+        name: 'test_v7m.txt',
+        rows: [{ index: 0, cells: Array.from({ length: 70 }, (_, i) => `val_${i}`) }],
+        metadata: {
+          system: 'CUSTOM_ERP',
+          jpkType: 'JPK_V7M',
+          subType: 'SprzedazWiersz',
+        },
+      }
+
+      const match = applyProfile(sheet)
+      expect(match).not.toBeNull()
+      expect(match!.profile.id).toBe('NAMOS_JPK_VDEK_SprzedazWiersz')
     })
   })
 })

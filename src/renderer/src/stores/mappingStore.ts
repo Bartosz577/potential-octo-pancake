@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import type { ColumnMapping, MappingResult } from '../../../core/mapping/AutoMapper'
 import { autoMap } from '../../../core/mapping/AutoMapper'
 import { getFieldDefinitions } from '../../../core/mapping/JpkFieldDefinitions'
-import { findProfile, applyProfile } from '../../../core/mapping/SystemProfiles'
+import { applyProfile } from '../../../core/mapping/SystemProfiles'
 import type { ParsedFile } from '../types'
 import { parsedFileToRawSheet } from '../bridge/PipelineBridge'
 
@@ -48,9 +48,20 @@ function persistProfiles(profiles: SavedMappingProfile[]): void {
   localStorage.setItem(PROFILES_KEY, JSON.stringify(profiles))
 }
 
+/** Info about a matched system profile for display in UI */
+export interface MatchedProfileInfo {
+  /** Profile display name (e.g. "NAMOS → JPK_V7M Sprzedaż") */
+  profileName: string
+  /** Original system from profile definition */
+  profileSystem: string
+  /** Actual system from file data */
+  fileSystem: string
+}
+
 interface MappingState {
   activeMappings: Record<string, ColumnMapping[]>
   autoMapResults: Record<string, MappingResult>
+  matchedProfiles: Record<string, MatchedProfileInfo>
   savedProfiles: SavedMappingProfile[]
   transformConfigs: Record<string, TransformConfig>
 
@@ -67,34 +78,37 @@ interface MappingState {
 export const useMappingStore = create<MappingState>((set, get) => ({
   activeMappings: {},
   autoMapResults: {},
+  matchedProfiles: {},
   savedProfiles: loadSavedProfiles(),
   transformConfigs: {},
 
   runAutoMap: (file: ParsedFile) => {
     const sheet = parsedFileToRawSheet(file)
 
-    // Try known system profile first (NAMOS, ESO → 100% confidence positional mapping)
-    const profile = findProfile(file.system, file.jpkType, file.subType)
+    // Try structure-based profile matching (jpkType + subType, ignoring system name)
+    const profileMatch = applyProfile(sheet)
     let result: MappingResult
+    let matchedProfile: MatchedProfileInfo | undefined
 
-    if (profile) {
-      const profileResult = applyProfile(sheet)
-      if (profileResult) {
-        result = profileResult
-      } else {
-        // Profile found but applyProfile failed — fall back to autoMap
-        const fields = getFieldDefinitions(file.jpkType, file.subType)
-        result = autoMap(sheet, fields)
+    if (profileMatch) {
+      result = profileMatch.result
+      matchedProfile = {
+        profileName: profileMatch.profile.name,
+        profileSystem: profileMatch.profile.system,
+        fileSystem: file.system
       }
     } else {
-      // No known profile — use header-based heuristic autoMap
+      // No matching profile — use header-based heuristic autoMap
       const fields = getFieldDefinitions(file.jpkType, file.subType)
       result = autoMap(sheet, fields)
     }
 
     set((state) => ({
       autoMapResults: { ...state.autoMapResults, [file.id]: result },
-      activeMappings: { ...state.activeMappings, [file.id]: result.mappings }
+      activeMappings: { ...state.activeMappings, [file.id]: result.mappings },
+      matchedProfiles: matchedProfile
+        ? { ...state.matchedProfiles, [file.id]: matchedProfile }
+        : state.matchedProfiles
     }))
   },
 
@@ -167,6 +181,6 @@ export const useMappingStore = create<MappingState>((set, get) => ({
   },
 
   clearMappings: () => {
-    set({ activeMappings: {}, autoMapResults: {}, transformConfigs: {} })
+    set({ activeMappings: {}, autoMapResults: {}, matchedProfiles: {}, transformConfigs: {} })
   }
 }))
