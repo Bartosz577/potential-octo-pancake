@@ -1,7 +1,8 @@
-appId: com.jpk-converter.app
+appId: pl.jpk.converter
 productName: JPK Converter
 directories:
   buildResources: build
+asar: true
 files:
   - '!**/.vscode/*'
   - '!src/*'
@@ -11,16 +12,27 @@ files:
   - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
 asarUnpack:
   - resources/**
+publish:
+  provider: github
+  owner: bartoszzielinski
+  repo: potential-octo-pancake
 win:
   executableName: jpk-converter
+  target:
+    - nsis
+    - portable
 nsis:
   artifactName: ${name}-${version}-setup.${ext}
   shortcutName: ${productName}
   uninstallDisplayName: ${productName}
   createDesktopShortcut: always
+portable:
+  artifactName: ${name}-${version}-portable.${ext}
 mac:
   entitlementsInherit: build/entitlements.mac.plist
   notarize: false
+  target:
+    - dmg
 dmg:
   artifactName: ${name}-${version}.${ext}
 linux:

@@ -1,6 +1,6 @@
 {
   "name": "jpk-converter",
-  "version": "1.0.0",
+  "version": "2.0.0-beta.1",
   "description": "Konwerter plików TXT do JPK XML",
   "main": "./out/main/index.js",
   "author": "JPK Converter",
@@ -20,7 +20,11 @@
     "build:unpack": "npm run build && electron-builder --dir",
     "build:win": "npm run build && electron-builder --win",
     "build:mac": "electron-vite build && electron-builder --mac",
-    "build:linux": "electron-vite build && electron-builder --linux"
+    "build:linux": "electron-vite build && electron-builder --linux",
+    "dist": "npm run build && electron-builder",
+    "dist:win": "npm run build && electron-builder --win",
+    "dist:mac": "npm run build && electron-builder --mac",
+    "dist:linux": "npm run build && electron-builder --linux"
   },
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.2",

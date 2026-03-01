@@ -179,7 +179,7 @@ function createWindow(): void {
 }
 
 app.whenReady().then(() => {
-  electronApp.setAppUserModelId('com.jpk-converter')
+  electronApp.setAppUserModelId('pl.jpk.converter')
 
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
