@@ -1,0 +1,6 @@
+Nr_dokumentu;Data_wystawienia;NIP;Nazwa_kontrahenta;Netto;Vat;Brutto;Stawka
+FV/2026/001;2026-01-10;5213456789;Przedsiębiorstwo ABC Sp. z o.o.;1000.00;230.00;1230.00;23
+FV/2026/002;2026-01-15;7891234560;Handel Jan Kowalski;500.00;115.00;615.00;23
+FV/2026/003;2026-01-20;1234567890;Usługi Transportowe S.A.;2000.00;160.00;2160.00;8
+FV/2026/004;2026-01-25;brak;Osoba Fizyczna;100.00;5.00;105.00;5
+FV/2026/005;2026-01-31;9876543210;Producent Sp.j.;3000.00;690.00;3690.00;23

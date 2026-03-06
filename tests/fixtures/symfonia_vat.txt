@@ -1,0 +1,6 @@
+TypDokumentu;NrDokumentu;DataWystawienia;NazwaKontrahenta;NIPKontrahenta;Netto;VATKwota;Brutto;StawkaVAT;KodWaluty
+FA;FS/2026/001;2026-01-10;Zakład Produkcyjny Kowalski;5213456789;1500.00;345.00;1845.00;23;PLN
+FA;FS/2026/002;2026-01-15;Hurtownia Świeżych Produktów;7891234560;800.00;64.00;864.00;8;PLN
+FZ;FZ/2026/001;2026-01-18;Dostawca Materiałów Sp. z o.o.;1234567890;2500.00;575.00;3075.00;23;PLN
+KS;KS/2026/001;2026-01-20;Zakład Produkcyjny Kowalski;5213456789;-200.00;-46.00;-246.00;23;PLN
+FA;FS/2026/003;2026-01-31;Export GmbH;DE123456789;5000.00;0.00;5000.00;0;EUR

@@ -247,6 +247,103 @@ const INSERT_SUBIEKT_FA_MAP: Record<number, string> = {
 }
 
 // ═══════════════════════════════════════════════════════
+//  ENOVA365 — JPK_FA Faktura (XML export)
+// ═══════════════════════════════════════════════════════
+// XML with <Dokumenty> or <Ewidencja> root
+// Child elements: <Numer>, <DataWystawienia>, <NIPNabywcy>, etc.
+
+const ENOVA365_XML_FA_MAP: Record<number, string> = {
+  0: 'P_2',           // Numer
+  1: 'P_1',           // DataWystawienia
+  2: 'P_6',           // NIPNabywcy
+  3: 'P_3A',          // NazwaNabywcy
+  4: 'P_13_1',        // WartoscNetto
+  5: 'P_14_1',        // WartoscVAT
+}
+
+// ═══════════════════════════════════════════════════════
+//  ENOVA365 — JPK_FA Faktura (CDN CSV export)
+// ═══════════════════════════════════════════════════════
+// Semicolon-separated CSV with header row
+// Nr_dokumentu;Data_wystawienia;NIP;Nazwa_kontrahenta;Netto;Vat;Brutto;Stawka
+
+const ENOVA365_CDN_TXT_MAP: Record<number, string> = {
+  0: 'P_2',           // Nr_dokumentu
+  1: 'P_1',           // Data_wystawienia
+  2: 'P_6',           // NIP
+  3: 'P_3A',          // Nazwa_kontrahenta
+  4: 'P_13_1',        // Netto
+  5: 'P_14_1',        // Vat
+  6: 'P_15',          // Brutto
+  // Col 7: Stawka — VAT rate, not a direct JPK target
+}
+
+// ═══════════════════════════════════════════════════════
+//  SAGE SYMFONIA — JPK_FA Faktura (TXT export)
+// ═══════════════════════════════════════════════════════
+// Semicolon-separated TXT
+// TypDokumentu;NrDokumentu;DataWystawienia;NazwaKontrahenta;NIPKontrahenta;
+// Netto;VATKwota;Brutto;StawkaVAT;KodWaluty
+
+const SAGE_SYMFONIA_FA_MAP: Record<number, string> = {
+  0: 'RodzajFaktury',  // TypDokumentu (FA/FZ/KS/KZ)
+  1: 'P_2',           // NrDokumentu
+  2: 'P_1',           // DataWystawienia
+  3: 'P_3A',          // NazwaKontrahenta
+  4: 'P_6',           // NIPKontrahenta
+  5: 'P_13_1',        // Netto
+  6: 'P_14_1',        // VATKwota
+  7: 'P_15',          // Brutto
+  // Col 8: StawkaVAT — rate, not a direct JPK target
+  9: 'KodWaluty',     // KodWaluty
+}
+
+// ═══════════════════════════════════════════════════════
+//  ASSECO WAPRO — JPK_FA Faktura (XML export)
+// ═══════════════════════════════════════════════════════
+// XML with <WaproExport> or <Faktury> root
+// Child elements: <Nr_faktury>, <Data_wyst>, <NIP_kontr>, etc.
+
+const ASSECO_WAPRO_XML_FA_MAP: Record<number, string> = {
+  0: 'P_2',           // Nr_faktury
+  1: 'P_1',           // Data_wyst
+  2: 'P_6',           // NIP_kontr
+  3: 'P_3A',          // Nazwa_kontr
+  4: 'P_13_1',        // Netto_23
+  5: 'P_14_1',        // VAT_23
+}
+
+// ═══════════════════════════════════════════════════════
+//  DYNAMICS NAV — JPK_FA Faktura (XML export)
+// ═══════════════════════════════════════════════════════
+// XML with <NAVExport> or <GLEntry> root
+// Enterprise system — non-standard exports
+
+const DYNAMICS_NAV_FA_MAP: Record<number, string> = {
+  0: 'P_2',           // No_
+  1: 'P_1',           // PostingDate
+  2: 'P_6',           // CustomerNo_
+  3: 'P_13_1',        // Amount
+  4: 'P_14_1',        // VATAmount
+}
+
+// ═══════════════════════════════════════════════════════
+//  SAP R/3 — JPK_FA Faktura (CSV export)
+// ═══════════════════════════════════════════════════════
+// Semicolon-separated CSV with SAP-specific headers
+// BUKRS;BLART;BUDAT;BELNR;WAERS;WRBTR;MWSKZ
+
+const SAP_R3_CSV_FA_MAP: Record<number, string> = {
+  // Col 0: BUKRS — company code, not direct JPK target
+  // Col 1: BLART — document type
+  2: 'P_1',           // BUDAT (posting date)
+  3: 'P_2',           // BELNR (document number)
+  4: 'KodWaluty',     // WAERS (currency)
+  5: 'P_15',          // WRBTR (amount)
+  // Col 6: MWSKZ — tax code, not a direct JPK target
+}
+
+// ═══════════════════════════════════════════════════════
 //  Profile registry
 // ═══════════════════════════════════════════════════════
 
@@ -303,6 +400,60 @@ export const SYSTEM_PROFILES: SystemProfile[] = [
     jpkType: 'JPK_FA',
     subType: 'Faktura',
     columnMap: INSERT_SUBIEKT_FA_MAP,
+    fields: JPK_FA_FAKTURA_FIELDS,
+  },
+  {
+    id: 'ENOVA365_XML_FA',
+    name: 'enova365 → JPK_FA Faktura (XML)',
+    system: 'ENOVA365',
+    jpkType: 'JPK_FA',
+    subType: 'Faktura',
+    columnMap: ENOVA365_XML_FA_MAP,
+    fields: JPK_FA_FAKTURA_FIELDS,
+  },
+  {
+    id: 'ENOVA365_CDN_TXT',
+    name: 'enova365 CDN → JPK_FA Faktura (CSV)',
+    system: 'ENOVA365',
+    jpkType: 'JPK_FA',
+    subType: 'Faktura',
+    columnMap: ENOVA365_CDN_TXT_MAP,
+    fields: JPK_FA_FAKTURA_FIELDS,
+  },
+  {
+    id: 'SAGE_SYMFONIA_FA',
+    name: 'Sage Symfonia → JPK_FA Faktura (TXT)',
+    system: 'SAGE_SYMFONIA',
+    jpkType: 'JPK_FA',
+    subType: 'Faktura',
+    columnMap: SAGE_SYMFONIA_FA_MAP,
+    fields: JPK_FA_FAKTURA_FIELDS,
+  },
+  {
+    id: 'ASSECO_WAPRO_XML_FA',
+    name: 'Asseco WAPRO → JPK_FA Faktura (XML)',
+    system: 'ASSECO_WAPRO',
+    jpkType: 'JPK_FA',
+    subType: 'Faktura',
+    columnMap: ASSECO_WAPRO_XML_FA_MAP,
+    fields: JPK_FA_FAKTURA_FIELDS,
+  },
+  {
+    id: 'DYNAMICS_NAV_FA',
+    name: 'Dynamics NAV → JPK_FA Faktura (XML)',
+    system: 'DYNAMICS_NAV',
+    jpkType: 'JPK_FA',
+    subType: 'Faktura',
+    columnMap: DYNAMICS_NAV_FA_MAP,
+    fields: JPK_FA_FAKTURA_FIELDS,
+  },
+  {
+    id: 'SAP_R3_CSV_FA',
+    name: 'SAP R/3 → JPK_FA Faktura (CSV)',
+    system: 'SAP_R3',
+    jpkType: 'JPK_FA',
+    subType: 'Faktura',
+    columnMap: SAP_R3_CSV_FA_MAP,
     fields: JPK_FA_FAKTURA_FIELDS,
   },
 ]

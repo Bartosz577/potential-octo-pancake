@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<WaproExport>
+  <Faktura>
+    <Nr_faktury>FV/WP/2026/001</Nr_faktury>
+    <Data_wyst>2026-01-10</Data_wyst>
+    <NIP_kontr>5213456789</NIP_kontr>
+    <Nazwa_kontr>Firma Handlowa ABC Sp. z o.o.</Nazwa_kontr>
+    <Netto_23>1000.00</Netto_23>
+    <VAT_23>230.00</VAT_23>
+  </Faktura>
+  <Faktura>
+    <Nr_faktury>FV/WP/2026/002</Nr_faktury>
+    <Data_wyst>2026-01-15</Data_wyst>
+    <NIP_kontr>7891234560</NIP_kontr>
+    <Nazwa_kontr>Sklep Spożywczy Nowak</Nazwa_kontr>
+    <Netto_23>500.00</Netto_23>
+    <VAT_23>115.00</VAT_23>
+  </Faktura>
+  <Faktura>
+    <Nr_faktury>FV/WP/2026/003</Nr_faktury>
+    <Data_wyst>2026-01-20</Data_wyst>
+    <NIP_kontr>1234567890</NIP_kontr>
+    <Nazwa_kontr>Zakład Usługowy Wiśniewski</Nazwa_kontr>
+    <Netto_23>2500.00</Netto_23>
+    <VAT_23>575.00</VAT_23>
+  </Faktura>
+</WaproExport>

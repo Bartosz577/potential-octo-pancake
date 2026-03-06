@@ -255,15 +255,23 @@ export interface ProfileHint {
   confidence: number
   /** Reason for the match */
   reason: string
+  /** True for enterprise systems (Dynamics NAV, SAP R/3) — UI should show verification warning */
+  enterpriseWarning?: boolean
 }
 
 /**
  * Heuristic detection of known ERP profiles from sheet data.
  *
  * Detection strategies (in priority order):
- * 1. Comarch Optima XML: headers contain XML element names → 95%
- * 2. Insert Subiekt EPP: headers contain EPP field names → 95%
- * 3. Comarch Optima TXT: 14 columns, NIP in col 3, date in col 1 → 92%
+ * 1. Comarch Optima XML: headers with NazwaKontrahenta, BruttoRazem etc → 95%
+ * 2. Insert Subiekt EPP: headers with NrFaktury, NazwaTowaru etc → 95%
+ * 3. enova365 XML: headers with Numer, WartoscNetto etc → 90%
+ * 4. Asseco WAPRO XML: headers with Nr_faktury, NIP_kontr etc → 90%
+ * 5. enova365 CDN CSV: headers with Nr_dokumentu + Netto/Vat → 88%
+ * 6. Sage Symfonia TXT: headers with TypDokumentu + FA/FZ values → 85%
+ * 7. Comarch Optima TXT: 14 columns, NIP col 3, date col 1 → 92%
+ * 8. SAP R/3 CSV: headers with BUKRS + BLART → 70% (enterprise)
+ * 9. Dynamics NAV XML: headers with No_, PostingDate or NAVExport → 65% (enterprise)
  */
 export function detectProfileHint(sheet: RawSheet): ProfileHint | null {
   const columnCount = sheet.rows.length > 0 ? sheet.rows[0].cells.length : 0
@@ -286,14 +294,20 @@ export function detectProfileHint(sheet: RawSheet): ProfileHint | null {
   }
 
   // Strategy 2: EPP (Insert Subiekt) — headers contain EPP-specific field names
+  // Requires at least one Subiekt-unique marker (NrFaktury, NazwaTowaru, CenaNetto)
+  // to distinguish from enova365 which shares NIPNabywcy, NazwaNabywcy, WartoscNetto, WartoscVAT
   if (sheet.headers && sheet.headers.length > 0) {
+    const SUBIEKT_UNIQUE = ['NrFaktury', 'NazwaTowaru', 'CenaNetto']
     const SUBIEKT_MARKERS = ['NrFaktury', 'NIPNabywcy', 'NazwaNabywcy', 'NazwaTowaru', 'WartoscNetto', 'WartoscVAT', 'StawkaVAT', 'CenaNetto']
     const normHeaders = sheet.headers.map((h) => h.trim())
+    const hasUniqueMarker = SUBIEKT_UNIQUE.some((marker) =>
+      normHeaders.some((h) => h === marker)
+    )
     const matchCount = SUBIEKT_MARKERS.filter((marker) =>
       normHeaders.some((h) => h === marker)
     ).length
 
-    if (matchCount >= 3) {
+    if (hasUniqueMarker && matchCount >= 3) {
       return {
         profileId: 'INSERT_SUBIEKT_FA',
         confidence: 0.95,
@@ -302,7 +316,80 @@ export function detectProfileHint(sheet: RawSheet): ProfileHint | null {
     }
   }
 
-  // Strategy 3: TXT pipe-delimited — 14 columns, NIP in col 3, date in col 1
+  // Strategy 3: enova365 XML — headers contain enova-specific element names
+  if (sheet.headers && sheet.headers.length > 0) {
+    const ENOVA_XML_MARKERS = ['Numer', 'DataWystawienia', 'NIPNabywcy', 'NazwaNabywcy', 'WartoscNetto', 'WartoscVAT']
+    const normHeaders = sheet.headers.map((h) => h.trim())
+    const matchCount = ENOVA_XML_MARKERS.filter((marker) =>
+      normHeaders.some((h) => h === marker)
+    ).length
+
+    if (matchCount >= 3) {
+      return {
+        profileId: 'ENOVA365_XML_FA',
+        confidence: 0.90,
+        reason: `XML element match: ${matchCount} enova365 markers found`,
+      }
+    }
+  }
+
+  // Strategy 4: Asseco WAPRO XML — headers contain WAPRO-specific element names
+  if (sheet.headers && sheet.headers.length > 0) {
+    const WAPRO_XML_MARKERS = ['Nr_faktury', 'Data_wyst', 'NIP_kontr', 'Nazwa_kontr', 'Netto_23', 'VAT_23']
+    const normHeaders = sheet.headers.map((h) => h.trim())
+    const matchCount = WAPRO_XML_MARKERS.filter((marker) =>
+      normHeaders.some((h) => h === marker)
+    ).length
+
+    if (matchCount >= 3) {
+      return {
+        profileId: 'ASSECO_WAPRO_XML_FA',
+        confidence: 0.90,
+        reason: `XML element match: ${matchCount} WAPRO markers found`,
+      }
+    }
+  }
+
+  // Strategy 5: enova365 CDN CSV — headers with Nr_dokumentu + Netto/Vat
+  if (sheet.headers && sheet.headers.length > 0) {
+    const normHeaders = sheet.headers.map((h) => h.trim())
+    const hasNrDokumentu = normHeaders.some((h) => h === 'Nr_dokumentu')
+    const hasNetto = normHeaders.some((h) => h === 'Netto' || h === 'WartoscNetto')
+    const hasVat = normHeaders.some((h) => h === 'Vat' || h === 'VAT')
+
+    if (hasNrDokumentu && hasNetto && hasVat) {
+      return {
+        profileId: 'ENOVA365_CDN_TXT',
+        confidence: 0.88,
+        reason: 'CSV header match: Nr_dokumentu + Netto + Vat (enova365 CDN)',
+      }
+    }
+  }
+
+  // Strategy 6: Sage Symfonia — headers with TypDokumentu + FA/FZ values in data
+  if (sheet.headers && sheet.headers.length > 0) {
+    const normHeaders = sheet.headers.map((h) => h.trim())
+    const hasTypDokumentu = normHeaders.some((h) => h === 'TypDokumentu')
+    const hasNIPKontrahenta = normHeaders.some((h) => h === 'NIPKontrahenta')
+
+    if (hasTypDokumentu && hasNIPKontrahenta) {
+      // Verify data contains FA/FZ/KS/KZ values
+      const typIdx = normHeaders.indexOf('TypDokumentu')
+      const SYMFONIA_TYPES = /^(FA|FZ|KS|KZ)$/
+      const sampleRows = sheet.rows.slice(0, 10)
+      const typeMatches = sampleRows.filter((r) => SYMFONIA_TYPES.test((r.cells[typIdx] ?? '').trim())).length
+
+      if (typeMatches > 0) {
+        return {
+          profileId: 'SAGE_SYMFONIA_FA',
+          confidence: 0.85,
+          reason: `TXT header match: TypDokumentu + NIPKontrahenta (Sage Symfonia), ${typeMatches} FA/FZ rows`,
+        }
+      }
+    }
+  }
+
+  // Strategy 7: TXT pipe-delimited — 14 columns, NIP in col 3, date in col 1
   if (columnCount >= 13 && columnCount <= 15) {
     const NIP_PATTERN = /^(\d{10}|\d{3}-\d{3}-\d{2}-\d{2}|brak)$/
     const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/
@@ -320,6 +407,39 @@ export function detectProfileHint(sheet: RawSheet): ProfileHint | null {
           confidence: 0.92,
           reason: `TXT structure match: ${columnCount} cols, NIP in col 3 (${Math.round(nipRatio * 100)}%), date in col 1 (${Math.round(dateRatio * 100)}%)`,
         }
+      }
+    }
+  }
+
+  // Strategy 8: SAP R/3 CSV — headers with BUKRS + BLART
+  if (sheet.headers && sheet.headers.length > 0) {
+    const normHeaders = sheet.headers.map((h) => h.trim())
+    const hasBUKRS = normHeaders.some((h) => h === 'BUKRS')
+    const hasBLART = normHeaders.some((h) => h === 'BLART')
+
+    if (hasBUKRS && hasBLART) {
+      return {
+        profileId: 'SAP_R3_CSV_FA',
+        confidence: 0.70,
+        reason: 'CSV header match: BUKRS + BLART (SAP R/3)',
+        enterpriseWarning: true,
+      }
+    }
+  }
+
+  // Strategy 9: Dynamics NAV XML — headers with No_ + PostingDate, or NAVExport/GLEntry
+  if (sheet.headers && sheet.headers.length > 0) {
+    const normHeaders = sheet.headers.map((h) => h.trim())
+    const hasNo = normHeaders.some((h) => h === 'No_')
+    const hasPostingDate = normHeaders.some((h) => h === 'PostingDate')
+    const hasAmount = normHeaders.some((h) => h === 'Amount' || h === 'VATAmount')
+
+    if (hasNo && hasPostingDate && hasAmount) {
+      return {
+        profileId: 'DYNAMICS_NAV_FA',
+        confidence: 0.65,
+        reason: 'XML element match: No_ + PostingDate + Amount (Dynamics NAV)',
+        enterpriseWarning: true,
       }
     }
   }

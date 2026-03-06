@@ -14,6 +14,8 @@ import {
 } from 'lucide-react'
 import { useImportStore } from '@renderer/stores/importStore'
 import { useAppStore } from '@renderer/stores/appStore'
+import { useToast } from '@renderer/stores/toastStore'
+import { parsedFileToRawSheet } from '@renderer/bridge/PipelineBridge'
 import {
   useMappingStore,
   DEFAULT_TRANSFORM_CONFIG,
@@ -30,7 +32,7 @@ import {
   type JpkFieldType
 } from '../../../../core/mapping/JpkFieldDefinitions'
 import { transformValue } from '../../../../core/mapping/TransformEngine'
-import type { ColumnMapping } from '../../../../core/mapping/AutoMapper'
+import { detectProfileHint, type ColumnMapping } from '../../../../core/mapping/AutoMapper'
 import type { ParsedFile } from '@renderer/types'
 
 const SAMPLE_COUNT = 5
@@ -540,6 +542,7 @@ export function MappingStep(): React.JSX.Element {
     setTransformConfig
   } = useMappingStore()
 
+  const toast = useToast()
   const [activeFileId, setActiveFileId] = useState<string>(files[0]?.id || '')
   const [selectedSource, setSelectedSource] = useState<number | null>(null)
   const [selectedTarget, setSelectedTarget] = useState<string | null>(null)
@@ -561,6 +564,20 @@ export function MappingStep(): React.JSX.Element {
       }
     }
   }, [files, activeMappings, runAutoMap])
+
+  // Show enterprise warning toast for Dynamics NAV / SAP R/3
+  const [warnedFiles] = useState(() => new Set<string>())
+  useEffect(() => {
+    for (const file of files) {
+      if (warnedFiles.has(file.id)) continue
+      const sheet = parsedFileToRawSheet(file)
+      const hint = detectProfileHint(sheet)
+      if (hint?.enterpriseWarning) {
+        warnedFiles.add(file.id)
+        toast.warning('Wykryto eksport z systemu enterprise. Proszę zweryfikować mapowanie kolumn.')
+      }
+    }
+  }, [files, toast, warnedFiles])
 
   // Get target fields for the active file
   const targetFields = useMemo(() => {
