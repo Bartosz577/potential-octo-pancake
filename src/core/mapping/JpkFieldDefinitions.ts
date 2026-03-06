@@ -227,6 +227,45 @@ export const JPK_KR_PD_DZIENNIK_FIELDS: JpkFieldDef[] = [
 ]
 
 // ═══════════════════════════════════════════════════════
+//  JPK_ST — Środki trwałe (PKPIR/EWP variant — G_ fields)
+// ═══════════════════════════════════════════════════════
+
+export const JPK_ST_WIERSZ_FIELDS: JpkFieldDef[] = [
+  { name: 'G_1', label: 'Lp.', type: 'integer', required: true, description: 'Liczba porządkowa', synonyms: ['lp', 'nr', 'numer'] },
+  { name: 'G_2', label: 'Data nabycia ŚT', type: 'date', required: false, description: 'Data nabycia/wytworzenia środka trwałego', synonyms: ['data_nabycia', 'data_nabycia_st'] },
+  { name: 'G_3', label: 'Data nabycia WNiP', type: 'date', required: false, description: 'Data nabycia wartości niematerialnej', synonyms: ['data_nabycia_wnip'] },
+  { name: 'G_4', label: 'Data przyjęcia', type: 'date', required: true, description: 'Data przyjęcia do użytkowania', synonyms: ['data_przyjecia', 'data_ot'] },
+  { name: 'G_6', label: 'Rodzaj nabycia', type: 'string', required: true, description: 'Sposób nabycia (S/D/N/W/F/I)', synonyms: ['nabycie', 'rodzaj_nabycia'] },
+  { name: 'G_7', label: 'Nazwa składnika', type: 'string', required: true, description: 'Nazwa środka trwałego/WNiP', synonyms: ['nazwa', 'nazwa_st', 'srodek_trwaly'] },
+  { name: 'G_9', label: 'Metoda amortyzacji', type: 'string', required: true, description: 'Metoda (D/L/J/I/X)', synonyms: ['metoda', 'metoda_amortyzacji'] },
+  { name: 'G_10', label: 'Stawka amortyzacji', type: 'decimal', required: true, description: 'Roczna stawka amortyzacji (%)', synonyms: ['stawka', 'stawka_amortyzacji'] },
+  { name: 'G_12', label: 'Wartość początkowa', type: 'decimal', required: true, description: 'Wartość początkowa podatkowa', synonyms: ['wartosc_poczatkowa', 'wp'] },
+  { name: 'G_14', label: 'Amortyzacja roczna', type: 'decimal', required: true, description: 'Suma odpisów w bieżącym roku', synonyms: ['amortyzacja', 'amortyzacja_roczna'] },
+  { name: 'G_15', label: 'Amortyzacja łączna', type: 'decimal', required: true, description: 'Suma odpisów narastająco', synonyms: ['amortyzacja_laczna', 'dotychczasowa'] },
+]
+
+// ═══════════════════════════════════════════════════════
+//  JPK_ST_KR — Środki trwałe (księgi rachunkowe — E_ fields)
+// ═══════════════════════════════════════════════════════
+
+export const JPK_ST_KR_WIERSZ_FIELDS: JpkFieldDef[] = [
+  { name: 'E_1', label: 'Nr inwentarzowy', type: 'string', required: true, description: 'Numer inwentarzowy składnika', synonyms: ['nr_inwentarzowy', 'numer_inwentarzowy', 'inwentarz'] },
+  { name: 'E_2', label: 'Data nabycia ŚT', type: 'date', required: false, description: 'Data nabycia/wytworzenia środka trwałego', synonyms: ['data_nabycia', 'data_nabycia_st'] },
+  { name: 'E_3', label: 'Data nabycia WNiP', type: 'date', required: false, description: 'Data nabycia wartości niematerialnej', synonyms: ['data_nabycia_wnip'] },
+  { name: 'E_4', label: 'Data przyjęcia', type: 'date', required: true, description: 'Data przyjęcia do użytkowania', synonyms: ['data_przyjecia', 'data_ot'] },
+  { name: 'E_5', label: 'Nr dokumentu OT', type: 'string', required: true, description: 'Numer dokumentu przyjęcia', synonyms: ['nr_ot', 'dokument_ot'] },
+  { name: 'E_6', label: 'Rodzaj nabycia', type: 'string', required: true, description: 'Sposób nabycia (S/D/N/W/F/I)', synonyms: ['nabycie', 'rodzaj_nabycia'] },
+  { name: 'E_7', label: 'Nazwa składnika', type: 'string', required: true, description: 'Nazwa środka trwałego/WNiP', synonyms: ['nazwa', 'nazwa_st', 'srodek_trwaly'] },
+  { name: 'E_9_1', label: 'Metoda amortyzacji', type: 'string', required: true, description: 'Metoda (D/L/J/I/X)', synonyms: ['metoda', 'metoda_amortyzacji'] },
+  { name: 'E_12', label: 'Wartość początkowa pod.', type: 'decimal', required: true, description: 'Wartość początkowa podatkowa', synonyms: ['wartosc_poczatkowa', 'wp_podatkowa'] },
+  { name: 'E_19', label: 'Amortyzacja pod. roczna', type: 'decimal', required: true, description: 'Suma odpisów podatkowych w bieżącym roku', synonyms: ['amortyzacja_podatkowa', 'amortyzacja_roczna'] },
+  { name: 'E_20', label: 'Amortyzacja pod. łączna', type: 'decimal', required: true, description: 'Suma odpisów podatkowych narastająco', synonyms: ['amortyzacja_laczna_pod'] },
+  { name: 'E_21', label: 'Wartość początkowa rach.', type: 'decimal', required: true, description: 'Wartość początkowa rachunkowa', synonyms: ['wp_rachunkowa'] },
+  { name: 'E_26', label: 'Amortyzacja rach. roczna', type: 'decimal', required: true, description: 'Suma odpisów rachunkowych w bieżącym roku', synonyms: ['amortyzacja_rachunkowa'] },
+  { name: 'E_27', label: 'Amortyzacja rach. łączna', type: 'decimal', required: true, description: 'Suma odpisów rachunkowych narastająco', synonyms: ['amortyzacja_laczna_rach'] },
+]
+
+// ═══════════════════════════════════════════════════════
 //  Section definitions (for registry / lookup)
 // ═══════════════════════════════════════════════════════
 
@@ -260,6 +299,16 @@ export const JPK_SECTIONS: Record<string, JpkSectionDef> = {
     sectionName: 'Dziennik',
     label: 'KR_PD — dziennik księgowy',
     fields: JPK_KR_PD_DZIENNIK_FIELDS,
+  },
+  'JPK_ST.STWiersz': {
+    sectionName: 'STWiersz',
+    label: 'ST — środki trwałe (PKPiR)',
+    fields: JPK_ST_WIERSZ_FIELDS,
+  },
+  'JPK_ST_KR.STKrWiersz': {
+    sectionName: 'STKrWiersz',
+    label: 'ST_KR — środki trwałe (KR)',
+    fields: JPK_ST_KR_WIERSZ_FIELDS,
   },
 }
 

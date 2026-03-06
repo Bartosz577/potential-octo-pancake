@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 
-export type JpkType = 'V7M' | 'FA' | 'MAG' | 'WB' | 'PKPIR' | 'EWP' | 'KR_PD'
+export type JpkType = 'V7M' | 'FA' | 'MAG' | 'WB' | 'PKPIR' | 'EWP' | 'KR_PD' | 'ST' | 'ST_KR'
 export type JpkSubtype = 'V7M' | 'V7K'
 export type Step = 1 | 2 | 3 | 4 | 5 | 6 | 7
 

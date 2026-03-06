@@ -342,7 +342,9 @@ const TAB_LABELS: Record<JpkType, string> = {
   JPK_WB: 'Wyciągi bankowe',
   JPK_PKPIR: 'KPiR',
   JPK_EWP: 'Ewidencja przychodów',
-  JPK_KR_PD: 'Księgi rachunkowe'
+  JPK_KR_PD: 'Księgi rachunkowe',
+  JPK_ST: 'Środki trwałe',
+  JPK_ST_KR: 'Środki trwałe (KR)'
 }
 
 export function PreviewStep(): React.JSX.Element {

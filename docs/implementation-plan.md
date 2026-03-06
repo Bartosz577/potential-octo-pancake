@@ -102,7 +102,25 @@
 - [x] KontoZapis: xsd:choice debit (Z_4/Z_5/Z_6) vs credit (Z_7/Z_8/Z_9) z obsługą walut
 - [x] Testy: `JpkKrPdGenerator.test.ts` — 54 testy
 
-### 2.9 Generyczny silnik XML
+### 2.9 JPK_ST(1) — nowy generator (środki trwałe — EWP/PKPIR)
+- [x] Schemat XSD JPK_ST(1) (namespace 11262) — już w /schemas
+- [x] Zaimplementuj `JpkStGenerator.ts` (Naglowek, Podmiot1 fizyczna/niefizyczna+ZnacznikST, EWP F_1..F_16, PKPIR G_1..G_22)
+- [x] Dodaj typ JPK_ST do core/models/types.ts i renderer/types
+- [x] Dodaj JPK_ST_WIERSZ_FIELDS do JpkFieldDefinitions.ts (11 pól)
+- [x] Integracja: appStore, Sidebar, ImportStep, ExportStep, PreviewStep, ValidationStep, HistoryStep, xmlExporter, validator
+- [x] Testy: `JpkStGenerator.test.ts` — 42 testy
+
+### 2.10 JPK_ST_KR(1) — nowy generator (środki trwałe — księgi rachunkowe)
+- [x] Schemat XSD JPK_ST_KR(1) (namespace 04242) — już w /schemas
+- [x] Zaimplementuj `JpkStKrGenerator.ts` (Naglowek z rokiem fiskalnym, Podmiot1 niefizyczna+AdresPol/AdresZagr, ST_KR E_1..E_32)
+- [x] TOdpis enum (M/K/R/J/S/I/X), TWykreslenieKr (7 wartości z 'A'), 3x metoda amortyzacji
+- [x] Pola rachunkowe: E_21..E_27 (wartość początkowa rach., amortyzacja rach.)
+- [x] Dodaj typ JPK_ST_KR do core/models/types.ts i renderer/types
+- [x] Dodaj JPK_ST_KR_WIERSZ_FIELDS do JpkFieldDefinitions.ts (14 pól)
+- [x] Integracja: appStore, Sidebar, ImportStep, ExportStep, PreviewStep, ValidationStep, HistoryStep, xmlExporter, validator
+- [x] Testy: `JpkStKrGenerator.test.ts` — 43 testy
+
+### 2.11 Generyczny silnik XML
 - [x] Refaktor: wydziel wspólną logikę (nagłówek, escape, formatowanie) do `XmlGeneratorEngine.ts`
 - [x] Zdefiniuj interfejs `XmlGenerator` i zarejestruj generatory w registry
 
@@ -209,11 +227,11 @@
 |------|--------|-------|
 | 0 — Przygotowanie | ✅ Done | — |
 | 1 — Core (parsery + mapowanie) | ✅ Done | 309 tests |
-| 2 — Generatory XML | ✅ Done | 786 tests (14 XSD, +V7K 39, +PKPIR 57, +EWP 42, +KR_PD 54) |
+| 2 — Generatory XML | ✅ Done | 871 tests (14 XSD, +V7K 39, +PKPIR 57, +EWP 42, +KR_PD 54, +ST 42, +ST_KR 43) |
 | 3 — UI rozszerzenia | ✅ Done | Web typecheck OK |
 | 4 — Zustand stores | ✅ Done | 632 tests |
 | 5 — Electron main | ✅ Done | Build OK |
-| 6 — Jakość | 🔶 In progress | 962 unit + 1 E2E |
+| 6 — Jakość | 🔶 In progress | 1047 unit + 1 E2E |
 | 7 — Release | ⬜ Not started | — |
 
 ### Pozostałe zadania (Faza 3-5)
