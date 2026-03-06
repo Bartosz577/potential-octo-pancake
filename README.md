@@ -7,20 +7,6 @@
 
 Desktopowe narzedzie do konwersji plikow z systemow ERP na pliki XML w formacie **JPK** (Jednolity Plik Kontrolny) wymagane przez Ministerstwo Finansow RP. Uniwersalne narzedzie obsługujace wszystkie popularne formaty wejsciowe i wszystkie struktury JPK.
 
-## Screenshoty
-
-| Import plikow | Mapowanie kolumn | Dane firmy |
-|:---:|:---:|:---:|
-| ![Import](docs/screenshots/01-import.png) | ![Mapowanie](docs/screenshots/02-mapping.png) | ![Firma](docs/screenshots/03-company.png) |
-
-| Podglad danych | Walidacja | Eksport XML |
-|:---:|:---:|:---:|
-| ![Podglad](docs/screenshots/04-preview.png) | ![Walidacja](docs/screenshots/05-validation.png) | ![Eksport](docs/screenshots/06-export.png) |
-
-| Historia konwersji | Scalanie JPK | Walidator JPK |
-|:---:|:---:|:---:|
-| ![Historia](docs/screenshots/07-history.png) | ![Merger](docs/screenshots/08-merger.png) | ![Validator](docs/screenshots/09-validator.png) |
-
 ## Obslugiwane struktury JPK
 
 | Struktura | Opis | Wersja |
