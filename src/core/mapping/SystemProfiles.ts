@@ -228,6 +228,25 @@ const COMARCH_OPTIMA_XML_FA_MAP: Record<number, string> = {
 }
 
 // ═══════════════════════════════════════════════════════
+//  INSERT SUBIEKT GT — JPK_FA Faktura (EPP format)
+// ═══════════════════════════════════════════════════════
+// EPP (EDI++) file from Insert Subiekt GT / Rachmistrz GT / Rewizor GT
+// Section-based key=value pairs flattened to tabular data
+// Invoice headers first, then item headers (deterministic order)
+// Standard EPP fields:
+//   Invoice: NrFaktury, DataWystawienia, NIPNabywcy, NazwaNabywcy, ...
+//   Item:    NazwaTowaru, Ilosc, CenaNetto, StawkaVAT, WartoscNetto, WartoscVAT
+
+const INSERT_SUBIEKT_FA_MAP: Record<number, string> = {
+  0: 'P_2',           // NrFaktury
+  1: 'P_1',           // DataWystawienia
+  2: 'P_6',           // NIPNabywcy
+  3: 'P_3A',          // NazwaNabywcy
+  4: 'P_15',          // Brutto
+  // Cols 5+: item fields — mapped via autoMap header matching
+}
+
+// ═══════════════════════════════════════════════════════
 //  Profile registry
 // ═══════════════════════════════════════════════════════
 
@@ -275,6 +294,15 @@ export const SYSTEM_PROFILES: SystemProfile[] = [
     jpkType: 'JPK_FA',
     subType: 'Faktura',
     columnMap: COMARCH_OPTIMA_XML_FA_MAP,
+    fields: JPK_FA_FAKTURA_FIELDS,
+  },
+  {
+    id: 'INSERT_SUBIEKT_FA',
+    name: 'Insert Subiekt GT → JPK_FA Faktura (EPP)',
+    system: 'INSERT_SUBIEKT',
+    jpkType: 'JPK_FA',
+    subType: 'Faktura',
+    columnMap: INSERT_SUBIEKT_FA_MAP,
     fields: JPK_FA_FAKTURA_FIELDS,
   },
 ]

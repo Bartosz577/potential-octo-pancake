@@ -258,12 +258,12 @@ export interface ProfileHint {
 }
 
 /**
- * Heuristic detection of Comarch Optima profiles from sheet data.
+ * Heuristic detection of known ERP profiles from sheet data.
  *
- * Two detection strategies:
- * 1. XML element match: presence of Comarch-specific XML element names
- *    in headers (e.g. NazwaKontrahenta, NIPNabywcy, BruttoRazem) → 95%
- * 2. TXT pipe-delimited: 14 columns, NIP pattern in col 3, date in col 1 → 92%
+ * Detection strategies (in priority order):
+ * 1. Comarch Optima XML: headers contain XML element names → 95%
+ * 2. Insert Subiekt EPP: headers contain EPP field names → 95%
+ * 3. Comarch Optima TXT: 14 columns, NIP in col 3, date in col 1 → 92%
  */
 export function detectProfileHint(sheet: RawSheet): ProfileHint | null {
   const columnCount = sheet.rows.length > 0 ? sheet.rows[0].cells.length : 0
@@ -285,7 +285,24 @@ export function detectProfileHint(sheet: RawSheet): ProfileHint | null {
     }
   }
 
-  // Strategy 2: TXT pipe-delimited — 14 columns, NIP in col 3, date in col 1
+  // Strategy 2: EPP (Insert Subiekt) — headers contain EPP-specific field names
+  if (sheet.headers && sheet.headers.length > 0) {
+    const SUBIEKT_MARKERS = ['NrFaktury', 'NIPNabywcy', 'NazwaNabywcy', 'NazwaTowaru', 'WartoscNetto', 'WartoscVAT', 'StawkaVAT', 'CenaNetto']
+    const normHeaders = sheet.headers.map((h) => h.trim())
+    const matchCount = SUBIEKT_MARKERS.filter((marker) =>
+      normHeaders.some((h) => h === marker)
+    ).length
+
+    if (matchCount >= 3) {
+      return {
+        profileId: 'INSERT_SUBIEKT_FA',
+        confidence: 0.95,
+        reason: `EPP field match: ${matchCount} Insert Subiekt markers found`,
+      }
+    }
+  }
+
+  // Strategy 3: TXT pipe-delimited — 14 columns, NIP in col 3, date in col 1
   if (columnCount >= 13 && columnCount <= 15) {
     const NIP_PATTERN = /^(\d{10}|\d{3}-\d{3}-\d{2}-\d{2}|brak)$/
     const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/

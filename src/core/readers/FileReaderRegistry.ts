@@ -4,6 +4,7 @@ import { CsvFileReader } from './CsvFileReader'
 import { XlsxFileReader } from './XlsxFileReader'
 import { JsonFileReader } from './JsonFileReader'
 import { XmlFileReader } from './XmlFileReader'
+import { EppFileReader } from './EppFileReader'
 
 /**
  * FileReaderRegistry — central registry for all file reader plugins.
@@ -91,12 +92,14 @@ export function createDefaultRegistry(): FileReaderRegistry {
   // Register in order of specificity:
   // 1. Binary formats first (more specific canRead checks)
   registry.register(new XlsxFileReader())
-  // 2. Structured text formats
+  // 2. Section-based text formats (EPP before generic text)
+  registry.register(new EppFileReader())
+  // 3. Structured text formats
   registry.register(new JsonFileReader())
   registry.register(new XmlFileReader())
-  // 3. CSV (before TXT — CSV is a subset of TXT)
+  // 4. CSV (before TXT — CSV is a subset of TXT)
   registry.register(new CsvFileReader())
-  // 4. Generic text format last (catches .txt, .dat, .tsv)
+  // 5. Generic text format last (catches .txt, .dat, .tsv)
   registry.register(new TxtFileReader())
 
   return registry

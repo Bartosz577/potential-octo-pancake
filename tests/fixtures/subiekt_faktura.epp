@@ -1,0 +1,49 @@
+[Faktura]
+NrFaktury=FV/2026/001
+DataWystawienia=2026-01-15
+NIPNabywcy=5213456789
+NazwaNabywcy=Zakład Produkcyjny Kowalski Sp. z o.o.
+Brutto=1599.00
+[Pozycja]
+NazwaTowaru=Usługi informatyczne — wdrożenie
+Ilosc=1.000
+CenaNetto=1000.00
+StawkaVAT=23
+WartoscNetto=1000.00
+WartoscVAT=230.00
+[Pozycja]
+NazwaTowaru=Licencja oprogramowania księgowego
+Ilosc=2.000
+CenaNetto=150.00
+StawkaVAT=23
+WartoscNetto=300.00
+WartoscVAT=69.00
+[KoniecFaktury]
+[Faktura]
+NrFaktury=FV/2026/002
+DataWystawienia=2026-01-20
+NIPNabywcy=7891234560
+NazwaNabywcy=Hurtownia Świeżych Produktów Jan Nowak
+Brutto=540.00
+[Pozycja]
+NazwaTowaru=Jabłka Grójeckie
+Ilosc=100.000
+CenaNetto=4.00
+StawkaVAT=5
+WartoscNetto=400.00
+WartoscVAT=20.00
+[Pozycja]
+NazwaTowaru=Gruszki Konferencja
+Ilosc=50.000
+CenaNetto=6.00
+StawkaVAT=5
+WartoscNetto=300.00
+WartoscVAT=15.00
+[Pozycja]
+NazwaTowaru=Opakowania kartonowe
+Ilosc=20.000
+CenaNetto=2.50
+StawkaVAT=23
+WartoscNetto=50.00
+WartoscVAT=11.50
+[KoniecFaktury]
