@@ -84,7 +84,15 @@
 - [x] Integracja: appStore, Sidebar, ImportStep, ExportStep, PreviewStep, ValidationStep, HistoryStep, xmlExporter, validator
 - [x] Testy: `JpkPkpirGenerator.test.ts` — 57 testów
 
-### 2.7 Generyczny silnik XML
+### 2.7 JPK_EWP(4) — nowy generator (ewidencja przychodów / ryczałt)
+- [x] Schemat XSD JPK_EWP(4) (namespace 10301) — już w /schemas
+- [x] Zaimplementuj `JpkEwpGenerator.ts` (Naglowek, Podmiot1+Kasowy_PIT, EWPWiersz K_1..K_10, EWPCtrl)
+- [x] Dodaj typ JPK_EWP do core/models/types.ts i renderer/types
+- [x] Dodaj JPK_EWP_WIERSZ_FIELDS do JpkFieldDefinitions.ts (10 pól)
+- [x] Integracja: appStore, Sidebar, ImportStep, ExportStep, PreviewStep, ValidationStep, HistoryStep, xmlExporter, validator
+- [x] Testy: `JpkEwpGenerator.test.ts` — 42 testy
+
+### 2.8 Generyczny silnik XML
 - [x] Refaktor: wydziel wspólną logikę (nagłówek, escape, formatowanie) do `XmlGeneratorEngine.ts`
 - [x] Zdefiniuj interfejs `XmlGenerator` i zarejestruj generatory w registry
 
@@ -191,11 +199,11 @@
 |------|--------|-------|
 | 0 — Przygotowanie | ✅ Done | — |
 | 1 — Core (parsery + mapowanie) | ✅ Done | 309 tests |
-| 2 — Generatory XML | ✅ Done | 690 tests (14 XSD, +V7K 39, +PKPIR 57) |
+| 2 — Generatory XML | ✅ Done | 732 tests (14 XSD, +V7K 39, +PKPIR 57, +EWP 42) |
 | 3 — UI rozszerzenia | ✅ Done | Web typecheck OK |
 | 4 — Zustand stores | ✅ Done | 632 tests |
 | 5 — Electron main | ✅ Done | Build OK |
-| 6 — Jakość | 🔶 In progress | 866 unit + 1 E2E |
+| 6 — Jakość | 🔶 In progress | 908 unit + 1 E2E |
 | 7 — Release | ⬜ Not started | — |
 
 ### Pozostałe zadania (Faza 3-5)

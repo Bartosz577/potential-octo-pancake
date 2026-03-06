@@ -191,6 +191,23 @@ export const JPK_PKPIR_WIERSZ_FIELDS: JpkFieldDef[] = [
 ]
 
 // ═══════════════════════════════════════════════════════
+//  JPK_EWP (Ewidencja Przychodów — ryczałt)
+// ═══════════════════════════════════════════════════════
+
+export const JPK_EWP_WIERSZ_FIELDS: JpkFieldDef[] = [
+  { name: 'K_1', label: 'Lp.', type: 'integer', required: true, description: 'Liczba porządkowa wiersza', synonyms: ['lp', 'nr', 'numer', 'wiersz', 'pozycja'] },
+  { name: 'K_2', label: 'Data wpisu', type: 'date', required: true, description: 'Data wpisu do ewidencji', synonyms: ['data', 'data_wpisu'] },
+  { name: 'K_3', label: 'Data przychodu', type: 'date', required: true, description: 'Data uzyskania przychodu', synonyms: ['data_przychodu', 'data_uzyskania'] },
+  { name: 'K_4', label: 'Nr dowodu', type: 'string', required: true, description: 'Numer dowodu księgowego', synonyms: ['dowod', 'nr_dowodu', 'numer_dowodu', 'dokument', 'faktura'] },
+  { name: 'K_5', label: 'Nr KSeF', type: 'string', required: false, description: 'Numer KSeF faktury', synonyms: ['ksef', 'nr_ksef', 'numer_ksef'] },
+  { name: 'K_6', label: 'Kod kraju', type: 'country', required: false, description: 'Kod kraju kontrahenta', synonyms: ['kod_kraju', 'kraj'] },
+  { name: 'K_7', label: 'NIP kontrahenta', type: 'nip', required: false, description: 'NIP kontrahenta', synonyms: ['nip', 'nip_kontrahenta'] },
+  { name: 'K_8', label: 'Kwota przychodu', type: 'decimal', required: true, description: 'Kwota przychodu w PLN', synonyms: ['przychod', 'kwota', 'kwota_przychodu', 'wartosc'] },
+  { name: 'K_9', label: 'Stawka podatku', type: 'string', required: true, description: 'Stawka ryczałtu (17, 15, 14, 12.5, 12, 10, 8.5, 5.5, 3)', synonyms: ['stawka', 'stawka_podatku', 'ryczalt', 'stawka_ryczaltu', 'procent'] },
+  { name: 'K_10', label: 'Uwagi', type: 'string', required: false, description: 'Uwagi / adnotacje', synonyms: ['uwagi', 'komentarz', 'notatka'] },
+]
+
+// ═══════════════════════════════════════════════════════
 //  Section definitions (for registry / lookup)
 // ═══════════════════════════════════════════════════════
 
@@ -214,6 +231,11 @@ export const JPK_SECTIONS: Record<string, JpkSectionDef> = {
     sectionName: 'PKPIRWiersz',
     label: 'KPiR — wiersze',
     fields: JPK_PKPIR_WIERSZ_FIELDS,
+  },
+  'JPK_EWP.EWPWiersz': {
+    sectionName: 'EWPWiersz',
+    label: 'EWP — ewidencja przychodów',
+    fields: JPK_EWP_WIERSZ_FIELDS,
   },
 }
 

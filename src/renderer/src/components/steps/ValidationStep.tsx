@@ -49,7 +49,8 @@ const TAB_LABELS: Record<JpkType, string> = {
   JPK_FA: 'FA',
   JPK_MAG: 'MAG',
   JPK_WB: 'WB',
-  JPK_PKPIR: 'PKPiR'
+  JPK_PKPIR: 'PKPiR',
+  JPK_EWP: 'EWP'
 }
 
 function SeverityIcon({

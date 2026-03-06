@@ -17,7 +17,8 @@ const JPK_LABELS: Record<JpkType, string> = {
   JPK_FA: 'FA',
   JPK_MAG: 'MAG',
   JPK_WB: 'WB',
-  JPK_PKPIR: 'PKPiR'
+  JPK_PKPIR: 'PKPiR',
+  JPK_EWP: 'EWP'
 }
 
 const JPK_COLORS: Record<JpkType, string> = {
@@ -25,10 +26,11 @@ const JPK_COLORS: Record<JpkType, string> = {
   JPK_FA: 'bg-purple-500/15 text-purple-400',
   JPK_MAG: 'bg-amber-500/15 text-amber-400',
   JPK_WB: 'bg-cyan-500/15 text-cyan-400',
-  JPK_PKPIR: 'bg-emerald-500/15 text-emerald-400'
+  JPK_PKPIR: 'bg-emerald-500/15 text-emerald-400',
+  JPK_EWP: 'bg-rose-500/15 text-rose-400'
 }
 
-const ALL_TYPES: JpkType[] = ['JPK_VDEK', 'JPK_FA', 'JPK_MAG', 'JPK_WB', 'JPK_PKPIR']
+const ALL_TYPES: JpkType[] = ['JPK_VDEK', 'JPK_FA', 'JPK_MAG', 'JPK_WB', 'JPK_PKPIR', 'JPK_EWP']
 
 function formatDate(iso: string): string {
   const d = new Date(iso)

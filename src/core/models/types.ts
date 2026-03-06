@@ -1,10 +1,10 @@
 // ── Core data models for JPK Universal Converter ──
 
 /** Supported JPK structure types */
-export type JpkType = 'JPK_VDEK' | 'JPK_FA' | 'JPK_MAG' | 'JPK_WB' | 'JPK_PKPIR'
+export type JpkType = 'JPK_VDEK' | 'JPK_FA' | 'JPK_MAG' | 'JPK_WB' | 'JPK_PKPIR' | 'JPK_EWP'
 
 /** Sub-type within a JPK structure */
-export type SubType = 'SprzedazWiersz' | 'ZakupWiersz' | 'Faktura' | 'FakturaWiersz' | 'WZ' | 'PZ' | 'RW' | 'MM' | 'PKPIRWiersz'
+export type SubType = 'SprzedazWiersz' | 'ZakupWiersz' | 'Faktura' | 'FakturaWiersz' | 'WZ' | 'PZ' | 'RW' | 'MM' | 'PKPIRWiersz' | 'EWPWiersz'
 
 /** Known ERP systems */
 export type ErpSystem = 'NAMOS' | 'ESO' | 'UNKNOWN'

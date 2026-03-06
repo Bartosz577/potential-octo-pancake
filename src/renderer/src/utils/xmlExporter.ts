@@ -8,12 +8,14 @@ import '../../../core/generators/JpkFaGenerator'
 import '../../../core/generators/JpkMagGenerator'
 import '../../../core/generators/JpkWbGenerator'
 import '../../../core/generators/JpkPkpirGenerator'
+import '../../../core/generators/JpkEwpGenerator'
 import type { V7mGeneratorInput } from '../../../core/generators/JpkV7mGenerator'
 import type { V7kGeneratorInput } from '../../../core/generators/JpkV7kGenerator'
 import type { FaGeneratorInput } from '../../../core/generators/JpkFaGenerator'
 import type { MagGeneratorInput, MagDokument } from '../../../core/generators/JpkMagGenerator'
 import type { WbGeneratorInput, WbWiersz } from '../../../core/generators/JpkWbGenerator'
 import type { PkpirGeneratorInput } from '../../../core/generators/JpkPkpirGenerator'
+import type { EwpGeneratorInput } from '../../../core/generators/JpkEwpGenerator'
 import type { ColumnMapping } from '../../../core/mapping/AutoMapper'
 import type { ParsedFile, JpkType } from '../types'
 import type { CompanyData, PeriodData } from '../stores/companyStore'
@@ -35,7 +37,8 @@ const JPK_REGISTRY_KEYS: Record<JpkType, string> = {
   JPK_FA: 'JPK_FA',
   JPK_MAG: 'JPK_MAG',
   JPK_WB: 'JPK_WB',
-  JPK_PKPIR: 'JPK_PKPIR'
+  JPK_PKPIR: 'JPK_PKPIR',
+  JPK_EWP: 'JPK_EWP'
 }
 
 const JPK_FILE_PREFIXES: Record<JpkType, string> = {
@@ -43,7 +46,8 @@ const JPK_FILE_PREFIXES: Record<JpkType, string> = {
   JPK_FA: 'JPK_FA',
   JPK_MAG: 'JPK_MAG',
   JPK_WB: 'JPK_WB',
-  JPK_PKPIR: 'JPK_PKPIR'
+  JPK_PKPIR: 'JPK_PKPIR',
+  JPK_EWP: 'JPK_EWP'
 }
 
 // Convert file rows to Record<string, string>[] using column mappings
@@ -263,6 +267,30 @@ function buildPkpirInput(
   }
 }
 
+function buildEwpInput(
+  file: ParsedFile,
+  records: Record<string, string>[],
+  company: CompanyData,
+  period: PeriodData
+): EwpGeneratorInput {
+  const mm = String(period.month).padStart(2, '0')
+  return {
+    naglowek: {
+      celZlozenia: period.celZlozenia,
+      dataOd: file.dateFrom || `${period.year}-${mm}-01`,
+      dataDo: file.dateTo || `${period.year}-12-31`,
+      kodUrzedu: company.kodUrzedu
+    },
+    podmiot: {
+      typ: 'niefizyczna',
+      nip: normalizeNip(company.nip),
+      pelnaNazwa: company.fullName,
+      email: company.email
+    },
+    wiersze: records
+  }
+}
+
 function buildGeneratorInput(
   file: ParsedFile,
   records: Record<string, string>[],
@@ -283,6 +311,8 @@ function buildGeneratorInput(
       return buildWbInput(file, records, company, period)
     case 'JPK_PKPIR':
       return buildPkpirInput(file, records, company, period)
+    case 'JPK_EWP':
+      return buildEwpInput(file, records, company, period)
   }
 }
 
