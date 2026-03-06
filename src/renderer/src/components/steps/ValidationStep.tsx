@@ -20,6 +20,7 @@ import { useMappingStore } from '@renderer/stores/mappingStore'
 import { useCompanyStore } from '@renderer/stores/companyStore'
 import {
   validateFiles,
+  validateExistingJpk,
   applyFixes,
   type ValidationReport,
   type ValidationGroup,
@@ -283,7 +284,75 @@ function SummaryBanner({
   )
 }
 
-export function ValidationStep(): React.JSX.Element {
+function StandaloneValidationView(): React.JSX.Element {
+  const { setCurrentStep, setMode, setValidationXml, validationXml, validationJpkLabel } = useAppStore()
+
+  const report = useMemo(() => {
+    if (!validationXml) return null
+    return validateExistingJpk(validationXml)
+  }, [validationXml])
+
+  const handleBack = useCallback(() => {
+    setMode('conversion')
+    setValidationXml(null)
+    setCurrentStep(1)
+  }, [setMode, setValidationXml, setCurrentStep])
+
+  return (
+    <div className="flex-1 flex flex-col min-h-0">
+      {/* Header */}
+      <div className="px-6 pt-5 pb-0">
+        <div className="flex items-center gap-2 mb-1">
+          <ShieldCheck className="w-5 h-5 text-accent" />
+          <h1 className="text-xl font-semibold text-text-primary">
+            Walidacja pliku{validationJpkLabel ? `: ${validationJpkLabel}` : ''}
+          </h1>
+        </div>
+        <p className="text-sm text-text-secondary mb-4">
+          Sprawdzenie poprawności istniejącego pliku JPK XML
+        </p>
+      </div>
+
+      {/* Scrollable content */}
+      <div className="flex-1 overflow-auto px-6 pb-4 flex flex-col gap-5">
+        {report ? (
+          <>
+            <SummaryBanner
+              totalErrors={report.errorCount}
+              totalWarnings={report.warningCount}
+              totalAutoFixes={0}
+              onFixAll={() => {}}
+            />
+
+            {report.groups.map((group) => (
+              <GroupCard key={group.category} group={group} onApplyFixes={() => {}} />
+            ))}
+          </>
+        ) : (
+          <div className="flex-1 flex items-center justify-center">
+            <div className="flex items-center gap-2 text-text-muted text-sm">
+              <Info className="w-4 h-4" />
+              Brak pliku do walidacji
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Footer */}
+      <div className="px-6 py-3 flex justify-start border-t border-border bg-bg-app">
+        <button
+          onClick={handleBack}
+          className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-colors"
+        >
+          <ChevronLeft className="w-4 h-4" />
+          Wróć
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function ConversionValidationView(): React.JSX.Element {
   const { files } = useImportStore()
   const { setCurrentStep } = useAppStore()
   const { activeMappings } = useMappingStore()
@@ -392,4 +461,14 @@ export function ValidationStep(): React.JSX.Element {
       </div>
     </div>
   )
+}
+
+export function ValidationStep(): React.JSX.Element {
+  const { mode } = useAppStore()
+
+  if (mode === 'validation') {
+    return <StandaloneValidationView />
+  }
+
+  return <ConversionValidationView />
 }

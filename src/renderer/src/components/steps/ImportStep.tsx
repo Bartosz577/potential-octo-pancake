@@ -14,9 +14,11 @@ import {
   BookOpen,
   GitMerge,
   Download,
-  Trash2
+  Trash2,
+  ShieldCheck
 } from 'lucide-react'
 import { mergeJpkFiles } from '../../../../core/JpkMerger'
+import { detectJpkLabel } from '@renderer/utils/validator'
 import { useImportStore } from '@renderer/stores/importStore'
 import { useAppStore } from '@renderer/stores/appStore'
 import { useToast } from '@renderer/stores/toastStore'
@@ -486,6 +488,147 @@ function MergeSection(): React.JSX.Element {
   )
 }
 
+// ── ValidateSection — validate an existing JPK XML file ──
+
+function ValidateSection(): React.JSX.Element {
+  const toast = useToast()
+  const { setMode, setValidationXml, setCurrentStep } = useAppStore()
+  const [expanded, setExpanded] = useState(false)
+  const [selectedFile, setSelectedFile] = useState<{ path: string; name: string } | null>(null)
+  const [detectedLabel, setDetectedLabel] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const handleSelectFile = useCallback(async () => {
+    const paths = await window.api.openFileDialog()
+    const xmlPaths = paths.filter((p) => p.toLowerCase().endsWith('.xml'))
+    if (xmlPaths.length === 0) {
+      toast.warning('Wybierz plik XML do walidacji')
+      return
+    }
+    const filePath = xmlPaths[0]
+    const fileName = filePath.split(/[/\\]/).pop() || filePath
+
+    setLoading(true)
+    setError(null)
+    setDetectedLabel(null)
+    try {
+      const { content } = await window.api.readFile(filePath)
+      const label = detectJpkLabel(content)
+      setSelectedFile({ path: filePath, name: fileName })
+      setDetectedLabel(label)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err))
+    } finally {
+      setLoading(false)
+    }
+  }, [toast])
+
+  const handleValidate = useCallback(async () => {
+    if (!selectedFile) return
+    setLoading(true)
+    setError(null)
+    try {
+      const { content } = await window.api.readFile(selectedFile.path)
+      setValidationXml(content, detectedLabel)
+      setMode('validation')
+      setCurrentStep(5)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err))
+    } finally {
+      setLoading(false)
+    }
+  }, [selectedFile, detectedLabel, setValidationXml, setMode, setCurrentStep])
+
+  const handleClear = useCallback(() => {
+    setSelectedFile(null)
+    setDetectedLabel(null)
+    setError(null)
+  }, [])
+
+  return (
+    <div className="rounded-lg border border-border bg-bg-card/50">
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-bg-hover/50 transition-colors rounded-lg"
+      >
+        <ShieldCheck className="w-4 h-4 text-text-muted" />
+        <span className="text-sm font-medium text-text-primary flex-1">
+          Waliduj plik JPK XML
+        </span>
+        <ChevronDown
+          className={`w-4 h-4 text-text-muted transition-transform ${expanded ? 'rotate-180' : ''}`}
+        />
+      </button>
+
+      {expanded && (
+        <div className="px-4 pb-4 flex flex-col gap-3">
+          <p className="text-xs text-text-muted">
+            Sprawdź poprawność istniejącego pliku JPK XML — strukturę, NIP, sumy kontrolne i zgodność ze schematem XSD.
+          </p>
+
+          {/* File selection */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleSelectFile}
+              disabled={loading}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium bg-bg-hover hover:bg-border text-text-secondary transition-colors disabled:opacity-50"
+            >
+              <FolderOpen className="w-3.5 h-3.5" />
+              Wybierz plik XML
+            </button>
+            {selectedFile && (
+              <button
+                onClick={handleClear}
+                className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-xs text-text-muted hover:text-error hover:bg-error/10 transition-colors"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            )}
+          </div>
+
+          {/* Selected file */}
+          {selectedFile && (
+            <div className="flex items-center gap-2 px-3 py-2 rounded bg-bg-hover/50 text-xs">
+              <FileText className="w-3.5 h-3.5 text-text-muted shrink-0" />
+              <span className="flex-1 font-mono text-text-secondary truncate">
+                {selectedFile.name}
+              </span>
+              {detectedLabel && (
+                <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-accent/15 text-accent">
+                  {detectedLabel}
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* Error */}
+          {error && (
+            <div className="flex items-start gap-2 px-3 py-2 rounded-lg bg-error/5 border border-error/20 text-xs text-error">
+              <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+              <span>{error}</span>
+            </div>
+          )}
+
+          {/* Validate button */}
+          <button
+            onClick={handleValidate}
+            disabled={!selectedFile || loading}
+            className={`flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              selectedFile && !loading
+                ? 'bg-accent hover:bg-accent-hover text-white'
+                : 'bg-bg-hover text-text-muted cursor-not-allowed'
+            }`}
+          >
+            <ShieldCheck className="w-4 h-4" />
+            {loading ? 'Ładowanie...' : 'Waliduj plik'}
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export function ImportStep(): React.JSX.Element {
   const { files, addFile, updateFile, removeFile } = useImportStore()
   const { setCurrentStep } = useAppStore()
@@ -685,6 +828,9 @@ export function ImportStep(): React.JSX.Element {
 
       {/* Merge section */}
       <MergeSection />
+
+      {/* Validate section */}
+      <ValidateSection />
 
       {/* Footer with Next button */}
       <div className="mt-auto pt-4 flex justify-end">
