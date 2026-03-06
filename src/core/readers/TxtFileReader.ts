@@ -65,7 +65,7 @@ export function detectSeparator(lines: string[]): SeparatorResult {
 function hasMetadataPrefix(lines: string[], separator: string): boolean {
   if (lines.length === 0) return false
 
-  const JPK_TYPE_PATTERN = /^JPK_(VDEK|FA|MAG|WB|V7M|KR|PKPIR|EWP)/
+  const JPK_TYPE_PATTERN = /^JPK_(VDEK|V7M|V7K|FA|FA_RR|MAG|WB|PKPIR|EWP|KR_PD|KR|ST_KR|ST)/
 
   const sample = lines.slice(0, Math.min(5, lines.length))
   let matchCount = 0
@@ -86,13 +86,19 @@ function hasMetadataPrefix(lines: string[], separator: string): boolean {
 /**
  * Extract metadata from the first row's metadata columns.
  */
+/** Normalize JPK type aliases so runtime values always match the JpkType union */
+function normalizeJpkType(raw: string): string {
+  if (raw === 'JPK_V7M' || raw === 'JPK_V7K') return 'JPK_VDEK'
+  return raw
+}
+
 function extractMetadata(firstRow: string[]): Record<string, string> {
   if (firstRow.length <= META_COLUMNS) return {}
 
   return {
     pointCode: firstRow[0],
     system: firstRow[1],
-    jpkType: firstRow[2],
+    jpkType: normalizeJpkType(firstRow[2]),
     subType: firstRow[3],
     dateFrom: firstRow[4],
     dateTo: firstRow[5]

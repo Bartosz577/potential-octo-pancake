@@ -8,6 +8,12 @@ function generateId(): string {
   return `file_${Date.now()}_${++idCounter}`
 }
 
+/** Normalize JPK type aliases (JPK_V7M/JPK_V7K → JPK_VDEK) */
+function normalizeJpkType(raw: string): JpkType {
+  if (raw === 'JPK_V7M' || raw === 'JPK_V7K') return 'JPK_VDEK'
+  return raw as JpkType
+}
+
 export function parseTxtFile(content: string, filename: string, fileSize = 0): ParsedFile {
   const lines = content
     .split(/\r?\n/)
@@ -27,7 +33,7 @@ export function parseTxtFile(content: string, filename: string, fileSize = 0): P
 
   const pointCode = firstRow[0]
   const system = firstRow[1] as ErpSystem
-  const jpkType = firstRow[2] as JpkType
+  const jpkType = normalizeJpkType(firstRow[2])
   const subType = firstRow[3] as SubType
   const dateFrom = firstRow[4]
   const dateTo = firstRow[5]

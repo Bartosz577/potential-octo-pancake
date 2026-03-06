@@ -19,7 +19,7 @@ import { useToast } from '@renderer/stores/toastStore'
 import { FormatBadge } from '@renderer/components/shared/FormatBadge'
 import type { ParsedFile, JpkType, FileFormat } from '@renderer/types'
 
-const ACCEPTED_EXTENSIONS = ['.txt', '.csv', '.xlsx', '.xls', '.json', '.xml', '.dat', '.tsv']
+const ACCEPTED_EXTENSIONS = ['.txt', '.csv', '.xlsx', '.xls', '.json', '.xml', '.dat', '.tsv', '.epp']
 
 const ENCODING_OPTIONS = [
   { value: 'auto', label: 'Auto-detect' },
@@ -273,6 +273,12 @@ function AutoDetectPanel({ files }: { files: ParsedFile[] }): React.JSX.Element 
   )
 }
 
+/** Normalize JPK type aliases (JPK_V7M/JPK_V7K → JPK_VDEK) */
+function normalizeJpkType(raw: string): JpkType {
+  if (raw === 'JPK_V7M' || raw === 'JPK_V7K') return 'JPK_VDEK'
+  return raw as JpkType
+}
+
 /** Convert serialized IPC result into a ParsedFile */
 function resultToParsedFile(
   result: SerializedFileReadResult,
@@ -290,7 +296,7 @@ function resultToParsedFile(
     filename,
     filePath,
     system: (meta.system as ParsedFile['system']) || 'UNKNOWN',
-    jpkType: (meta.jpkType as ParsedFile['jpkType']) || 'JPK_VDEK',
+    jpkType: normalizeJpkType(meta.jpkType || 'JPK_VDEK'),
     subType: (meta.subType as ParsedFile['subType']) || 'SprzedazWiersz',
     pointCode: meta.pointCode || '',
     dateFrom: meta.dateFrom || '',
