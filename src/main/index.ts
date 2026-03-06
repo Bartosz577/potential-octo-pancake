@@ -91,7 +91,7 @@ function createWindow(): void {
       filters: [
         {
           name: 'Pliki danych',
-          extensions: ['txt', 'csv', 'xlsx', 'xls', 'json', 'xml', 'dat', 'tsv']
+          extensions: ['txt', 'csv', 'xlsx', 'xls', 'json', 'xml', 'dat', 'tsv', 'epp', 'dbf', 'ods']
         }
       ],
       properties: ['openFile', 'multiSelections']

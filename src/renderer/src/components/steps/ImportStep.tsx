@@ -11,8 +11,12 @@ import {
   Info,
   AlertTriangle,
   Wallet,
-  BookOpen
+  BookOpen,
+  GitMerge,
+  Download,
+  Trash2
 } from 'lucide-react'
+import { mergeJpkFiles } from '../../../../core/JpkMerger'
 import { useImportStore } from '@renderer/stores/importStore'
 import { useAppStore } from '@renderer/stores/appStore'
 import { useToast } from '@renderer/stores/toastStore'
@@ -312,6 +316,176 @@ function resultToParsedFile(
   }
 }
 
+// ── MergeSection — merge multiple JPK XML files ──
+
+interface MergeFile {
+  path: string
+  name: string
+}
+
+function MergeSection(): React.JSX.Element {
+  const toast = useToast()
+  const [expanded, setExpanded] = useState(false)
+  const [mergeFiles, setMergeFiles] = useState<MergeFile[]>([])
+  const [mergeLoading, setMergeLoading] = useState(false)
+  const [mergeError, setMergeError] = useState<string | null>(null)
+
+  const handleSelectFiles = useCallback(async () => {
+    const paths = await window.api.openFileDialog()
+    const xmlPaths = paths.filter((p) => p.toLowerCase().endsWith('.xml'))
+    if (xmlPaths.length === 0) {
+      toast.warning('Wybierz pliki XML do scalenia')
+      return
+    }
+    const newFiles = xmlPaths.map((p) => ({
+      path: p,
+      name: p.split(/[/\\]/).pop() || p,
+    }))
+    setMergeFiles((prev) => {
+      const existingPaths = new Set(prev.map((f) => f.path))
+      const unique = newFiles.filter((f) => !existingPaths.has(f.path))
+      return [...prev, ...unique]
+    })
+    setMergeError(null)
+  }, [toast])
+
+  const handleRemoveFile = useCallback((path: string) => {
+    setMergeFiles((prev) => prev.filter((f) => f.path !== path))
+    setMergeError(null)
+  }, [])
+
+  const handleClearAll = useCallback(() => {
+    setMergeFiles([])
+    setMergeError(null)
+  }, [])
+
+  const handleMerge = useCallback(async () => {
+    if (mergeFiles.length < 2) {
+      setMergeError('Wybierz co najmniej 2 pliki do scalenia')
+      return
+    }
+
+    setMergeLoading(true)
+    setMergeError(null)
+
+    try {
+      // Read all files
+      const contents: string[] = []
+      for (const f of mergeFiles) {
+        const { content } = await window.api.readFile(f.path)
+        contents.push(content)
+      }
+
+      // Merge
+      const merged = mergeJpkFiles(contents)
+
+      // Save
+      const defaultName = `JPK_MERGED_${new Date().toISOString().slice(0, 10)}.xml`
+      const savedPath = await window.api.saveFile(defaultName, merged)
+
+      if (savedPath) {
+        toast.success(`Scalony plik zapisano: ${savedPath.split(/[/\\]/).pop()}`)
+        setMergeFiles([])
+      }
+    } catch (err) {
+      setMergeError(err instanceof Error ? err.message : String(err))
+    } finally {
+      setMergeLoading(false)
+    }
+  }, [mergeFiles, toast])
+
+  return (
+    <div className="rounded-lg border border-border bg-bg-card/50">
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-bg-hover/50 transition-colors rounded-lg"
+      >
+        <GitMerge className="w-4 h-4 text-text-muted" />
+        <span className="text-sm font-medium text-text-primary flex-1">
+          Scalanie plików JPK XML
+        </span>
+        <ChevronDown
+          className={`w-4 h-4 text-text-muted transition-transform ${expanded ? 'rotate-180' : ''}`}
+        />
+      </button>
+
+      {expanded && (
+        <div className="px-4 pb-4 flex flex-col gap-3">
+          <p className="text-xs text-text-muted">
+            Scal wiele plików JPK tego samego typu (ten sam KodFormularza, WariantFormularza i NIP) w jeden plik.
+          </p>
+
+          {/* File selection */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleSelectFiles}
+              disabled={mergeLoading}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium bg-bg-hover hover:bg-border text-text-secondary transition-colors disabled:opacity-50"
+            >
+              <FolderOpen className="w-3.5 h-3.5" />
+              Dodaj pliki XML
+            </button>
+            {mergeFiles.length > 0 && (
+              <button
+                onClick={handleClearAll}
+                className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-xs text-text-muted hover:text-error hover:bg-error/10 transition-colors"
+              >
+                <Trash2 className="w-3 h-3" />
+                Wyczyść
+              </button>
+            )}
+          </div>
+
+          {/* Selected files list */}
+          {mergeFiles.length > 0 && (
+            <div className="flex flex-col gap-1">
+              {mergeFiles.map((f) => (
+                <div
+                  key={f.path}
+                  className="flex items-center gap-2 px-3 py-1.5 rounded bg-bg-hover/50 text-xs group"
+                >
+                  <FileText className="w-3.5 h-3.5 text-text-muted shrink-0" />
+                  <span className="flex-1 font-mono text-text-secondary truncate">
+                    {f.name}
+                  </span>
+                  <button
+                    onClick={() => handleRemoveFile(f.path)}
+                    className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-error/15 hover:text-error text-text-muted transition-all"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Error */}
+          {mergeError && (
+            <div className="flex items-start gap-2 px-3 py-2 rounded-lg bg-error/5 border border-error/20 text-xs text-error">
+              <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+              <span>{mergeError}</span>
+            </div>
+          )}
+
+          {/* Merge button */}
+          <button
+            onClick={handleMerge}
+            disabled={mergeFiles.length < 2 || mergeLoading}
+            className={`flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              mergeFiles.length >= 2 && !mergeLoading
+                ? 'bg-accent hover:bg-accent-hover text-white'
+                : 'bg-bg-hover text-text-muted cursor-not-allowed'
+            }`}
+          >
+            <Download className="w-4 h-4" />
+            {mergeLoading ? 'Scalanie...' : `Scal i pobierz (${mergeFiles.length} plików)`}
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export function ImportStep(): React.JSX.Element {
   const { files, addFile, updateFile, removeFile } = useImportStore()
   const { setCurrentStep } = useAppStore()
@@ -508,6 +682,9 @@ export function ImportStep(): React.JSX.Element {
 
       {/* Auto-detect panel */}
       <AutoDetectPanel files={files} />
+
+      {/* Merge section */}
+      <MergeSection />
 
       {/* Footer with Next button */}
       <div className="mt-auto pt-4 flex justify-end">
