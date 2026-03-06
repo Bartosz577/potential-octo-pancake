@@ -5,6 +5,7 @@ import { XlsxFileReader } from './XlsxFileReader'
 import { JsonFileReader } from './JsonFileReader'
 import { XmlFileReader } from './XmlFileReader'
 import { EppFileReader } from './EppFileReader'
+import { DbfFileReader } from './DbfFileReader'
 
 /**
  * FileReaderRegistry — central registry for all file reader plugins.
@@ -92,6 +93,7 @@ export function createDefaultRegistry(): FileReaderRegistry {
   // Register in order of specificity:
   // 1. Binary formats first (more specific canRead checks)
   registry.register(new XlsxFileReader())
+  registry.register(new DbfFileReader())
   // 2. Section-based text formats (EPP before generic text)
   registry.register(new EppFileReader())
   // 3. Structured text formats

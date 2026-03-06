@@ -19,7 +19,7 @@ import { useToast } from '@renderer/stores/toastStore'
 import { FormatBadge } from '@renderer/components/shared/FormatBadge'
 import type { ParsedFile, JpkType, FileFormat } from '@renderer/types'
 
-const ACCEPTED_EXTENSIONS = ['.txt', '.csv', '.xlsx', '.xls', '.json', '.xml', '.dat', '.tsv', '.epp']
+const ACCEPTED_EXTENSIONS = ['.txt', '.csv', '.xlsx', '.xls', '.json', '.xml', '.dat', '.tsv', '.epp', '.dbf']
 
 const ENCODING_OPTIONS = [
   { value: 'auto', label: 'Auto-detect' },
