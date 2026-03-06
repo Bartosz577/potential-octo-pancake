@@ -130,7 +130,7 @@ function optionalTag(name: string, value: string | undefined, indent: string): s
 
 function percentTag(name: string, value: string | number | undefined): string {
   if (value === undefined || value === '') return ''
-  const num = typeof value === 'number' ? value : parseFloat(String(value))
+  const num = typeof value === 'number' ? value : parseFloat(String(value).replace(',', '.'))
   if (isNaN(num)) return ''
   return `<${name}>${num}</${name}>`
 }

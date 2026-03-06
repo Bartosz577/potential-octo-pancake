@@ -95,6 +95,26 @@ describe('XmlGeneratorEngine', () => {
     it('rounds properly', () => {
       expect(formatAmount('99.999')).toBe('100.00')
     })
+
+    it('handles comma as decimal separator', () => {
+      expect(formatAmount('1232,85')).toBe('1232.85')
+    })
+
+    it('formats integer string with 2 decimals', () => {
+      expect(formatAmount('100')).toBe('100.00')
+    })
+
+    it('pads single decimal place', () => {
+      expect(formatAmount('1232.8')).toBe('1232.80')
+    })
+
+    it('rounds 3+ decimals to 2', () => {
+      expect(formatAmount('1232.856')).toBe('1232.86')
+    })
+
+    it('handles comma with rounding', () => {
+      expect(formatAmount('99,999')).toBe('100.00')
+    })
   })
 
   // ── formatDeclAmount ──
@@ -122,6 +142,10 @@ describe('XmlGeneratorEngine', () => {
 
     it('handles string input', () => {
       expect(formatDeclAmount('1234.7')).toBe('1235')
+    })
+
+    it('handles comma as decimal separator', () => {
+      expect(formatDeclAmount('1234,7')).toBe('1235')
     })
   })
 
@@ -159,6 +183,10 @@ describe('XmlGeneratorEngine', () => {
     it('returns 0 for NaN', () => {
       expect(formatQuantity('abc')).toBe('0')
     })
+
+    it('handles comma as decimal separator', () => {
+      expect(formatQuantity('3,14')).toBe('3.14')
+    })
   })
 
   // ── parseAmount ──
@@ -182,6 +210,10 @@ describe('XmlGeneratorEngine', () => {
 
     it('parses negative number', () => {
       expect(parseAmount('-50.00')).toBe(-50)
+    })
+
+    it('handles comma as decimal separator', () => {
+      expect(parseAmount('1232,85')).toBe(1232.85)
     })
   })
 

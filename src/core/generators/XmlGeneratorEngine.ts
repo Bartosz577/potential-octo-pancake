@@ -12,23 +12,26 @@ export function escapeXml(value: string): string {
     .replace(/'/g, '&apos;')
 }
 
+function toNumber(value: string | number | undefined): number {
+  if (value === undefined || value === '' || value === null) return NaN
+  if (typeof value === 'number') return value
+  return parseFloat(String(value).replace(',', '.'))
+}
+
 export function formatAmount(value: string | number | undefined): string {
-  if (value === undefined || value === '' || value === null) return '0.00'
-  const num = typeof value === 'number' ? value : parseFloat(String(value))
+  const num = toNumber(value)
   if (isNaN(num)) return '0.00'
   return num.toFixed(2)
 }
 
 export function formatDeclAmount(value: string | number | undefined): string {
-  if (value === undefined || value === '' || value === null) return '0'
-  const num = typeof value === 'number' ? value : parseFloat(String(value))
+  const num = toNumber(value)
   if (isNaN(num)) return '0'
   return String(Math.round(num))
 }
 
 export function formatQuantity(value: string | number | undefined): string {
-  if (value === undefined || value === '' || value === null) return '0'
-  const num = typeof value === 'number' ? value : parseFloat(String(value))
+  const num = toNumber(value)
   if (isNaN(num)) return '0'
   let formatted = num.toFixed(6)
   formatted = formatted.replace(/(\.\d*?)0+$/, '$1').replace(/\.$/, '')
@@ -37,7 +40,7 @@ export function formatQuantity(value: string | number | undefined): string {
 
 export function parseAmount(value: string | undefined): number {
   if (!value || value === '') return 0
-  const num = parseFloat(value)
+  const num = parseFloat(String(value).replace(',', '.'))
   return isNaN(num) ? 0 : num
 }
 
