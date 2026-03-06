@@ -15,9 +15,12 @@ import {
   GitMerge,
   Download,
   Trash2,
-  ShieldCheck
+  ShieldCheck,
+  ArrowUpCircle,
+  CheckCircle2
 } from 'lucide-react'
 import { mergeJpkFiles } from '../../../../core/JpkMerger'
+import { convertJpkVersion, detectUpgradeNeeded } from '../../../../core/JpkVersionConverter'
 import { detectJpkLabel } from '@renderer/utils/validator'
 import { useImportStore } from '@renderer/stores/importStore'
 import { useAppStore } from '@renderer/stores/appStore'
@@ -488,6 +491,94 @@ function MergeSection(): React.JSX.Element {
   )
 }
 
+// ── UpgradeBanner — shown when an imported XML file has an older JPK version ──
+
+interface UpgradeInfo {
+  filePath: string
+  fileName: string
+  label: string
+  kodFormularza: string
+  currentWariant: string
+  targetWariant: string
+}
+
+function UpgradeBanner({
+  upgrade,
+  onUpgrade,
+  onDismiss
+}: {
+  upgrade: UpgradeInfo
+  onUpgrade: () => void
+  onDismiss: () => void
+}): React.JSX.Element {
+  const [upgrading, setUpgrading] = useState(false)
+  const [changes, setChanges] = useState<string[] | null>(null)
+
+  const handleUpgrade = useCallback(async () => {
+    setUpgrading(true)
+    try {
+      const { content } = await window.api.readFile(upgrade.filePath)
+      const result = convertJpkVersion(content)
+      setChanges(result.changes)
+
+      // Save upgraded file
+      const defaultName = upgrade.fileName.replace(/\.xml$/i, `_v${upgrade.targetWariant}.xml`)
+      const savedPath = await window.api.saveFile(defaultName, result.result)
+      if (savedPath) {
+        onUpgrade()
+      }
+    } catch {
+      setUpgrading(false)
+    }
+  }, [upgrade, onUpgrade])
+
+  return (
+    <div className="flex flex-col gap-2 px-4 py-3 bg-warning/5 rounded-lg border border-warning/20">
+      <div className="flex items-start gap-3">
+        <ArrowUpCircle className="w-5 h-5 text-warning shrink-0 mt-0.5" />
+        <div className="flex-1">
+          <p className="text-sm font-medium text-text-primary">
+            Wykryto starszy format {upgrade.label}
+          </p>
+          <p className="text-xs text-text-secondary mt-0.5">
+            Zaktualizować do wersji ({upgrade.targetWariant})? Dodane zostanie oznaczenie KSeF (BFK) i zaktualizowany namespace.
+          </p>
+        </div>
+      </div>
+
+      {changes && (
+        <div className="ml-8 flex flex-col gap-1 px-3 py-2 rounded bg-bg-hover/50 text-xs">
+          {changes.map((c, i) => (
+            <div key={i} className="flex items-center gap-1.5 text-text-secondary">
+              <CheckCircle2 className="w-3 h-3 text-success shrink-0" />
+              {c}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {!changes && (
+        <div className="ml-8 flex items-center gap-2">
+          <button
+            onClick={handleUpgrade}
+            disabled={upgrading}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium bg-accent hover:bg-accent-hover text-white transition-colors disabled:opacity-50"
+          >
+            <ArrowUpCircle className="w-3.5 h-3.5" />
+            {upgrading ? 'Aktualizowanie...' : 'Zaktualizuj automatycznie'}
+          </button>
+          <button
+            onClick={onDismiss}
+            className="px-3 py-1.5 rounded-lg text-xs font-medium text-text-muted hover:text-text-primary hover:bg-bg-hover transition-colors"
+          >
+            Kontynuuj bez zmiany
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── ValidateSection — validate an existing JPK XML file ──
 
 function ValidateSection(): React.JSX.Element {
@@ -636,6 +727,7 @@ export function ImportStep(): React.JSX.Element {
   const [isDragOver, setIsDragOver] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [reloadingFileId, setReloadingFileId] = useState<string | null>(null)
+  const [pendingUpgrade, setPendingUpgrade] = useState<UpgradeInfo | null>(null)
 
   const importFile = useCallback(
     async (filePath: string, filename: string) => {
@@ -643,6 +735,26 @@ export function ImportStep(): React.JSX.Element {
       if (alreadyImported) {
         toast.warning(`Plik "${filename}" jest już zaimportowany`)
         return
+      }
+
+      // Check if XML file needs version upgrade
+      if (filename.toLowerCase().endsWith('.xml')) {
+        try {
+          const { content } = await window.api.readFile(filePath)
+          const upgrade = detectUpgradeNeeded(content)
+          if (upgrade) {
+            setPendingUpgrade({
+              filePath,
+              fileName: filename,
+              label: upgrade.label,
+              kodFormularza: upgrade.kodFormularza,
+              currentWariant: upgrade.currentWariant,
+              targetWariant: upgrade.targetWariant,
+            })
+          }
+        } catch {
+          // Ignore detection errors — continue with normal import
+        }
       }
 
       const result = await window.api.parseFile(filePath)
@@ -818,6 +930,18 @@ export function ImportStep(): React.JSX.Element {
             />
           ))}
         </div>
+      )}
+
+      {/* Upgrade banner */}
+      {pendingUpgrade && (
+        <UpgradeBanner
+          upgrade={pendingUpgrade}
+          onUpgrade={() => {
+            toast.success('Plik zaktualizowany do najnowszej wersji')
+            setPendingUpgrade(null)
+          }}
+          onDismiss={() => setPendingUpgrade(null)}
+        />
       )}
 
       {/* Warnings */}
