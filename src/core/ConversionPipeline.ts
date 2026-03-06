@@ -63,7 +63,7 @@ export interface PipelineConfig {
  * 4. Validate: check required fields, NIP checksums, date ranges
  */
 export class ConversionPipeline {
-  constructor(private registry: FileReaderRegistry) {}
+  constructor(private registry?: FileReaderRegistry) {}
 
   /**
    * Run the full pipeline on a file buffer.
@@ -74,6 +74,9 @@ export class ConversionPipeline {
     // ── Stage 1: Parse ──
     let fileResult: FileReadResult
     try {
+      if (!this.registry) {
+        throw new Error('FileReaderRegistry is required for buffer parsing')
+      }
       fileResult = this.registry.read(buffer, filename)
     } catch (err) {
       issues.push({

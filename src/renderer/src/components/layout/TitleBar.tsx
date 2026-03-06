@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
-import { Minus, Square, X, Copy } from 'lucide-react'
+import { Minus, Square, X, Copy, Sun, Moon } from 'lucide-react'
+import { useThemeStore } from '@renderer/stores/themeStore'
 
 export function TitleBar(): React.JSX.Element {
   const [isMaximized, setIsMaximized] = useState(false)
+  const { theme, toggleTheme } = useThemeStore()
   const isMac = window.api.platform === 'darwin'
 
   useEffect(() => {
@@ -26,6 +28,20 @@ export function TitleBar(): React.JSX.Element {
 
       {/* Spacer — draggable area */}
       <div className="flex-1" />
+
+      {/* Theme toggle */}
+      <button
+        onClick={toggleTheme}
+        className="flex items-center justify-center w-10 h-10 hover:bg-bg-hover transition-colors"
+        style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
+        title="Przełącz motyw"
+      >
+        {theme === 'dark' ? (
+          <Sun className="w-3.5 h-3.5 text-text-secondary" />
+        ) : (
+          <Moon className="w-3.5 h-3.5 text-text-secondary" />
+        )}
+      </button>
 
       {/* Window controls — Windows/Linux only */}
       {!isMac && (

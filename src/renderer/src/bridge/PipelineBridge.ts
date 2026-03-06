@@ -2,7 +2,6 @@ import type { RawSheet } from '../../../core/models/types'
 import type { MappingResult, ColumnMapping } from '../../../core/mapping/AutoMapper'
 import type { PipelineConfig, PipelineResult } from '../../../core/ConversionPipeline'
 import { ConversionPipeline } from '../../../core/ConversionPipeline'
-import { createDefaultRegistry } from '../../../core/readers/FileReaderRegistry'
 import type { ParsedFile } from '../types'
 import type { CompanyData, PeriodData } from '../stores/companyStore'
 import type { FileProcessingResult, FileProcessingStatus } from './types'
@@ -14,7 +13,8 @@ let pipelineInstance: ConversionPipeline | null = null
 
 function getPipeline(): ConversionPipeline {
   if (!pipelineInstance) {
-    pipelineInstance = new ConversionPipeline(createDefaultRegistry())
+    // No registry needed — renderer only uses runOnSheet (files parsed in main process)
+    pipelineInstance = new ConversionPipeline()
   }
   return pipelineInstance
 }

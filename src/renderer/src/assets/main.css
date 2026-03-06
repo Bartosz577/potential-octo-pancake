@@ -5,7 +5,7 @@
   --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
 
-  /* Background colors */
+  /* Background colors (dark theme defaults) */
   --color-bg-app: #0C0E14;
   --color-bg-sidebar: #111318;
   --color-bg-main: #14161E;
@@ -29,6 +29,30 @@
   /* Border colors */
   --color-border: #252838;
   --color-border-active: #4F8EF750;
+}
+
+/* Light theme overrides (outside @layer → higher cascade priority than @theme) */
+:root[data-theme="light"] {
+  --color-bg-app: #f0f1f5;
+  --color-bg-sidebar: #f7f7f9;
+  --color-bg-main: #ffffff;
+  --color-bg-card: #f4f4f6;
+  --color-bg-input: #eeeef2;
+  --color-bg-hover: #e0e1e6;
+
+  --color-accent: #4F8EF7;
+  --color-accent-hover: #3A75E0;
+  --color-accent-subtle: #4F8EF71A;
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+
+  --color-text-primary: #09090b;
+  --color-text-secondary: #52525b;
+  --color-text-muted: #a1a1aa;
+
+  --color-border: #d4d4d8;
+  --color-border-active: #4F8EF74D;
 }
 
 @layer base {
