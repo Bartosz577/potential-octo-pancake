@@ -10,7 +10,8 @@ import {
   HardDrive,
   Info,
   Globe,
-  Clock
+  Clock,
+  RefreshCw
 } from 'lucide-react'
 import { useImportStore } from '@renderer/stores/importStore'
 import { useCompanyStore } from '@renderer/stores/companyStore'
@@ -169,13 +170,24 @@ function HighlightedLine({ line }: { line: string }): React.JSX.Element {
 export function ExportStep(): React.JSX.Element {
   const { files } = useImportStore()
   const { company, period } = useCompanyStore()
-  const { jpkSubtype, setCurrentStep } = useAppStore()
-  const { activeMappings } = useMappingStore()
+  const { jpkSubtype, setCurrentStep, setActiveJpkType, setJpkSubtype, setMode, setValidationXml } = useAppStore()
+  const { activeMappings, clearMappings } = useMappingStore()
+  const { clearFiles } = useImportStore()
   const { addRecord } = useHistoryStore()
   const toast = useToast()
 
   const [copied, setCopied] = useState(false)
   const [activeFileId, setActiveFileId] = useState<string>(files[0]?.id || '')
+
+  const handleNewConversion = useCallback(() => {
+    clearFiles()
+    clearMappings()
+    setActiveJpkType('V7M')
+    setJpkSubtype('V7M')
+    setMode('conversion')
+    setValidationXml(null)
+    setCurrentStep(1)
+  }, [clearFiles, clearMappings, setActiveJpkType, setJpkSubtype, setMode, setValidationXml, setCurrentStep])
 
   const activeFile = files.find((f) => f.id === activeFileId) || files[0]
 
@@ -402,6 +414,13 @@ export function ExportStep(): React.JSX.Element {
             <Clock className="w-4 h-4" />
             Historia
             <ChevronRight className="w-3.5 h-3.5" />
+          </button>
+          <button
+            onClick={handleNewConversion}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium bg-accent hover:bg-accent-hover text-white transition-colors"
+          >
+            <RefreshCw className="w-4 h-4" />
+            Nowa konwersja
           </button>
         </div>
       </div>

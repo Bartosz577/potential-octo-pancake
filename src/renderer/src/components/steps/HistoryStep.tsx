@@ -7,9 +7,13 @@ import {
   FileText,
   Check,
   AlertTriangle,
-  Search
+  Search,
+  RefreshCw
 } from 'lucide-react'
 import { useHistoryStore, type ConversionRecord } from '@renderer/stores/historyStore'
+import { useAppStore } from '@renderer/stores/appStore'
+import { useImportStore } from '@renderer/stores/importStore'
+import { useMappingStore } from '@renderer/stores/mappingStore'
 import type { JpkType } from '@renderer/types'
 
 const JPK_LABELS: Record<JpkType, string> = {
@@ -137,9 +141,22 @@ function RecordRow({
 
 export function HistoryStep(): React.JSX.Element {
   const { records, removeRecord, clearHistory } = useHistoryStore()
+  const { setCurrentStep, setActiveJpkType, setJpkSubtype, setMode, setValidationXml } = useAppStore()
+  const { clearFiles } = useImportStore()
+  const { clearMappings } = useMappingStore()
   const [toast, setToast] = useState<string | null>(null)
   const [filterType, setFilterType] = useState<JpkType | 'ALL'>('ALL')
   const [searchQuery, setSearchQuery] = useState('')
+
+  const handleNewConversion = useCallback(() => {
+    clearFiles()
+    clearMappings()
+    setActiveJpkType('V7M')
+    setJpkSubtype('V7M')
+    setMode('conversion')
+    setValidationXml(null)
+    setCurrentStep(1)
+  }, [clearFiles, clearMappings, setActiveJpkType, setJpkSubtype, setMode, setValidationXml, setCurrentStep])
 
   const filtered = useMemo(() => {
     let list = records
@@ -179,6 +196,13 @@ export function HistoryStep(): React.JSX.Element {
         <div className="flex items-center gap-2 mb-1">
           <Clock className="w-5 h-5 text-accent" />
           <h1 className="text-xl font-semibold text-text-primary">Historia konwersji</h1>
+          <button
+            onClick={handleNewConversion}
+            className="ml-auto flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-accent hover:bg-accent-hover text-white transition-colors"
+          >
+            <RefreshCw className="w-4 h-4" />
+            Nowa konwersja
+          </button>
         </div>
         <p className="text-sm text-text-secondary mb-4">
           Poprzednie eksporty XML — pobierz ponownie lub usuń
