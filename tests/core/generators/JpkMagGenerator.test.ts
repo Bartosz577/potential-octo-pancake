@@ -10,6 +10,7 @@ import {
   MagDokument,
   MagInwentaryzacja,
 } from '../../../src/core/generators/JpkMagGenerator'
+import { generatorRegistry } from '../../../src/core/generators/XmlGeneratorEngine'
 
 // ── Test fixtures ──
 
@@ -1026,6 +1027,42 @@ describe('JpkMagGenerator', () => {
       expect(xml).not.toContain('<MMWE>')
       expect(xml).not.toContain('<MMWY>')
       expect(xml).not.toContain('<INW>')
+    })
+  })
+
+  // ── Branch coverage — registry generate function ──
+  describe('generator registry', () => {
+    it('registers as JPK_MAG type and works via registry generate()', () => {
+      const gen = generatorRegistry.get('JPK_MAG')
+      expect(gen).toBeDefined()
+      expect(gen!.jpkType).toBe('JPK_MAG')
+      expect(gen!.version).toBe('2')
+      expect(gen!.namespace).toBe(MAG_NAMESPACE)
+      const xml = gen!.generate(makeMinimalInput())
+      expect(xml).toContain('<Naglowek>')
+      expect(xml).toContain('<Magazyn>')
+    })
+  })
+
+  // ── Branch coverage — foreign address without optional fields ──
+  describe('foreign address edge cases', () => {
+    it('generates foreign address without kodPocztowy and ulica', () => {
+      const input = makeMinimalInput()
+      input.podmiot = {
+        nip: '5261040828',
+        pelnaNazwa: 'Minimal Foreign',
+        adres: {
+          typ: 'zagraniczny',
+          kodKraju: 'US',
+          miejscowosc: 'New York',
+        },
+      }
+      const xml = generateJpkMag(input)
+      expect(xml).toContain('<AdresZagr>')
+      expect(xml).toContain('<etd:KodKraju>US</etd:KodKraju>')
+      expect(xml).toContain('<etd:Miejscowosc>New York</etd:Miejscowosc>')
+      expect(xml).not.toContain('<etd:KodPocztowy>')
+      expect(xml).not.toContain('<etd:Ulica>')
     })
   })
 

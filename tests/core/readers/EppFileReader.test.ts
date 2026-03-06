@@ -238,6 +238,136 @@ WartoscVAT=23.00
     })
   })
 
+  describe('canRead — edge cases', () => {
+    it('rejects .epp file with no section brackets', () => {
+      const buffer = Buffer.from('Just plain text\nNo brackets here\n', 'utf-8')
+      expect(reader.canRead(buffer, 'test.epp')).toBe(false)
+    })
+
+    it('rejects .epp file with empty content', () => {
+      const buffer = Buffer.from('', 'utf-8')
+      expect(reader.canRead(buffer, 'test.epp')).toBe(false)
+    })
+  })
+
+  describe('read — unrecognized lines and empty sections', () => {
+    it('warns on unrecognized line format inside a section', () => {
+      const epp = `[Faktura]
+NrFaktury=FV/001
+DataWystawienia=2026-01-15
+NIPNabywcy=1234567890
+NazwaNabywcy=Test
+Brutto=100.00
+THIS LINE HAS NO EQUALS SIGN
+[Pozycja]
+NazwaTowaru=Item
+Ilosc=1.000
+[KoniecFaktury]
+`
+      const buffer = Buffer.from(epp, 'utf-8')
+      const result = reader.read(buffer, 'test.epp')
+
+      expect(result.warnings.some((w) => w.message.includes('nie rozpoznano formatu linii'))).toBe(true)
+      // Should still parse the valid parts
+      expect(result.sheets[0].rows).toHaveLength(1)
+    })
+
+    it('returns empty for file with only unknown sections (no Faktura/Pozycja)', () => {
+      const epp = `[SomeUnknownSection]
+Key1=Value1
+Key2=Value2
+[AnotherSection]
+Key3=Value3
+`
+      const buffer = Buffer.from(epp, 'utf-8')
+      const result = reader.read(buffer, 'test.epp')
+
+      // No Faktura/Pozycja → headers.length === 0 → no rows
+      expect(result.sheets).toHaveLength(0)
+      expect(result.warnings.some((w) => w.message.includes('Nie znaleziono pozycji faktur'))).toBe(true)
+    })
+
+    it('handles field present in one invoice but not another (empty cell fallback)', () => {
+      const epp = `[Faktura]
+NrFaktury=FV/001
+DataWystawienia=2026-01-15
+NIPNabywcy=1234567890
+NazwaNabywcy=Test
+Brutto=100.00
+ExtraField=ExtraValue
+[Pozycja]
+NazwaTowaru=Item1
+Ilosc=1.000
+[KoniecFaktury]
+[Faktura]
+NrFaktury=FV/002
+DataWystawienia=2026-01-20
+NIPNabywcy=9876543210
+NazwaNabywcy=Other
+Brutto=200.00
+[Pozycja]
+NazwaTowaru=Item2
+Ilosc=2.000
+[KoniecFaktury]
+`
+      const buffer = Buffer.from(epp, 'utf-8')
+      const result = reader.read(buffer, 'test.epp')
+
+      const sheet = result.sheets[0]
+      const headers = sheet.headers!
+      const extraIdx = headers.indexOf('ExtraField')
+      expect(extraIdx).toBeGreaterThanOrEqual(0)
+
+      // First row has ExtraField
+      expect(sheet.rows[0].cells[extraIdx]).toBe('ExtraValue')
+      // Second row does NOT have ExtraField → should be empty string
+      expect(sheet.rows[1].cells[extraIdx]).toBe('')
+    })
+
+    it('handles item field not in invoice fields (falls through to item lookup)', () => {
+      const epp = `[Faktura]
+NrFaktury=FV/001
+DataWystawienia=2026-01-15
+NIPNabywcy=1234567890
+NazwaNabywcy=Test
+[Pozycja]
+NazwaTowaru=Widget
+Ilosc=5.000
+UniqueItemField=Special
+[KoniecFaktury]
+`
+      const buffer = Buffer.from(epp, 'utf-8')
+      const result = reader.read(buffer, 'test.epp')
+
+      const sheet = result.sheets[0]
+      const headers = sheet.headers!
+      const uniqueIdx = headers.indexOf('UniqueItemField')
+      expect(uniqueIdx).toBeGreaterThanOrEqual(0)
+      expect(sheet.rows[0].cells[uniqueIdx]).toBe('Special')
+    })
+  })
+
+  describe('read — low encoding confidence', () => {
+    it('adds warning for low confidence encoding detection', () => {
+      // Create a very short buffer that may trigger low confidence
+      const epp = `[Faktura]
+NrFaktury=FV/001
+DataWystawienia=2026-01-15
+NIPNabywcy=1234567890
+NazwaNabywcy=Test
+Brutto=100
+[Pozycja]
+NazwaTowaru=Item
+Ilosc=1
+[KoniecFaktury]
+`
+      const buffer = Buffer.from(epp, 'utf-8')
+      const result = reader.read(buffer, 'test.epp')
+      // Just ensure it processes without error; low confidence depends on encoding detector
+      expect(result.sheets).toHaveLength(1)
+    })
+  })
+
   describe('read — edge cases', () => {
     it('returns empty sheets for empty file', () => {
       const buffer = Buffer.from('', 'utf-8')

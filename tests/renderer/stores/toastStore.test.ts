@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest'
+
 import { useToastStore } from '../../../src/renderer/src/stores/toastStore'
 
 const initialState = {
@@ -88,31 +89,30 @@ describe('toastStore', () => {
     })
   })
 
-  describe('useToast convenience methods', () => {
-    // useToast() is a React hook that calls useToastStore((s) => s.addToast)
-    // We can test the underlying addToast behavior for each type instead.
-    it('success type produces correct toast', () => {
+  describe('addToast type variants', () => {
+    it('adds success toast with default 5000ms duration', () => {
       useToastStore.getState().addToast('OK', 'success')
       const t = useToastStore.getState().toasts[0]
       expect(t.type).toBe('success')
+      expect(t.message).toBe('OK')
       expect(t.duration).toBe(5000)
     })
 
-    it('error type produces correct toast', () => {
+    it('adds error toast with default 0ms duration', () => {
       useToastStore.getState().addToast('Fail', 'error')
       const t = useToastStore.getState().toasts[0]
       expect(t.type).toBe('error')
       expect(t.duration).toBe(0)
     })
 
-    it('warning type produces correct toast', () => {
+    it('adds warning toast with default 0ms duration', () => {
       useToastStore.getState().addToast('Warn', 'warning')
       const t = useToastStore.getState().toasts[0]
       expect(t.type).toBe('warning')
       expect(t.duration).toBe(0)
     })
 
-    it('info type produces correct toast', () => {
+    it('adds info toast with default 5000ms duration', () => {
       useToastStore.getState().addToast('FYI', 'info')
       const t = useToastStore.getState().toasts[0]
       expect(t.type).toBe('info')

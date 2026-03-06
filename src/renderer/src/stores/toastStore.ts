@@ -44,6 +44,7 @@ export const useToastStore = create<ToastState>((set) => ({
     set((state) => ({ toasts: state.toasts.filter((t) => t.id !== id) }))
 }))
 
+/* v8 ignore start -- React hook, requires render context */
 export function useToast() {
   const addToast = useToastStore((s) => s.addToast)
   return {

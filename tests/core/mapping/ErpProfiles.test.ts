@@ -118,7 +118,7 @@ describe('ENOVA365_CDN_TXT profile', () => {
   })
 
   it('maps col 0 → P_2 (Nr_dokumentu)', () => {
-    const p = findProfile('ENOVA365', 'JPK_FA', 'Faktura')!
+    const _p = findProfile('ENOVA365', 'JPK_FA', 'Faktura')!
     // findProfile returns ENOVA365_XML_FA (first match). Use direct lookup.
     const cdn = SYSTEM_PROFILES.find((p) => p.id === 'ENOVA365_CDN_TXT')!
     expect(cdn.columnMap[0]).toBe('P_2')
@@ -235,7 +235,7 @@ describe('SAGE_SYMFONIA_FA profile', () => {
     const reader = new TxtFileReader()
     const fileResult = reader.read(buffer, 'symfonia_vat.txt')
 
-    const sheet = fileResult.sheets[0]
+    const _sheet = fileResult.sheets[0]
     // TxtFileReader doesn't set headers, so we test via CSV reader instead
     const csvReader = new CsvFileReader()
     const csvResult = csvReader.read(buffer, 'symfonia_vat.csv')

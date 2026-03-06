@@ -7,6 +7,7 @@ import {
   type FaNaglowek,
   type FaPodmiot,
 } from '../../../src/core/generators/JpkFaGenerator'
+import { generatorRegistry } from '../../../src/core/generators/XmlGeneratorEngine'
 
 // ── Test helpers ──
 
@@ -549,6 +550,189 @@ describe('JpkFaGenerator', () => {
       for (let i = 1; i < positions.length; i++) {
         expect(positions[i]).toBeGreaterThan(positions[i - 1])
       }
+    })
+  })
+
+  // ── Branch coverage — uncovered conditional paths ──
+  describe('branch coverage — uncovered conditional paths', () => {
+    it('generates P_22A with P_22B and P_22C (new transport fields)', () => {
+      const fakt = {
+        ...SIMPLE_FAKTURA,
+        P_22: '1',
+        P_22A: '2026-01-15',
+        P_22B: '1500',
+        P_22C: 'ABC123',
+      }
+      const xml = generateJpkFa(makeInput({ faktury: [fakt] }))
+      expect(xml).toContain('<P_22>true</P_22>')
+      expect(xml).toContain('<P_22A>2026-01-15</P_22A>')
+      expect(xml).toContain('<P_22B>1500</P_22B>')
+      expect(xml).toContain('<P_22C>ABC123</P_22C>')
+    })
+
+    it('generates P_22A without P_22B and P_22C when they are missing', () => {
+      const fakt = {
+        ...SIMPLE_FAKTURA,
+        P_22: '1',
+        P_22A: '2026-01-15',
+      }
+      const xml = generateJpkFa(makeInput({ faktury: [fakt] }))
+      expect(xml).toContain('<P_22A>2026-01-15</P_22A>')
+      expect(xml).not.toContain('<P_22B>')
+      expect(xml).not.toContain('<P_22C>')
+    })
+
+    it('generates P_14_5 when provided with P_13_5 (group 5 with VAT)', () => {
+      const fakt: Record<string, string> = {
+        KodWaluty: 'PLN',
+        P_1: '2026-02-15',
+        P_2A: 'FV/003',
+        P_3C: 'Seller',
+        P_3D: 'Addr',
+        P_13_5: '3000.00',
+        P_14_5: '150.00',
+        P_15: '3150.00',
+        RodzajFaktury: 'VAT',
+      }
+      const xml = generateJpkFa(makeInput({ faktury: [fakt] }))
+      expect(xml).toContain('<P_13_5>3000.00</P_13_5>')
+      expect(xml).toContain('<P_14_5>150.00</P_14_5>')
+    })
+
+    it('generates foreign address without optional kodPocztowy and ulica', () => {
+      const xml = generateJpkFa(makeInput({
+        podmiot: {
+          nip: '5261040828',
+          pelnaNazwa: 'UK Ltd',
+          adres: {
+            typ: 'zagraniczny',
+            kodKraju: 'GB',
+            miejscowosc: 'London',
+          },
+        },
+      }))
+      expect(xml).toContain('<AdresPodmiotu2>')
+      expect(xml).toContain('<etd:KodKraju>GB</etd:KodKraju>')
+      expect(xml).toContain('<etd:Miejscowosc>London</etd:Miejscowosc>')
+      expect(xml).not.toContain('<etd:KodPocztowy>')
+      expect(xml).not.toContain('<etd:Ulica>')
+    })
+
+    it('generates P_20A and P_20B when both are present (enforcement organ)', () => {
+      const fakt = {
+        ...SIMPLE_FAKTURA,
+        P_20: '1',
+        P_20A: 'art. 106c pkt 1',
+        P_20B: 'Naczelnik US Warszawa-Mokotów',
+      }
+      const xml = generateJpkFa(makeInput({ faktury: [fakt] }))
+      expect(xml).toContain('<P_20>true</P_20>')
+      expect(xml).toContain('<P_20A>art. 106c pkt 1</P_20A>')
+      expect(xml).toContain('<P_20B>Naczelnik US Warszawa-Mokotów</P_20B>')
+    })
+
+    it('generates P_21A, P_21B and P_21C when all present (tax representative)', () => {
+      const fakt = {
+        ...SIMPLE_FAKTURA,
+        P_21: '1',
+        P_21A: 'Przedstawiciel Podatkowy Sp. z o.o.',
+        P_21B: 'ul. Podatkowa 5, 00-001 Warszawa',
+        P_21C: '1122334455',
+      }
+      const xml = generateJpkFa(makeInput({ faktury: [fakt] }))
+      expect(xml).toContain('<P_21>true</P_21>')
+      expect(xml).toContain('<P_21A>Przedstawiciel Podatkowy Sp. z o.o.</P_21A>')
+      expect(xml).toContain('<P_21B>ul. Podatkowa 5, 00-001 Warszawa</P_21B>')
+      expect(xml).toContain('<P_21C>1122334455</P_21C>')
+    })
+
+    it('omits P_21A/B/C when not all three are present', () => {
+      const fakt = {
+        ...SIMPLE_FAKTURA,
+        P_21: '1',
+        P_21A: 'Partial only',
+      }
+      const xml = generateJpkFa(makeInput({ faktury: [fakt] }))
+      expect(xml).toContain('<P_21>true</P_21>')
+      expect(xml).not.toContain('<P_21A>')
+    })
+
+    it('generates P_106E_3A when present (used goods margin)', () => {
+      const fakt = {
+        ...SIMPLE_FAKTURA,
+        P_106E_3: '1',
+        P_106E_3A: 'Procedura marży - dzieła sztuki',
+      }
+      const xml = generateJpkFa(makeInput({ faktury: [fakt] }))
+      expect(xml).toContain('<P_106E_3>true</P_106E_3>')
+      expect(xml).toContain('<P_106E_3A>Procedura marży - dzieła sztuki</P_106E_3A>')
+    })
+
+    it('generates P_19B and P_19C exemption basis fields', () => {
+      const fakt = {
+        ...SIMPLE_FAKTURA,
+        P_19: '1',
+        P_19B: 'Dz. U. 2004 nr 54 poz. 535',
+        P_19C: 'Dyrektywa 2006/112/WE art. 132',
+      }
+      const xml = generateJpkFa(makeInput({ faktury: [fakt] }))
+      expect(xml).toContain('<P_19B>Dz. U. 2004 nr 54 poz. 535</P_19B>')
+      expect(xml).toContain('<P_19C>Dyrektywa 2006/112/WE art. 132</P_19C>')
+    })
+
+    it('defaults KodWaluty to PLN when not provided', () => {
+      const fakt: Record<string, string> = {
+        P_1: '2026-02-15',
+        P_2A: 'FV/004',
+        P_3C: 'Seller',
+        P_3D: 'Addr',
+        P_15: '100.00',
+        RodzajFaktury: 'VAT',
+      }
+      const xml = generateJpkFa(makeInput({ faktury: [fakt] }))
+      expect(xml).toContain('<KodWaluty>PLN</KodWaluty>')
+    })
+
+    it('defaults RodzajFaktury to VAT when not provided', () => {
+      const fakt: Record<string, string> = {
+        KodWaluty: 'PLN',
+        P_1: '2026-02-15',
+        P_2A: 'FV/005',
+        P_3C: 'Seller',
+        P_3D: 'Addr',
+        P_15: '100.00',
+      }
+      const xml = generateJpkFa(makeInput({ faktury: [fakt] }))
+      expect(xml).toContain('<RodzajFaktury>VAT</RodzajFaktury>')
+    })
+
+    it('generates P_4A with only VAT group having hasVat=true but hasNetto=false', () => {
+      const fakt: Record<string, string> = {
+        KodWaluty: 'PLN',
+        P_1: '2026-02-15',
+        P_2A: 'FV/006',
+        P_3C: 'Seller',
+        P_3D: 'Addr',
+        P_14_1: '230.00',
+        P_15: '1230.00',
+        RodzajFaktury: 'VAT',
+      }
+      const xml = generateJpkFa(makeInput({ faktury: [fakt] }))
+      expect(xml).toContain('<P_13_1>0.00</P_13_1>')
+      expect(xml).toContain('<P_14_1>230.00</P_14_1>')
+    })
+  })
+
+  // ── Generator registry ──
+  describe('generator registry', () => {
+    it('generate function works via registry', () => {
+      const gen = generatorRegistry.get('JPK_FA')
+      expect(gen).toBeDefined()
+      expect(gen!.jpkType).toBe('JPK_FA')
+      expect(gen!.version).toBe('4')
+      expect(gen!.namespace).toBe(FA_NAMESPACE)
+      const xml = gen!.generate(makeInput())
+      expect(xml).toContain('<Faktura>')
     })
   })
 

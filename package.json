@@ -1,6 +1,6 @@
 {
   "name": "jpk-converter",
-  "version": "2.1.0",
+  "version": "3.0.0",
   "description": "Konwerter plików TXT do JPK XML",
   "main": "./out/main/index.js",
   "author": "JPK Converter",

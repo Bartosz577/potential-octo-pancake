@@ -6,7 +6,6 @@ import {
   MAP_KONTA_PD,
   isValidMapKontaPd,
   escapeXml,
-  formatAmount,
   type KrPdGeneratorInput,
   type KrPdNaglowek,
   type KrPdPodmiot,

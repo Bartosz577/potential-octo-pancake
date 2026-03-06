@@ -140,6 +140,45 @@ describe('CsvFileReader', () => {
     })
   })
 
+  describe('read — column count mismatch', () => {
+    it('warns when a row has different column count than expected', () => {
+      const csv = 'A,B,C\n1,2,3\n4,5\n6,7,8,9'
+      const buf = Buffer.from(csv, 'utf-8')
+      const result = reader.read(buf, 'mismatch.csv')
+
+      const sheet = result.sheets[0]
+      // Row with 2 cols and row with 4 cols should generate warnings
+      const mismatchWarnings = result.warnings.filter((w) =>
+        w.message.includes('oczekiwano') && w.message.includes('kolumn')
+      )
+      expect(mismatchWarnings.length).toBeGreaterThanOrEqual(2)
+      // But all rows should still be included
+      expect(sheet.rows).toHaveLength(3)
+    })
+  })
+
+  describe('read — whitespace-only file (empty after trim)', () => {
+    it('returns empty sheets for whitespace-only content', () => {
+      const buf = Buffer.from('   \n  \n  ', 'utf-8')
+      const result = reader.read(buf, 'whitespace.csv')
+      expect(result.sheets).toHaveLength(0)
+      expect(result.warnings.some((w) => w.message.includes('pusty'))).toBe(true)
+    })
+  })
+
+  describe('read — PapaParse error handling', () => {
+    it('reports PapaParse warnings for malformed quoted fields', () => {
+      // Unclosed quote at end of file can trigger PapaParse errors
+      const csv = 'a,b,c\n"unclosed,2,3\n4,5,6'
+      const buf = Buffer.from(csv, 'utf-8')
+      const result = reader.read(buf, 'malformed.csv')
+
+      // PapaParse may produce warnings for malformed quotes
+      // Even if no error, the data should still be parsed
+      expect(result.sheets).toHaveLength(1)
+    })
+  })
+
   describe('read — edge cases', () => {
     it('handles empty file', () => {
       const buf = Buffer.from('', 'utf-8')

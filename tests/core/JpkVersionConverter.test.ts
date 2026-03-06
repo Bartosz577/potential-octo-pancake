@@ -298,6 +298,186 @@ describe('convertJpkVersion', () => {
   })
 })
 
+describe('convertJpkVersion — additional branch coverage', () => {
+  it('handles KodFormularza as plain text (not object with attributes)', () => {
+    // When KodFormularza is a plain string (no attributes), extractVersionInfo
+    // takes the else branch at line 91-92
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<JPK xmlns="http://jpk.mf.gov.pl/wzor/2019/12/15/12151/">
+  <Naglowek>
+    <KodFormularza>JPK_FA</KodFormularza>
+    <WariantFormularza>3</WariantFormularza>
+  </Naglowek>
+  <Podmiot1><IdentyfikatorPodmiotu><NIP>7740001454</NIP></IdentyfikatorPodmiotu></Podmiot1>
+  <FakturaWiersz><P_2B>FA/1</P_2B><P_7>Towar</P_7></FakturaWiersz>
+  <FakturaWierszCtrl><LiczbaWierszyFaktur>1</LiczbaWierszyFaktur><WartoscWierszyFaktur>100.00</WartoscWierszyFaktur></FakturaWierszCtrl>
+</JPK>`
+    const { result, changes } = convertJpkVersion(xml)
+    // Should still upgrade to FA(4)
+    expect(result).toContain('>4<')
+    expect(changes.some((c) => c.includes('WariantFormularza'))).toBe(true)
+    // BFK should be added to FakturaWiersz
+    expect(result).toContain('<BFK>1</BFK>')
+  })
+
+  it('handles V7M without <Ewidencja> wrapper (rows at JPK root)', () => {
+    // convertV7m takes ewidencja ?? jpk when Ewidencja is missing
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<JPK xmlns="http://crd.gov.pl/wzor/2021/12/27/11148/">
+  <Naglowek>
+    <KodFormularza kodSystemowy="JPK_V7M (2)" wersjaSchemy="1-0">JPK_VAT</KodFormularza>
+    <WariantFormularza>2</WariantFormularza>
+  </Naglowek>
+  <Podmiot1><OsobaFizyczna><NIP>7740001454</NIP></OsobaFizyczna></Podmiot1>
+  <SprzedazWiersz><LpSprzedazy>1</LpSprzedazy><K_19>100.00</K_19></SprzedazWiersz>
+  <SprzedazCtrl><LiczbaWierszySprzedazy>1</LiczbaWierszySprzedazy><PodatekNalezny>0.00</PodatekNalezny></SprzedazCtrl>
+  <ZakupWiersz><LpZakupu>1</LpZakupu><K_42>50.00</K_42></ZakupWiersz>
+  <ZakupCtrl><LiczbaWierszyZakupow>1</LiczbaWierszyZakupow><PodatekNaliczony>0.00</PodatekNaliczony></ZakupCtrl>
+</JPK>`
+    const { result, changes } = convertJpkVersion(xml)
+    expect(result).toContain('>3<')
+    // BFK should be added when rows are at JPK root
+    expect(changes.some((c) => c.includes('BFK') && c.includes('SprzedazWiersz'))).toBe(true)
+    expect(changes.some((c) => c.includes('BFK') && c.includes('ZakupWiersz'))).toBe(true)
+  })
+
+  it('adds namespace when none exists (updateNamespace !currentNs branch)', () => {
+    // XML without xmlns attribute on JPK root
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<JPK>
+  <Naglowek>
+    <KodFormularza kodSystemowy="JPK_FA (3)" wersjaSchemy="1-0">JPK_FA</KodFormularza>
+    <WariantFormularza>3</WariantFormularza>
+  </Naglowek>
+  <Podmiot1><IdentyfikatorPodmiotu><NIP>7740001454</NIP></IdentyfikatorPodmiotu></Podmiot1>
+  <FakturaWiersz><P_2B>FA/1</P_2B><P_7>Towar</P_7></FakturaWiersz>
+  <FakturaWierszCtrl><LiczbaWierszyFaktur>1</LiczbaWierszyFaktur><WartoscWierszyFaktur>100.00</WartoscWierszyFaktur></FakturaWierszCtrl>
+</JPK>`
+    const { changes } = convertJpkVersion(xml)
+    expect(changes.some((c) => c.includes('Dodano namespace'))).toBe(true)
+  })
+
+  it('does not add BFK when rows have NrKSeF marking', () => {
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<JPK xmlns="http://jpk.mf.gov.pl/wzor/2019/12/15/12151/">
+  <Naglowek>
+    <KodFormularza kodSystemowy="JPK_FA (3)" wersjaSchemy="1-0">JPK_FA</KodFormularza>
+    <WariantFormularza>3</WariantFormularza>
+  </Naglowek>
+  <Podmiot1><IdentyfikatorPodmiotu><NIP>7740001454</NIP></IdentyfikatorPodmiotu></Podmiot1>
+  <FakturaWiersz><P_2B>FA/1</P_2B><P_7>Towar</P_7><NrKSeF>KSeF-123</NrKSeF></FakturaWiersz>
+  <FakturaWierszCtrl><LiczbaWierszyFaktur>1</LiczbaWierszyFaktur><WartoscWierszyFaktur>100.00</WartoscWierszyFaktur></FakturaWierszCtrl>
+</JPK>`
+    const { changes } = convertJpkVersion(xml)
+    // Should NOT add BFK since row already has NrKSeF
+    expect(changes.some((c) => c.includes('BFK') && c.includes('FakturaWiersz'))).toBe(false)
+  })
+
+  it('does not add BFK when rows have OFF marking', () => {
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<JPK xmlns="http://jpk.mf.gov.pl/wzor/2019/12/15/12151/">
+  <Naglowek>
+    <KodFormularza kodSystemowy="JPK_FA (3)" wersjaSchemy="1-0">JPK_FA</KodFormularza>
+    <WariantFormularza>3</WariantFormularza>
+  </Naglowek>
+  <Podmiot1><IdentyfikatorPodmiotu><NIP>7740001454</NIP></IdentyfikatorPodmiotu></Podmiot1>
+  <FakturaWiersz><P_2B>FA/1</P_2B><P_7>Towar</P_7><OFF>1</OFF></FakturaWiersz>
+  <FakturaWierszCtrl><LiczbaWierszyFaktur>1</LiczbaWierszyFaktur><WartoscWierszyFaktur>100.00</WartoscWierszyFaktur></FakturaWierszCtrl>
+</JPK>`
+    const { changes } = convertJpkVersion(xml)
+    expect(changes.some((c) => c.includes('BFK') && c.includes('FakturaWiersz'))).toBe(false)
+  })
+
+  it('does not add BFK when rows have DI marking', () => {
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<JPK xmlns="http://jpk.mf.gov.pl/wzor/2019/12/15/12151/">
+  <Naglowek>
+    <KodFormularza kodSystemowy="JPK_FA (3)" wersjaSchemy="1-0">JPK_FA</KodFormularza>
+    <WariantFormularza>3</WariantFormularza>
+  </Naglowek>
+  <Podmiot1><IdentyfikatorPodmiotu><NIP>7740001454</NIP></IdentyfikatorPodmiotu></Podmiot1>
+  <FakturaWiersz><P_2B>FA/1</P_2B><P_7>Towar</P_7><DI>1</DI></FakturaWiersz>
+  <FakturaWierszCtrl><LiczbaWierszyFaktur>1</LiczbaWierszyFaktur><WartoscWierszyFaktur>100.00</WartoscWierszyFaktur></FakturaWierszCtrl>
+</JPK>`
+    const { changes } = convertJpkVersion(xml)
+    expect(changes.some((c) => c.includes('BFK') && c.includes('FakturaWiersz'))).toBe(false)
+  })
+
+  it('does not add BFK when rows have OznaczenieKSeF', () => {
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<JPK xmlns="http://jpk.mf.gov.pl/wzor/2019/12/15/12151/">
+  <Naglowek>
+    <KodFormularza kodSystemowy="JPK_FA (3)" wersjaSchemy="1-0">JPK_FA</KodFormularza>
+    <WariantFormularza>3</WariantFormularza>
+  </Naglowek>
+  <Podmiot1><IdentyfikatorPodmiotu><NIP>7740001454</NIP></IdentyfikatorPodmiotu></Podmiot1>
+  <FakturaWiersz><P_2B>FA/1</P_2B><P_7>Towar</P_7><OznaczenieKSeF>BFK</OznaczenieKSeF></FakturaWiersz>
+  <FakturaWierszCtrl><LiczbaWierszyFaktur>1</LiczbaWierszyFaktur><WartoscWierszyFaktur>100.00</WartoscWierszyFaktur></FakturaWierszCtrl>
+</JPK>`
+    const { changes } = convertJpkVersion(xml)
+    expect(changes.some((c) => c.includes('BFK') && c.includes('FakturaWiersz'))).toBe(false)
+  })
+
+  it('handles FA with empty FakturaWiersz (no rows to add BFK)', () => {
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<JPK xmlns="http://jpk.mf.gov.pl/wzor/2019/12/15/12151/">
+  <Naglowek>
+    <KodFormularza kodSystemowy="JPK_FA (3)" wersjaSchemy="1-0">JPK_FA</KodFormularza>
+    <WariantFormularza>3</WariantFormularza>
+  </Naglowek>
+  <Podmiot1><IdentyfikatorPodmiotu><NIP>7740001454</NIP></IdentyfikatorPodmiotu></Podmiot1>
+  <FakturaCtrl><LiczbaFaktur>0</LiczbaFaktur><WartoscFaktur>0.00</WartoscFaktur></FakturaCtrl>
+  <FakturaWierszCtrl><LiczbaWierszyFaktur>0</LiczbaWierszyFaktur><WartoscWierszyFaktur>0.00</WartoscWierszyFaktur></FakturaWierszCtrl>
+</JPK>`
+    const { changes } = convertJpkVersion(xml)
+    // No BFK changes because there are no rows
+    expect(changes.some((c) => c.includes('BFK'))).toBe(false)
+    // But other changes should still be made
+    expect(changes.some((c) => c.includes('WariantFormularza'))).toBe(true)
+  })
+
+  it('handles missing KodFormularza', () => {
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<JPK>
+  <Naglowek>
+    <WariantFormularza>3</WariantFormularza>
+  </Naglowek>
+</JPK>`
+    expect(() => convertJpkVersion(xml)).toThrow('Brak KodFormularza')
+  })
+
+  it('handles missing WariantFormularza', () => {
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<JPK>
+  <Naglowek>
+    <KodFormularza kodSystemowy="JPK_FA (3)">JPK_FA</KodFormularza>
+  </Naglowek>
+</JPK>`
+    expect(() => convertJpkVersion(xml)).toThrow('Brak WariantFormularza')
+  })
+
+  it('does not log kodSystemowy change when value is already the same', () => {
+    // Set kodSystemowy to JPK_FA (4) but wariant to 3 so conversion still runs
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<JPK xmlns="http://jpk.mf.gov.pl/wzor/2022/02/17/02171/">
+  <Naglowek>
+    <KodFormularza kodSystemowy="JPK_FA (4)" wersjaSchemy="1-0">JPK_FA</KodFormularza>
+    <WariantFormularza>3</WariantFormularza>
+  </Naglowek>
+  <Podmiot1><IdentyfikatorPodmiotu><NIP>7740001454</NIP></IdentyfikatorPodmiotu></Podmiot1>
+  <FakturaWiersz><P_2B>FA/1</P_2B><P_7>Towar</P_7></FakturaWiersz>
+  <FakturaWierszCtrl><LiczbaWierszyFaktur>1</LiczbaWierszyFaktur><WartoscWierszyFaktur>100.00</WartoscWierszyFaktur></FakturaWierszCtrl>
+</JPK>`
+    const { changes } = convertJpkVersion(xml)
+    // kodSystemowy is already JPK_FA (4), so no kodSystemowy change should be logged
+    expect(changes.filter((c) => c.includes('kodSystemowy'))).toHaveLength(0)
+    // But WariantFormularza change should still be logged
+    expect(changes.some((c) => c.includes('WariantFormularza'))).toBe(true)
+    // Namespace is already the target — no namespace change either
+    expect(changes.filter((c) => c.includes('Namespace'))).toHaveLength(0)
+  })
+})
+
 describe('detectUpgradeNeeded', () => {
   it('detects FA(3) needs upgrade', () => {
     const xml = buildFaXml({ wariant: '3' })
@@ -336,5 +516,52 @@ describe('detectUpgradeNeeded', () => {
       <WariantFormularza>1</WariantFormularza>
     </Naglowek></JPK>`
     expect(detectUpgradeNeeded(xml)).toBeNull()
+  })
+
+  it('uses fallback label when kodSystemowy is empty (line 305)', () => {
+    // KodFormularza without attributes (plain text) → kodSystemowy will be empty
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<JPK>
+  <Naglowek>
+    <KodFormularza>JPK_FA</KodFormularza>
+    <WariantFormularza>3</WariantFormularza>
+  </Naglowek>
+</JPK>`
+    const info = detectUpgradeNeeded(xml)
+    expect(info).not.toBeNull()
+    // Fallback label should be "JPK_FA(3)" since kodSystemowy is empty
+    expect(info!.label).toBe('JPK_FA(3)')
+    expect(info!.currentWariant).toBe('3')
+    expect(info!.targetWariant).toBe('4')
+  })
+
+  it('returns null for unsupported wariant in upgrade paths', () => {
+    // FA(1) has no upgrade path
+    const xml = `<?xml version="1.0"?><JPK><Naglowek>
+      <KodFormularza kodSystemowy="JPK_FA (1)">JPK_FA</KodFormularza>
+      <WariantFormularza>1</WariantFormularza>
+    </Naglowek></JPK>`
+    expect(detectUpgradeNeeded(xml)).toBeNull()
+  })
+
+  it('returns null when extractVersionInfo throws (catch block line 312-314)', () => {
+    // Missing Naglowek will cause extractVersionInfo to throw
+    const xml = `<?xml version="1.0"?><JPK><Data>test</Data></JPK>`
+    // extractVersionInfo throws 'Brak elementu <Naglowek>', but detectUpgradeNeeded catches it
+    expect(detectUpgradeNeeded(xml)).toBeNull()
+  })
+
+  it('returns null when missing JPK root element', () => {
+    const xml = `<?xml version="1.0"?><Root><Child>text</Child></Root>`
+    expect(detectUpgradeNeeded(xml)).toBeNull()
+  })
+
+  it('detects FA(2) needs upgrade', () => {
+    const xml = buildFaXml({ wariant: '2', kodSystemowy: 'JPK_FA (2)' })
+    const info = detectUpgradeNeeded(xml)
+    expect(info).not.toBeNull()
+    expect(info!.currentWariant).toBe('2')
+    expect(info!.targetWariant).toBe('4')
+    expect(info!.label).toBe('JPK_FA (2)')
   })
 })

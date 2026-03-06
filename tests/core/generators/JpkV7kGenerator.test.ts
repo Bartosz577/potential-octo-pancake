@@ -441,6 +441,409 @@ describe('JpkV7kGenerator', () => {
     })
   })
 
+  // ── Branch coverage — uncovered conditional paths ──
+  describe('branch coverage — uncovered conditional paths', () => {
+    it('generates OFF=1 when NrKSeF is absent and OFF is set in SprzedazWiersz', () => {
+      const xml = generateJpkV7k(makeInput({
+        sprzedazWiersze: [{
+          NrKontrahenta: '1234567890',
+          NazwaKontrahenta: 'Test',
+          DowodSprzedazy: 'FV/001',
+          DataWystawienia: '2026-03-15',
+          OFF: '1',
+        }],
+      }))
+      expect(xml).toContain('<OFF>1</OFF>')
+      expect(xml).not.toContain('<BFK>')
+      expect(xml).not.toContain('<NrKSeF>')
+    })
+
+    it('generates DI=1 when NrKSeF and OFF are absent in SprzedazWiersz', () => {
+      const xml = generateJpkV7k(makeInput({
+        sprzedazWiersze: [{
+          NrKontrahenta: '1234567890',
+          NazwaKontrahenta: 'Test',
+          DowodSprzedazy: 'FV/002',
+          DataWystawienia: '2026-03-15',
+          DI: '1',
+        }],
+      }))
+      expect(xml).toContain('<DI>1</DI>')
+      expect(xml).not.toContain('<BFK>')
+      expect(xml).not.toContain('<OFF>')
+    })
+
+    it('generates OFF=1 with value "true" in SprzedazWiersz', () => {
+      const xml = generateJpkV7k(makeInput({
+        sprzedazWiersze: [{
+          NrKontrahenta: '1234567890',
+          NazwaKontrahenta: 'Test',
+          DowodSprzedazy: 'FV/002b',
+          DataWystawienia: '2026-03-15',
+          OFF: 'true',
+        }],
+      }))
+      expect(xml).toContain('<OFF>1</OFF>')
+    })
+
+    it('generates DI=1 with value "true" in SprzedazWiersz', () => {
+      const xml = generateJpkV7k(makeInput({
+        sprzedazWiersze: [{
+          NrKontrahenta: '1234567890',
+          NazwaKontrahenta: 'Test',
+          DowodSprzedazy: 'FV/002c',
+          DataWystawienia: '2026-03-15',
+          DI: 'true',
+        }],
+      }))
+      expect(xml).toContain('<DI>1</DI>')
+    })
+
+    it('generates DokumentZakupu when provided in ZakupWiersz', () => {
+      const xml = generateJpkV7k(makeInput({
+        zakupWiersze: [{
+          NrDostawcy: '9876543210',
+          NazwaDostawcy: 'Dostawca',
+          DowodZakupu: 'FZ/001',
+          DataZakupu: '2026-03-10',
+          DokumentZakupu: 'MK',
+          K_40: '800',
+          K_41: '184',
+        }],
+      }))
+      expect(xml).toContain('<DokumentZakupu>MK</DokumentZakupu>')
+    })
+
+    it('generates ZakupVAT_Marza when provided in ZakupWiersz', () => {
+      const xml = generateJpkV7k(makeInput({
+        zakupWiersze: [{
+          NrDostawcy: '9876543210',
+          NazwaDostawcy: 'Dostawca',
+          DowodZakupu: 'FZ/002',
+          DataZakupu: '2026-03-10',
+          ZakupVAT_Marza: '1500.00',
+        }],
+      }))
+      expect(xml).toContain('<ZakupVAT_Marza>1500.00</ZakupVAT_Marza>')
+    })
+
+    it('generates OFF=1 in ZakupWiersz when NrKSeF is absent and OFF is set', () => {
+      const xml = generateJpkV7k(makeInput({
+        zakupWiersze: [{
+          NrDostawcy: '9876543210',
+          NazwaDostawcy: 'Dostawca',
+          DowodZakupu: 'FZ/003',
+          DataZakupu: '2026-03-10',
+          OFF: '1',
+        }],
+      }))
+      expect(xml).toContain('<OFF>1</OFF>')
+      expect(xml).not.toContain('<BFK>')
+    })
+
+    it('generates DI=1 in ZakupWiersz when NrKSeF and OFF are absent (value "true")', () => {
+      const xml = generateJpkV7k(makeInput({
+        zakupWiersze: [{
+          NrDostawcy: '9876543210',
+          NazwaDostawcy: 'Dostawca',
+          DowodZakupu: 'FZ/004',
+          DataZakupu: '2026-03-10',
+          DI: 'true',
+        }],
+      }))
+      expect(xml).toContain('<DI>1</DI>')
+      expect(xml).not.toContain('<BFK>')
+    })
+
+    it('generates DI=1 in ZakupWiersz (value "1")', () => {
+      const xml = generateJpkV7k(makeInput({
+        zakupWiersze: [{
+          NrDostawcy: '9876543210',
+          NazwaDostawcy: 'Dostawca',
+          DowodZakupu: 'FZ/004b',
+          DataZakupu: '2026-03-10',
+          DI: '1',
+        }],
+      }))
+      expect(xml).toContain('<DI>1</DI>')
+    })
+
+    it('generates OFF=1 in ZakupWiersz (value "true")', () => {
+      const xml = generateJpkV7k(makeInput({
+        zakupWiersze: [{
+          NrDostawcy: '9876543210',
+          NazwaDostawcy: 'Dostawca',
+          DowodZakupu: 'FZ/003b',
+          DataZakupu: '2026-03-10',
+          OFF: 'true',
+        }],
+      }))
+      expect(xml).toContain('<OFF>1</OFF>')
+    })
+
+    it('generates NrKSeF in ZakupWiersz when provided', () => {
+      const xml = generateJpkV7k(makeInput({
+        zakupWiersze: [{
+          NrDostawcy: '9876543210',
+          NazwaDostawcy: 'Dostawca',
+          DowodZakupu: 'FZ/005',
+          DataZakupu: '2026-03-10',
+          NrKSeF: '9876543210-20260310-XYZ789',
+        }],
+      }))
+      expect(xml).toContain('<NrKSeF>9876543210-20260310-XYZ789</NrKSeF>')
+      expect(xml).not.toContain('<BFK>')
+    })
+
+    it('generates DataWplywu in ZakupWiersz when provided', () => {
+      const xml = generateJpkV7k(makeInput({
+        zakupWiersze: [{
+          NrDostawcy: '9876543210',
+          NazwaDostawcy: 'Dostawca',
+          DowodZakupu: 'FZ/006',
+          DataZakupu: '2026-03-10',
+          DataWplywu: '2026-03-12',
+        }],
+      }))
+      expect(xml).toContain('<DataWplywu>2026-03-12</DataWplywu>')
+    })
+
+    it('generates KodKrajuNadaniaTIN in ZakupWiersz when provided', () => {
+      const xml = generateJpkV7k(makeInput({
+        zakupWiersze: [{
+          KodKrajuNadaniaTIN: 'DE',
+          NrDostawcy: 'DE123456789',
+          NazwaDostawcy: 'German GmbH',
+          DowodZakupu: 'FZ/007',
+          DataZakupu: '2026-03-10',
+        }],
+      }))
+      expect(xml).toContain('<KodKrajuNadaniaTIN>DE</KodKrajuNadaniaTIN>')
+    })
+
+    it('generates IMP flag in ZakupWiersz when set', () => {
+      const xml = generateJpkV7k(makeInput({
+        zakupWiersze: [{
+          NrDostawcy: '9876543210',
+          NazwaDostawcy: 'Dostawca',
+          DowodZakupu: 'FZ/008',
+          DataZakupu: '2026-03-10',
+          IMP: '1',
+        }],
+      }))
+      expect(xml).toContain('<IMP>1</IMP>')
+    })
+
+    it('generates SprzedazVAT_Marza when provided', () => {
+      const xml = generateJpkV7k(makeInput({
+        sprzedazWiersze: [{
+          NrKontrahenta: '1234567890',
+          NazwaKontrahenta: 'Test',
+          DowodSprzedazy: 'FV/003',
+          DataWystawienia: '2026-03-15',
+          SprzedazVAT_Marza: '2000.00',
+        }],
+      }))
+      expect(xml).toContain('<SprzedazVAT_Marza>2000.00</SprzedazVAT_Marza>')
+    })
+
+    it('generates DataSprzedazy in SprzedazWiersz when provided', () => {
+      const xml = generateJpkV7k(makeInput({
+        sprzedazWiersze: [{
+          NrKontrahenta: '1234567890',
+          NazwaKontrahenta: 'Test',
+          DowodSprzedazy: 'FV/004',
+          DataWystawienia: '2026-03-15',
+          DataSprzedazy: '2026-03-10',
+        }],
+      }))
+      expect(xml).toContain('<DataSprzedazy>2026-03-10</DataSprzedazy>')
+    })
+
+    it('generates KorektaPodstawyOpodt with TerminPlatnosci', () => {
+      const xml = generateJpkV7k(makeInput({
+        sprzedazWiersze: [{
+          NrKontrahenta: '1234567890',
+          NazwaKontrahenta: 'Test',
+          DowodSprzedazy: 'FV/005',
+          DataWystawienia: '2026-03-15',
+          KorektaPodstawyOpodt: '1',
+          TerminPlatnosci: '2026-04-15',
+        }],
+      }))
+      expect(xml).toContain('<KorektaPodstawyOpodt>1</KorektaPodstawyOpodt>')
+      expect(xml).toContain('<TerminPlatnosci>2026-04-15</TerminPlatnosci>')
+    })
+
+    it('generates KorektaPodstawyOpodt with DataZaplaty when TerminPlatnosci is absent', () => {
+      const xml = generateJpkV7k(makeInput({
+        sprzedazWiersze: [{
+          NrKontrahenta: '1234567890',
+          NazwaKontrahenta: 'Test',
+          DowodSprzedazy: 'FV/006',
+          DataWystawienia: '2026-03-15',
+          KorektaPodstawyOpodt: '1',
+          DataZaplaty: '2026-04-01',
+        }],
+      }))
+      expect(xml).toContain('<KorektaPodstawyOpodt>1</KorektaPodstawyOpodt>')
+      expect(xml).toContain('<DataZaplaty>2026-04-01</DataZaplaty>')
+      expect(xml).not.toContain('<TerminPlatnosci>')
+    })
+
+    it('generates KorektaPodstawyOpodt without TerminPlatnosci or DataZaplaty', () => {
+      const xml = generateJpkV7k(makeInput({
+        sprzedazWiersze: [{
+          NrKontrahenta: '1234567890',
+          NazwaKontrahenta: 'Test',
+          DowodSprzedazy: 'FV/007',
+          DataWystawienia: '2026-03-15',
+          KorektaPodstawyOpodt: '1',
+        }],
+      }))
+      expect(xml).toContain('<KorektaPodstawyOpodt>1</KorektaPodstawyOpodt>')
+      expect(xml).not.toContain('<TerminPlatnosci>')
+      expect(xml).not.toContain('<DataZaplaty>')
+    })
+
+    it('generates TypDokumentu in SprzedazWiersz when provided', () => {
+      const xml = generateJpkV7k(makeInput({
+        sprzedazWiersze: [{
+          NrKontrahenta: '1234567890',
+          NazwaKontrahenta: 'Test',
+          DowodSprzedazy: 'RO/001',
+          DataWystawienia: '2026-03-15',
+          TypDokumentu: 'RO',
+        }],
+      }))
+      expect(xml).toContain('<TypDokumentu>RO</TypDokumentu>')
+    })
+
+    it('generates KodKrajuNadaniaTIN in SprzedazWiersz when provided', () => {
+      const xml = generateJpkV7k(makeInput({
+        sprzedazWiersze: [{
+          KodKrajuNadaniaTIN: 'DE',
+          NrKontrahenta: 'DE123456789',
+          NazwaKontrahenta: 'Test',
+          DowodSprzedazy: 'FV/008',
+          DataWystawienia: '2026-03-15',
+        }],
+      }))
+      expect(xml).toContain('<KodKrajuNadaniaTIN>DE</KodKrajuNadaniaTIN>')
+    })
+
+    it('generates standalone K fields in zakup when set', () => {
+      const xml = generateJpkV7k(makeInput({
+        zakupWiersze: [{
+          NrDostawcy: '9876543210',
+          NazwaDostawcy: 'Dostawca',
+          DowodZakupu: 'FZ/009',
+          DataZakupu: '2026-03-10',
+          K_44: '100.00',
+          K_45: '200.00',
+          K_46: '50.00',
+          K_47: '75.00',
+        }],
+      }))
+      expect(xml).toContain('<K_44>100.00</K_44>')
+      expect(xml).toContain('<K_45>200.00</K_45>')
+      expect(xml).toContain('<K_46>50.00</K_46>')
+      expect(xml).toContain('<K_47>75.00</K_47>')
+    })
+
+    it('generates fizyczna podmiot without optional fields', () => {
+      const xml = generateJpkV7k(makeInput({
+        podmiot: {
+          typ: 'fizyczna',
+          nip: '7680002466',
+          email: 'test@test.pl',
+        },
+      }))
+      expect(xml).toContain('<OsobaFizyczna>')
+      expect(xml).toContain('<etd:NIP>7680002466</etd:NIP>')
+      expect(xml).not.toContain('<etd:ImiePierwsze>')
+      expect(xml).not.toContain('<etd:Nazwisko>')
+      expect(xml).not.toContain('<etd:DataUrodzenia>')
+      expect(xml).not.toContain('<Telefon>')
+    })
+
+    it('generates niefizyczna podmiot with telefon', () => {
+      const xml = generateJpkV7k(makeInput({
+        podmiot: {
+          typ: 'niefizyczna',
+          nip: '5261040828',
+          pelnaNazwa: 'Test',
+          email: 'test@test.pl',
+          telefon: '500600700',
+        },
+      }))
+      expect(xml).toContain('<Telefon>500600700</Telefon>')
+    })
+
+    it('generates Deklaracja with P_61 and P_ORDZU raw fields', () => {
+      const xml = generateJpkV7k(makeInput({
+        deklaracja: {
+          P_38: 0,
+          P_51: 0,
+          P_61: 'Uzasadnienie korekty deklaracji',
+          P_ORDZU: 'TAK',
+        },
+        kwartal: 1,
+      }))
+      expect(xml).toContain('<P_61>Uzasadnienie korekty deklaracji</P_61>')
+      expect(xml).toContain('<P_ORDZU>TAK</P_ORDZU>')
+    })
+
+    it('calculates PodatekNalezny with minus fields K_35 and K_36', () => {
+      const xml = generateJpkV7k(makeInput({
+        sprzedazWiersze: [{
+          NrKontrahenta: '1234567890',
+          NazwaKontrahenta: 'Test',
+          DowodSprzedazy: 'FV/010',
+          DataWystawienia: '2026-03-15',
+          K_19: '10000',
+          K_20: '2300',
+          K_35: '100',
+          K_36: '50',
+          K_360: '25',
+        }],
+      }))
+      // PodatekNalezny = K_20(2300) - K_35(100) - K_36(50) - K_360(25) = 2125
+      expect(xml).toContain('<PodatekNalezny>2125.00</PodatekNalezny>')
+    })
+
+    it('generates Deklaracja with custom Pouczenia value', () => {
+      const xml = generateJpkV7k(makeInput({
+        deklaracja: {
+          P_38: 0,
+          P_51: 0,
+          Pouczenia: '2',
+        },
+        kwartal: 1,
+      }))
+      expect(xml).toContain('<Pouczenia>2</Pouczenia>')
+    })
+  })
+
+  // ── Generator registry — V7K ──
+  describe('registry generate function', () => {
+    it('generate function works via registry', () => {
+      const gen = generatorRegistry.get('JPK_V7K')!
+      const xml = gen.generate(makeInput({
+        sprzedazWiersze: [{
+          NrKontrahenta: '111',
+          NazwaKontrahenta: 'A',
+          DowodSprzedazy: 'F1',
+          DataWystawienia: '2026-03-01',
+          K_19: '1000',
+          K_20: '230',
+        }],
+      }))
+      expect(xml).toContain('<SprzedazWiersz>')
+      expect(xml).toContain('<K_19>1000.00</K_19>')
+    })
+  })
+
   // ── Full integration ──
   describe('full integration', () => {
     it('generates complete V7K XML with all sections', () => {

@@ -5,6 +5,7 @@ import * as XLSX from 'xlsx'
 import { FileReaderRegistry, createDefaultRegistry } from '../../../src/core/readers/FileReaderRegistry'
 import { TxtFileReader } from '../../../src/core/readers/TxtFileReader'
 import { CsvFileReader } from '../../../src/core/readers/CsvFileReader'
+import type { FileReaderPlugin } from '../../../src/core/models/types'
 
 const TEST_DATA_DIR = join(__dirname, '..', '..', '..', 'test-data')
 
@@ -95,6 +96,30 @@ describe('FileReaderRegistry', () => {
       const buf = Buffer.from([0x00, 0x01, 0x02, 0x00, 0x03])
       const reader = registry.findReader(buf, 'data.txt')
       expect(reader).toBeNull()
+    })
+
+    it('falls back to content-based canRead when no extension match (line 62)', () => {
+      // Create a custom registry with a mock reader that accepts any content
+      const customRegistry = new FileReaderRegistry()
+
+      const mockReader: FileReaderPlugin = {
+        name: 'MockReader',
+        supportedExtensions: ['mock'],
+        canRead: (_buffer: Buffer, _filename: string) => true,
+        read: (_buffer: Buffer, _filename: string) => ({
+          sheets: [],
+          encoding: 'utf-8' as const,
+          warnings: []
+        })
+      }
+      customRegistry.register(mockReader)
+
+      // Use an extension that doesn't match 'mock' — first loop skips,
+      // fallback loop calls canRead on all readers and MockReader returns true
+      const buf = Buffer.from('anything')
+      const found = customRegistry.findReader(buf, 'data.xyz')
+      expect(found).not.toBeNull()
+      expect(found!.name).toBe('MockReader')
     })
 
     it('finds TxtFileReader for .tsv files', () => {

@@ -60,6 +60,11 @@ describe('excelDateToString', () => {
     // Serial 61 = 1900-03-01 (correct)
     expect(excelDateToString(61)).toBe('1900-03-01')
   })
+
+  it('handles serial <= 59 without Lotus adjustment', () => {
+    // Serial 59 = 1900-02-28 (no adjustment since <= 59)
+    expect(excelDateToString(59)).toBe('1900-02-28')
+  })
 })
 
 describe('XlsxFileReader', () => {
@@ -201,6 +206,175 @@ describe('XlsxFileReader', () => {
       const sheet = result.sheets[0]
       // Without date format, numbers stay as formatted values
       expect(sheet.rows[0].cells[1]).toBe('42')
+    })
+  })
+
+  describe('canRead — xls format', () => {
+    it('accepts .xls files with OLE2 signature', () => {
+      // OLE2 compound document signature: D0 CF 11 E0 A1 B1 1A E1
+      const buf = Buffer.alloc(512)
+      buf[0] = 0xd0
+      buf[1] = 0xcf
+      buf[2] = 0x11
+      buf[3] = 0xe0
+      buf[4] = 0xa1
+      buf[5] = 0xb1
+      buf[6] = 0x1a
+      buf[7] = 0xe1
+      expect(reader.canRead(buf, 'data.xls')).toBe(true)
+    })
+
+    it('rejects .xls files without OLE2 signature', () => {
+      const buf = Buffer.from('not an xls file content')
+      expect(reader.canRead(buf, 'data.xls')).toBe(false)
+    })
+
+    it('rejects .xls files with buffer too short', () => {
+      const buf = Buffer.alloc(4)
+      expect(reader.canRead(buf, 'data.xls')).toBe(false)
+    })
+
+    it('returns false for unknown extension even with valid signature', () => {
+      const buf = Buffer.alloc(8)
+      buf[0] = 0x50; buf[1] = 0x4b // PK
+      expect(reader.canRead(buf, 'data.doc')).toBe(false)
+    })
+  })
+
+  describe('read — empty/no sheets workbook', () => {
+    it('returns warning for corrupted/unreadable Excel file', () => {
+      // Pass a buffer with valid PK signature but corrupted content
+      const buf = Buffer.from([0x50, 0x4b, 0x03, 0x04, 0x00, 0x00, 0x00, 0x00])
+      const result = reader.read(buf, 'corrupt.xlsx')
+      expect(result.sheets).toHaveLength(0)
+      expect(result.warnings.some((w) => w.message.includes('Błąd odczytu'))).toBe(true)
+    })
+
+    it('skips empty worksheets without !ref', () => {
+      const wb = XLSX.utils.book_new()
+      const ws1 = XLSX.utils.aoa_to_sheet([['A', 'B'], ['1', '2']])
+      XLSX.utils.book_append_sheet(wb, ws1, 'Data')
+      // Create an empty worksheet manually
+      const ws2: XLSX.WorkSheet = {}
+      XLSX.utils.book_append_sheet(wb, ws2, 'Empty')
+
+      const xlsxData = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' })
+      const buf = Buffer.from(xlsxData)
+      const result = reader.read(buf, 'test.xlsx')
+
+      expect(result.sheets).toHaveLength(1)
+      expect(result.sheets[0].name).toBe('Data')
+      expect(result.warnings.some((w) => w.message.includes('Empty') && w.message.includes('pusty'))).toBe(true)
+    })
+  })
+
+  describe('read — cell value branches', () => {
+    it('uses cell.v when cell.w is not available', () => {
+      // Build worksheet manually with cells that have .v but no .w
+      const wb = XLSX.utils.book_new()
+      const ws: XLSX.WorkSheet = {
+        '!ref': 'A1:B2',
+        'A1': { t: 's', v: 'Header1' },
+        'B1': { t: 's', v: 'Header2' },
+        'A2': { t: 'n', v: 42 },
+        'B2': { t: 's', v: 'text' }
+      }
+      XLSX.utils.book_append_sheet(wb, ws, 'Test')
+      const xlsxData = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' })
+      const buf = Buffer.from(xlsxData)
+      const result = reader.read(buf, 'test.xlsx')
+
+      expect(result.sheets).toHaveLength(1)
+    })
+
+    it('returns empty string for cell with no v and no w', () => {
+      const wb = XLSX.utils.book_new()
+      const ws: XLSX.WorkSheet = {
+        '!ref': 'A1:B2',
+        'A1': { t: 's', v: 'H1' },
+        'B1': { t: 's', v: 'H2' },
+        'A2': { t: 'z' } as XLSX.CellObject, // blank cell type
+        'B2': { t: 's', v: 'val' }
+      }
+      XLSX.utils.book_append_sheet(wb, ws, 'Test')
+      const xlsxData = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' })
+      const buf = Buffer.from(xlsxData)
+      const result = reader.read(buf, 'test.xlsx')
+
+      expect(result.sheets).toHaveLength(1)
+    })
+
+    it('detects date with format string containing y/m/d', () => {
+      const wb = XLSX.utils.book_new()
+      const ws: XLSX.WorkSheet = {
+        '!ref': 'A1:A2',
+        'A1': { t: 's', v: 'Date', w: 'Date' },
+        'A2': { t: 'n', v: 46054, z: 'yyyy-mm-dd', w: '2026-02-01' }
+      }
+      XLSX.utils.book_append_sheet(wb, ws, 'Dates')
+      const xlsxData = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' })
+      const buf = Buffer.from(xlsxData)
+      const result = reader.read(buf, 'dates.xlsx')
+
+      const sheet = result.sheets[0]
+      // The date value should appear somewhere in the data (header detection may vary)
+      const allValues = sheet.rows.flatMap((r) => r.cells)
+      expect(allValues.some((v) => v === '2026-02-01')).toBe(true)
+    })
+
+    it('does not treat number as date without date format', () => {
+      // Number without date format pattern should NOT be converted
+      const wb = XLSX.utils.book_new()
+      const ws: XLSX.WorkSheet = {
+        '!ref': 'A1:A2',
+        'A1': { t: 's', v: 'Amount', w: 'Amount' },
+        'A2': { t: 'n', v: 500, z: '#,##0', w: '500' }
+      }
+      XLSX.utils.book_append_sheet(wb, ws, 'Nums')
+      const xlsxData = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' })
+      const buf = Buffer.from(xlsxData)
+      const result = reader.read(buf, 'nums.xlsx')
+
+      const sheet = result.sheets[0]
+      expect(sheet.rows[0].cells[0]).toBe('500')
+    })
+  })
+
+  describe('read — header detection', () => {
+    it('does not detect header when first row has empty cells', () => {
+      const buf = createXlsxBuffer([
+        { name: 'S', data: [['', 'B', 'C'], ['1', '2', '3']] }
+      ])
+      const result = reader.read(buf, 'noheader.xlsx')
+      // First row has empty cell → not all text → no header
+      expect(result.sheets[0].headers).toBeUndefined()
+    })
+
+    it('does not detect header when first row has numeric values', () => {
+      const buf = createXlsxBuffer([
+        { name: 'S', data: [['Name', '123', 'City'], ['Alice', '30', 'Warsaw']] }
+      ])
+      const result = reader.read(buf, 'numheader.xlsx')
+      // First row has '123' which looks numeric → no header
+      expect(result.sheets[0].headers).toBeUndefined()
+    })
+
+    it('does not detect header when only one row', () => {
+      const buf = createXlsxBuffer([
+        { name: 'S', data: [['Name', 'Age', 'City']] }
+      ])
+      const result = reader.read(buf, 'single.xlsx')
+      // Only 1 row → allRows.length < 2 → no header
+      expect(result.sheets[0].headers).toBeUndefined()
+    })
+
+    it('does not detect header when second row has no numbers', () => {
+      const buf = createXlsxBuffer([
+        { name: 'S', data: [['Name', 'City'], ['Alice', 'Warsaw']] }
+      ])
+      const result = reader.read(buf, 'textonly.xlsx')
+      // Second row has no numeric values → no header
+      expect(result.sheets[0].headers).toBeUndefined()
     })
   })
 

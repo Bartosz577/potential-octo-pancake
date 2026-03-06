@@ -397,6 +397,132 @@ describe('JpkEwpGenerator', () => {
     })
   })
 
+  // ── Branch coverage: missing/default field values ──
+  describe('branch coverage — default and fallback paths', () => {
+    it('uses default K_1=1 when K_1 is missing from row', () => {
+      const row: Record<string, string> = {
+        K_2: '2026-03-15',
+        K_3: '2026-03-15',
+        K_4: 'FV/001',
+        K_8: '100',
+        K_9: '8.5',
+      }
+      const xml = generateJpkEwp(makeInput({ wiersze: [row] }))
+      expect(xml).toContain('<K_1>1</K_1>')
+    })
+
+    it('generates empty K_2 when K_2 is missing from row', () => {
+      const row: Record<string, string> = {
+        K_1: '1',
+        K_3: '2026-03-15',
+        K_4: 'FV/001',
+        K_8: '100',
+        K_9: '8.5',
+      }
+      const xml = generateJpkEwp(makeInput({ wiersze: [row] }))
+      expect(xml).toContain('<K_2></K_2>')
+    })
+
+    it('generates empty K_3 when K_3 is missing from row', () => {
+      const row: Record<string, string> = {
+        K_1: '1',
+        K_2: '2026-03-15',
+        K_4: 'FV/001',
+        K_8: '100',
+        K_9: '8.5',
+      }
+      const xml = generateJpkEwp(makeInput({ wiersze: [row] }))
+      expect(xml).toContain('<K_3></K_3>')
+    })
+
+    it('generates empty K_4 when K_4 is missing from row', () => {
+      const row: Record<string, string> = {
+        K_1: '1',
+        K_2: '2026-03-15',
+        K_3: '2026-03-15',
+        K_8: '100',
+        K_9: '8.5',
+      }
+      const xml = generateJpkEwp(makeInput({ wiersze: [row] }))
+      expect(xml).toContain('<K_4></K_4>')
+    })
+
+    it('generates empty K_9 when K_9 is missing from row', () => {
+      const row: Record<string, string> = {
+        K_1: '1',
+        K_2: '2026-03-15',
+        K_3: '2026-03-15',
+        K_4: 'FV/001',
+        K_8: '100',
+      }
+      const xml = generateJpkEwp(makeInput({ wiersze: [row] }))
+      expect(xml).toContain('<K_9></K_9>')
+    })
+
+    it('omits optional fields when values are empty strings', () => {
+      const xml = generateJpkEwp(makeInput({
+        wiersze: [makeRow({ K_5: '', K_6: '', K_7: '', K_10: '' })],
+      }))
+      expect(xml).not.toContain('<K_5>')
+      expect(xml).not.toContain('<K_6>')
+      expect(xml).not.toContain('<K_7>')
+      expect(xml).not.toContain('<K_10>')
+    })
+
+    it('generates niefizyczna podmiot without email and telefon', () => {
+      const xml = generateJpkEwp(makeInput({
+        podmiot: {
+          typ: 'niefizyczna',
+          nip: '5261040828',
+          pelnaNazwa: 'Test Sp. z o.o.',
+        },
+      }))
+      expect(xml).toContain('<OsobaNiefizyczna>')
+      expect(xml).toContain('<NIP>5261040828</NIP>')
+      expect(xml).toContain('<PelnaNazwa>Test Sp. z o.o.</PelnaNazwa>')
+      expect(xml).not.toContain('<Email>')
+      expect(xml).not.toContain('<Telefon>')
+    })
+
+    it('generates niefizyczna podmiot with telefon', () => {
+      const xml = generateJpkEwp(makeInput({
+        podmiot: {
+          typ: 'niefizyczna',
+          nip: '5261040828',
+          pelnaNazwa: 'Test',
+          telefon: '123456789',
+        },
+      }))
+      expect(xml).toContain('<Telefon>123456789</Telefon>')
+    })
+
+    it('generates fizyczna podmiot without optional fields', () => {
+      const xml = generateJpkEwp(makeInput({
+        podmiot: {
+          typ: 'fizyczna',
+          nip: '7680002466',
+        },
+      }))
+      expect(xml).toContain('<OsobaFizyczna>')
+      expect(xml).toContain('<etd:NIP>7680002466</etd:NIP>')
+      expect(xml).not.toContain('<etd:ImiePierwsze>')
+      expect(xml).not.toContain('<etd:Nazwisko>')
+      expect(xml).not.toContain('<etd:DataUrodzenia>')
+      expect(xml).not.toContain('<Email>')
+      expect(xml).not.toContain('<Telefon>')
+    })
+
+    it('generates niefizyczna podmiot with empty pelnaNazwa fallback', () => {
+      const xml = generateJpkEwp(makeInput({
+        podmiot: {
+          typ: 'niefizyczna',
+          nip: '5261040828',
+        },
+      }))
+      expect(xml).toContain('<PelnaNazwa></PelnaNazwa>')
+    })
+  })
+
   // ── Generator registry ──
   describe('generator registry', () => {
     it('registers as JPK_EWP type', () => {

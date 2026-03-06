@@ -528,6 +528,97 @@ describe('JpkPkpirGenerator', () => {
     })
   })
 
+  // ── Branch coverage — uncovered conditional paths ──
+  describe('branch coverage — uncovered conditional paths', () => {
+    it('handles empty spisy array (length = 0)', () => {
+      const xml = generateJpkPkpir(makeInput({ spisy: [] }))
+      expect(xml).not.toContain('<PKPIRSpis>')
+    })
+
+    it('generates K_16A and K_16B when only K_16B is present', () => {
+      const xml = generateJpkPkpir(makeInput({
+        wiersze: [makeRow({ K_16B: '3000.00' })],
+      }))
+      expect(xml).toContain('<K_16A></K_16A>')
+      expect(xml).toContain('<K_16B>3000.00</K_16B>')
+    })
+
+    it('generates row with all required fields missing (fallback to empty)', () => {
+      const row: Record<string, string> = {}
+      const xml = generateJpkPkpir(makeInput({ wiersze: [row] }))
+      expect(xml).toContain('<K_1>1</K_1>')
+      expect(xml).toContain('<K_2></K_2>')
+      expect(xml).toContain('<K_3A></K_3A>')
+      expect(xml).toContain('<K_5A></K_5A>')
+      expect(xml).toContain('<K_5B></K_5B>')
+      expect(xml).toContain('<K_6></K_6>')
+    })
+
+    it('generates niefizyczna podmiot without email and telefon', () => {
+      const xml = generateJpkPkpir(makeInput({
+        podmiot: {
+          typ: 'niefizyczna',
+          nip: '5261040828',
+          pelnaNazwa: 'Test',
+        },
+      }))
+      expect(xml).toContain('<OsobaNiefizyczna>')
+      expect(xml).not.toContain('<Email>')
+      expect(xml).not.toContain('<Telefon>')
+    })
+
+    it('generates niefizyczna podmiot with telefon', () => {
+      const xml = generateJpkPkpir(makeInput({
+        podmiot: {
+          typ: 'niefizyczna',
+          nip: '5261040828',
+          pelnaNazwa: 'Test',
+          telefon: '500600700',
+        },
+      }))
+      expect(xml).toContain('<Telefon>500600700</Telefon>')
+    })
+
+    it('generates fizyczna podmiot without optional fields', () => {
+      const xml = generateJpkPkpir(makeInput({
+        podmiot: {
+          typ: 'fizyczna',
+          nip: '7680002466',
+        },
+      }))
+      expect(xml).toContain('<OsobaFizyczna>')
+      expect(xml).toContain('<etd:NIP>7680002466</etd:NIP>')
+      expect(xml).not.toContain('<etd:ImiePierwsze>')
+      expect(xml).not.toContain('<etd:Nazwisko>')
+      expect(xml).not.toContain('<etd:DataUrodzenia>')
+      expect(xml).not.toContain('<Email>')
+      expect(xml).not.toContain('<Telefon>')
+    })
+
+    it('generates PKPIRInfo with string values for amounts', () => {
+      const xml = generateJpkPkpir(makeInput({
+        pkpirInfo: {
+          spisPoczatek: '5000.50',
+          spisKoniec: '6000.75',
+          kosztyRazem: '30000',
+          dochod: '45000',
+        },
+      }))
+      expect(xml).toContain('<P_1>5000.50</P_1>')
+      expect(xml).toContain('<P_2>6000.75</P_2>')
+      expect(xml).toContain('<P_3>30000.00</P_3>')
+      expect(xml).toContain('<P_4>45000.00</P_4>')
+    })
+
+    it('generates PKPIRSpis with string wartosc value', () => {
+      const xml = generateJpkPkpir(makeInput({
+        spisy: [{ data: '2026-06-30', wartosc: '7500.25' }],
+      }))
+      expect(xml).toContain('<PKPIRSpis>')
+      expect(xml).toContain('<P_5B>7500.25</P_5B>')
+    })
+  })
+
   // ── Full integration ──
   describe('full integration', () => {
     it('generates complete PKPIR XML with all sections', () => {
