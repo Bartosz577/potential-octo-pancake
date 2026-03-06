@@ -1,4 +1,4 @@
-import { FileText, FileSpreadsheet, Package, Clock, Wallet, BookOpen, Receipt, Scale, Landmark } from 'lucide-react'
+import { FileText, FileSpreadsheet, Package, Clock, Wallet, BookOpen, Receipt, Scale, Landmark, Tractor, BookMarked } from 'lucide-react'
 import { useAppStore, type JpkType } from '@renderer/stores/appStore'
 
 const NAV_ITEMS: { type: JpkType; label: string; sublabel: string; icon: typeof FileText }[] = [
@@ -10,7 +10,9 @@ const NAV_ITEMS: { type: JpkType; label: string; sublabel: string; icon: typeof 
   { type: 'EWP', label: 'JPK EWP', sublabel: 'Ewidencja ryczałtu', icon: Receipt },
   { type: 'KR_PD', label: 'JPK KR_PD', sublabel: 'Księgi rachunkowe (CIT)', icon: Scale },
   { type: 'ST', label: 'JPK ST', sublabel: 'Środki trwałe (EWP/PKPiR)', icon: Landmark },
-  { type: 'ST_KR', label: 'JPK ST_KR', sublabel: 'Środki trwałe (KR)', icon: Landmark }
+  { type: 'ST_KR', label: 'JPK ST_KR', sublabel: 'Środki trwałe (KR)', icon: Landmark },
+  { type: 'FA_RR', label: 'JPK FA_RR', sublabel: 'Faktury VAT RR', icon: Tractor },
+  { type: 'KR', label: 'JPK KR', sublabel: 'Księgi rachunkowe (legacy)', icon: BookMarked }
 ]
 
 export function Sidebar(): React.JSX.Element {

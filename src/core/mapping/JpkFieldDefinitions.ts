@@ -266,6 +266,42 @@ export const JPK_ST_KR_WIERSZ_FIELDS: JpkFieldDef[] = [
 ]
 
 // ═══════════════════════════════════════════════════════
+//  JPK_FA_RR(1) — FakturaRR (agricultural VAT invoices)
+// ═══════════════════════════════════════════════════════
+
+export const JPK_FA_RR_FAKTURA_FIELDS: JpkFieldDef[] = [
+  { name: 'P_1A', label: 'Dostawca — nazwa', type: 'string', required: true, description: 'Imię i nazwisko lub nazwa dostawcy', synonyms: ['dostawca', 'nazwa_dostawcy', 'rolnik'] },
+  { name: 'P_1B', label: 'Dostawca — adres', type: 'string', required: true, description: 'Adres dostawcy', synonyms: ['adres_dostawcy'] },
+  { name: 'P_1C', label: 'Nabywca — nazwa', type: 'string', required: true, description: 'Imię i nazwisko lub nazwa nabywcy', synonyms: ['nabywca', 'nazwa_nabywcy'] },
+  { name: 'P_1D', label: 'Nabywca — adres', type: 'string', required: true, description: 'Adres nabywcy', synonyms: ['adres_nabywcy'] },
+  { name: 'P_2A', label: 'NIP/PESEL dostawcy', type: 'nip', required: true, description: 'NIP lub PESEL dostawcy', synonyms: ['nip_dostawcy', 'pesel_dostawcy'] },
+  { name: 'P_2B', label: 'NIP nabywcy', type: 'nip', required: true, description: 'NIP nabywcy', synonyms: ['nip_nabywcy'] },
+  { name: 'P_4A', label: 'Data nabycia', type: 'date', required: true, description: 'Data dokonania nabycia', synonyms: ['data_nabycia', 'data_zakupu'] },
+  { name: 'P_4B', label: 'Data wystawienia', type: 'date', required: true, description: 'Data wystawienia faktury', synonyms: ['data_wystawienia', 'data_faktury'] },
+  { name: 'P_4C1', label: 'Nr faktury', type: 'string', required: true, description: 'Kolejny numer faktury', synonyms: ['nr_faktury', 'numer_faktury'] },
+  { name: 'P_12_1', label: 'Kwota należności', type: 'decimal', required: true, description: 'Kwota należności ogółem z VAT', synonyms: ['brutto', 'razem', 'naleznosc'] },
+  { name: 'RodzajFaktury', label: 'Rodzaj faktury', type: 'string', required: true, description: 'VAT_RR lub KOREKTA_RR', synonyms: ['rodzaj', 'typ_faktury'] },
+]
+
+// ═══════════════════════════════════════════════════════
+//  JPK_KR(1) — Dziennik (legacy accounting books)
+// ═══════════════════════════════════════════════════════
+
+export const JPK_KR_DZIENNIK_FIELDS: JpkFieldDef[] = [
+  { name: 'LpZapisuDziennika', label: 'Lp.', type: 'integer', required: true, description: 'Numer kolejny zapisu dziennika', synonyms: ['lp', 'nr', 'numer'] },
+  { name: 'NrZapisuDziennika', label: 'Nr zapisu', type: 'string', required: true, description: 'Numer zapisu w dzienniku', synonyms: ['numer_zapisu', 'nr_zapisu'] },
+  { name: 'OpisDziennika', label: 'Dziennik', type: 'string', required: true, description: 'Opis dziennika', synonyms: ['dziennik', 'nazwa_dziennika'] },
+  { name: 'NrDowoduKsiegowego', label: 'Nr dowodu', type: 'string', required: true, description: 'Numer dowodu księgowego', synonyms: ['dowod', 'nr_dowodu', 'dokument'] },
+  { name: 'RodzajDowodu', label: 'Rodzaj dowodu', type: 'string', required: true, description: 'Typ dowodu księgowego', synonyms: ['rodzaj_dowodu', 'typ_dowodu'] },
+  { name: 'DataOperacji', label: 'Data operacji', type: 'date', required: true, description: 'Data dokonania operacji', synonyms: ['data', 'data_operacji'] },
+  { name: 'DataDowodu', label: 'Data dowodu', type: 'date', required: true, description: 'Data sporządzenia dowodu', synonyms: ['data_dowodu', 'data_wystawienia'] },
+  { name: 'DataKsiegowania', label: 'Data księgowania', type: 'date', required: true, description: 'Data ujęcia w księgach', synonyms: ['data_ksiegowania', 'data_wpisu'] },
+  { name: 'KodOperatora', label: 'Operator', type: 'string', required: true, description: 'Osoba odpowiedzialna za zapis', synonyms: ['operator', 'osoba', 'uzytkownik'] },
+  { name: 'OpisOperacji', label: 'Opis operacji', type: 'string', required: true, description: 'Opis operacji w dzienniku', synonyms: ['opis', 'opis_operacji', 'tresc'] },
+  { name: 'DziennikKwotaOperacji', label: 'Kwota operacji', type: 'decimal', required: true, description: 'Wartość operacji', synonyms: ['kwota', 'kwota_operacji', 'wartosc'] },
+]
+
+// ═══════════════════════════════════════════════════════
 //  Section definitions (for registry / lookup)
 // ═══════════════════════════════════════════════════════
 
@@ -309,6 +345,16 @@ export const JPK_SECTIONS: Record<string, JpkSectionDef> = {
     sectionName: 'STKrWiersz',
     label: 'ST_KR — środki trwałe (KR)',
     fields: JPK_ST_KR_WIERSZ_FIELDS,
+  },
+  'JPK_FA_RR.FaRrFaktura': {
+    sectionName: 'FaRrFaktura',
+    label: 'FA_RR — faktury VAT RR',
+    fields: JPK_FA_RR_FAKTURA_FIELDS,
+  },
+  'JPK_KR.KrDziennik': {
+    sectionName: 'KrDziennik',
+    label: 'KR — dziennik księgowy (legacy)',
+    fields: JPK_KR_DZIENNIK_FIELDS,
   },
 }
 

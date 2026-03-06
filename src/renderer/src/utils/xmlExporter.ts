@@ -12,6 +12,8 @@ import '../../../core/generators/JpkEwpGenerator'
 import '../../../core/generators/JpkKrPdGenerator'
 import '../../../core/generators/JpkStGenerator'
 import '../../../core/generators/JpkStKrGenerator'
+import '../../../core/generators/JpkFaRrGenerator'
+import '../../../core/generators/JpkKrGenerator'
 import type { V7mGeneratorInput } from '../../../core/generators/JpkV7mGenerator'
 import type { V7kGeneratorInput } from '../../../core/generators/JpkV7kGenerator'
 import type { FaGeneratorInput } from '../../../core/generators/JpkFaGenerator'
@@ -22,6 +24,8 @@ import type { EwpGeneratorInput } from '../../../core/generators/JpkEwpGenerator
 import type { KrPdGeneratorInput } from '../../../core/generators/JpkKrPdGenerator'
 import type { StGeneratorInput } from '../../../core/generators/JpkStGenerator'
 import type { StKrGeneratorInput } from '../../../core/generators/JpkStKrGenerator'
+import type { FaRrGeneratorInput } from '../../../core/generators/JpkFaRrGenerator'
+import type { KrGeneratorInput } from '../../../core/generators/JpkKrGenerator'
 import type { ColumnMapping } from '../../../core/mapping/AutoMapper'
 import type { ParsedFile, JpkType } from '../types'
 import type { CompanyData, PeriodData } from '../stores/companyStore'
@@ -47,7 +51,9 @@ const JPK_REGISTRY_KEYS: Record<JpkType, string> = {
   JPK_EWP: 'JPK_EWP',
   JPK_KR_PD: 'JPK_KR_PD',
   JPK_ST: 'JPK_ST',
-  JPK_ST_KR: 'JPK_ST_KR'
+  JPK_ST_KR: 'JPK_ST_KR',
+  JPK_FA_RR: 'JPK_FA_RR',
+  JPK_KR: 'JPK_KR'
 }
 
 const JPK_FILE_PREFIXES: Record<JpkType, string> = {
@@ -59,7 +65,9 @@ const JPK_FILE_PREFIXES: Record<JpkType, string> = {
   JPK_EWP: 'JPK_EWP',
   JPK_KR_PD: 'JPK_KR_PD',
   JPK_ST: 'JPK_ST',
-  JPK_ST_KR: 'JPK_ST_KR'
+  JPK_ST_KR: 'JPK_ST_KR',
+  JPK_FA_RR: 'JPK_FA_RR',
+  JPK_KR: 'JPK_KR'
 }
 
 // Convert file rows to Record<string, string>[] using column mappings
@@ -389,6 +397,67 @@ function buildStKrInput(
   }
 }
 
+function buildFaRrInput(
+  file: ParsedFile,
+  _records: Record<string, string>[],
+  company: CompanyData,
+  period: PeriodData
+): FaRrGeneratorInput {
+  const mm = String(period.month).padStart(2, '0')
+  return {
+    naglowek: {
+      dataOd: file.dateFrom || `${period.year}-${mm}-01`,
+      dataDo: file.dateTo || `${period.year}-${mm}-28`,
+      kodUrzedu: company.kodUrzedu
+    },
+    podmiot: {
+      nip: normalizeNip(company.nip),
+      pelnaNazwa: company.fullName,
+      adres: {
+        typ: 'polski' as const,
+        wojewodztwo: '-',
+        powiat: '-',
+        gmina: '-',
+        nrDomu: '-',
+        miejscowosc: '-',
+        kodPocztowy: '00-000'
+      }
+    },
+    faktury: [],
+    wiersze: []
+  }
+}
+
+function buildKrInput(
+  file: ParsedFile,
+  _records: Record<string, string>[],
+  company: CompanyData,
+  period: PeriodData
+): KrGeneratorInput {
+  const mm = String(period.month).padStart(2, '0')
+  return {
+    naglowek: {
+      dataOd: file.dateFrom || `${period.year}-${mm}-01`,
+      dataDo: file.dateTo || `${period.year}-12-31`,
+      kodUrzedu: company.kodUrzedu
+    },
+    podmiot: {
+      nip: normalizeNip(company.nip),
+      pelnaNazwa: company.fullName,
+      regon: company.regon || undefined,
+      adres: {
+        kodKraju: 'PL',
+        nrDomu: '-',
+        miejscowosc: '-',
+        kodPocztowy: '00-000'
+      }
+    },
+    zpisSald: [],
+    dziennik: [],
+    kontoZapisy: []
+  }
+}
+
 function buildGeneratorInput(
   file: ParsedFile,
   records: Record<string, string>[],
@@ -417,6 +486,10 @@ function buildGeneratorInput(
       return buildStInput(file, records, company, period)
     case 'JPK_ST_KR':
       return buildStKrInput(file, records, company, period)
+    case 'JPK_FA_RR':
+      return buildFaRrInput(file, records, company, period)
+    case 'JPK_KR':
+      return buildKrInput(file, records, company, period)
   }
 }
 

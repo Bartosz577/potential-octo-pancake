@@ -120,7 +120,32 @@
 - [x] Integracja: appStore, Sidebar, ImportStep, ExportStep, PreviewStep, ValidationStep, HistoryStep, xmlExporter, validator
 - [x] Testy: `JpkStKrGenerator.test.ts` — 43 testy
 
-### 2.11 Generyczny silnik XML
+### 2.11 JPK_FA_RR(1) — nowy generator (faktury VAT RR)
+- [x] Schemat XSD JPK_FA_RR(1) (namespace 08121) — pobrany do /schemas
+- [x] Zaimplementuj `JpkFaRrGenerator.ts` — 3 namespacey (tns, etd, kck), TPodpis, typ="G"
+- [x] FakturaRR: P_1A..P_4C1, P_11_1/P_11_2, P_12_1/P_12_2, P_116_3, RodzajFaktury, korekta
+- [x] FakturaRRWiersz: P_4C2..P_10, TIlosciJPK (P_6B)
+- [x] FakturaRRCtrl (sum P_12_1), FakturaRRWierszCtrl (sum P_8)
+- [x] Opcjonalna sekcja Oswiadczenie + OswiadczenieCtrl (count only)
+- [x] Dodaj typ JPK_FA_RR do core/models/types.ts i renderer/types
+- [x] Dodaj JPK_FA_RR_FAKTURA_FIELDS do JpkFieldDefinitions.ts (11 pól)
+- [x] Integracja: appStore, Sidebar, ImportStep, ExportStep, PreviewStep, ValidationStep, HistoryStep, xmlExporter, validator
+- [x] Testy: `JpkFaRrGenerator.test.ts` — 52 testy
+
+### 2.12 JPK_KR(1) — nowy generator (księgi rachunkowe legacy)
+- [x] Schemat XSD JPK_KR(1) (namespace 03091) — pobrany do /schemas
+- [x] Zaimplementuj `JpkKrGenerator.ts` — etd v4, starszy format (2016)
+- [x] ZOiS: 18 pól (16 wymaganych + 2 opcjonalne podkategorie), typ="G"
+- [x] Dziennik: 11 pól (wszystkie wymagane), typ="G"
+- [x] KontoZapis: debit AND credit w każdym wierszu (nie choice), default="null", typ="G"
+- [x] DziennikCtrl: LiczbaWierszyDziennika + SumaKwotOperacji
+- [x] KontoZapisCtrl: LiczbaWierszyKontoZapisj (oficjalny typo!) + SumaWinien + SumaMa
+- [x] Dodaj typ JPK_KR do core/models/types.ts i renderer/types
+- [x] Dodaj JPK_KR_DZIENNIK_FIELDS do JpkFieldDefinitions.ts (11 pól)
+- [x] Integracja: appStore, Sidebar, ImportStep, ExportStep, PreviewStep, ValidationStep, HistoryStep, xmlExporter, validator
+- [x] Testy: `JpkKrGenerator.test.ts` — 39 testy
+
+### 2.13 Generyczny silnik XML
 - [x] Refaktor: wydziel wspólną logikę (nagłówek, escape, formatowanie) do `XmlGeneratorEngine.ts`
 - [x] Zdefiniuj interfejs `XmlGenerator` i zarejestruj generatory w registry
 

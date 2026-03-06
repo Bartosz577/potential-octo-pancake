@@ -101,7 +101,9 @@ const KEY_SUM_FIELDS: Record<JpkType, string[]> = {
   JPK_EWP: ['K_8'],
   JPK_KR_PD: ['D_11'],
   JPK_ST: [],
-  JPK_ST_KR: []
+  JPK_ST_KR: [],
+  JPK_FA_RR: ['P_12_1'],
+  JPK_KR: ['DziennikKwotaOperacji']
 }
 
 // --- STRUKTURA ---

@@ -344,7 +344,9 @@ const TAB_LABELS: Record<JpkType, string> = {
   JPK_EWP: 'Ewidencja przychodów',
   JPK_KR_PD: 'Księgi rachunkowe',
   JPK_ST: 'Środki trwałe',
-  JPK_ST_KR: 'Środki trwałe (KR)'
+  JPK_ST_KR: 'Środki trwałe (KR)',
+  JPK_FA_RR: 'Faktury VAT RR',
+  JPK_KR: 'Księgi rachunkowe (legacy)'
 }
 
 export function PreviewStep(): React.JSX.Element {
