@@ -24,13 +24,37 @@ Każdy krok = osobny komponent React. Nawigacja przez `appStore.currentStep`.
 ### Warstwy core
 ```
 src/core/
-├── readers/         # Pluginy odczytu plików (TxtFileReader, CsvFileReader, XlsxFileReader, JsonFileReader, XmlFileReader)
-├── mapping/         # AutoMapper, SystemProfiles, TransformEngine, JpkFieldDefinitions
-├── models/          # TypeScript interfaces (types.ts + canonical models per JPK type)
-├── validation/      # ValidationEngine + rules (structural, business, checksums, xsd)
-├── generators/      # XML generators per typ JPK
-├── encoding/        # EncodingDetector (windows-1250, ISO-8859-2, CP852)
-└── ConversionPipeline.ts  # Orkiestrator: parse → map → transform → validate → generate
+├── readers/                    # Pluginy odczytu plików (8 formatów)
+│   ├── TxtFileReader.ts        #   TXT pipe-delimited (NAMOS/ESO)
+│   ├── CsvFileReader.ts        #   CSV z auto-detect separatora
+│   ├── XlsxFileReader.ts       #   Excel XLSX/XLS
+│   ├── JsonFileReader.ts       #   JSON (tablica obiektów)
+│   ├── XmlFileReader.ts        #   Generyczny XML
+│   ├── EppFileReader.ts        #   Format Comarch Optima EPP
+│   ├── DbfFileReader.ts        #   dBASE III/IV DBF
+│   ├── OdsFileReader.ts        #   OpenDocument Spreadsheet ODS
+│   └── FileReaderRegistry.ts   #   Auto-detection formatu
+├── mapping/                    # AutoMapper, SystemProfiles, TransformEngine, JpkFieldDefinitions
+├── models/                     # TypeScript interfaces (types.ts + canonical models per JPK type)
+├── validation/                 # XsdValidator + rules (structural, business, checksums, xsd)
+├── generators/                 # XML generators (12 typów JPK)
+│   ├── JpkV7mGenerator.ts      #   JPK_V7M(3) z KSeF
+│   ├── JpkV7kGenerator.ts      #   JPK_V7K(3) z KSeF
+│   ├── JpkFaGenerator.ts       #   JPK_FA(4)
+│   ├── JpkFaRrGenerator.ts     #   JPK_FA_RR(1)
+│   ├── JpkMagGenerator.ts      #   JPK_MAG(2)
+│   ├── JpkWbGenerator.ts       #   JPK_WB(1)
+│   ├── JpkPkpirGenerator.ts    #   JPK_PKPIR(3)
+│   ├── JpkEwpGenerator.ts      #   JPK_EWP(4)
+│   ├── JpkKrPdGenerator.ts     #   JPK_KR_PD(1)
+│   ├── JpkKrGenerator.ts       #   JPK_KR(1)
+│   ├── JpkStGenerator.ts       #   JPK_ST(1)
+│   ├── JpkStKrGenerator.ts     #   JPK_ST_KR(1)
+│   └── XmlGeneratorEngine.ts   #   Wspólny silnik XML
+├── encoding/                   # EncodingDetector (windows-1250, ISO-8859-2, CP852)
+├── JpkMerger.ts                # Scalanie plików JPK XML tego samego typu
+├── JpkVersionConverter.ts      # Konwersja starszych wersji JPK (FA(2/3)→FA(4), V7M(2)→V7M(3))
+└── ConversionPipeline.ts       # Orkiestrator: parse → map → transform → validate → generate
 ```
 
 ### UI
