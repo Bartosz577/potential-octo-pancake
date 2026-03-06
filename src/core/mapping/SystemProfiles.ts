@@ -176,6 +176,58 @@ const ESO_MAG_WZ_MAP: Record<number, string> = {
 }
 
 // ═══════════════════════════════════════════════════════
+//  COMARCH OPTIMA — JPK_VDEK SprzedazWiersz (VAT register TXT)
+// ═══════════════════════════════════════════════════════
+// Pipe-separated TXT export from Comarch Optima VAT register
+// 14 data columns, no metadata prefix (unlike NAMOS/ESO)
+// Header row: NrDokumentu|DataWystawienia|DataSprzedazy|NIPNabywcy|...
+
+const COMARCH_OPTIMA_VAT_TXT_MAP: Record<number, string> = {
+  0: 'DowodSprzedazy',     // NrDokumentu
+  1: 'DataWystawienia',    // DataWystawienia
+  2: 'DataSprzedazy',      // DataSprzedazy
+  3: 'NrKontrahenta',      // NIPNabywcy
+  4: 'NazwaKontrahenta',   // NazwaNabywcy
+  5: 'K_10',               // NettoPodst23
+  6: 'K_11',               // Vat23
+  7: 'K_12',               // NettoPodst8
+  8: 'K_13',               // Vat8
+  9: 'K_14',               // NettoPodst5
+  10: 'K_15',              // Vat5
+  11: 'K_17',              // NettoZwolnione
+  // Col 12: Brutto — sum field, not a direct JPK target
+  // Col 13: KodWaluty — currency code
+}
+
+// ═══════════════════════════════════════════════════════
+//  COMARCH OPTIMA — JPK_FA Faktura (XML export)
+// ═══════════════════════════════════════════════════════
+// XML export from Comarch Optima with <Faktura> root element
+// Element names map directly to JPK_FA fields
+
+const COMARCH_OPTIMA_XML_FA_MAP: Record<number, string> = {
+  0: 'KodWaluty',
+  1: 'P_1',           // DataWystawienia
+  2: 'P_2',           // NumerFaktury
+  3: 'P_3A',          // NazwaKontrahenta → nabywca nazwa
+  4: 'P_3B',          // AdresKontrahenta → nabywca adres
+  5: 'P_3C',          // NazwaSprzedawcy → sprzedawca nazwa
+  6: 'P_3D',          // AdresSprzedawcy → sprzedawca adres
+  7: 'P_4A',          // KrajSprzedawcy
+  8: 'P_5',           // NIPSprzedawcy
+  9: 'P_4B',          // KrajNabywcy
+  10: 'P_6',          // NIPNabywcy
+  11: 'P_13_1',       // Netto23
+  12: 'P_14_1',       // VAT23
+  13: 'P_13_2',       // Netto8
+  14: 'P_14_2',       // VAT8
+  15: 'P_13_3',       // Netto5
+  16: 'P_14_3',       // VAT5
+  17: 'P_15',         // BruttoRazem
+  18: 'RodzajFaktury', // RodzajFaktury
+}
+
+// ═══════════════════════════════════════════════════════
 //  Profile registry
 // ═══════════════════════════════════════════════════════
 
@@ -206,6 +258,24 @@ export const SYSTEM_PROFILES: SystemProfile[] = [
     subType: 'WZ',
     columnMap: ESO_MAG_WZ_MAP,
     fields: [...JPK_MAG_WZ_DOC_FIELDS, ...JPK_MAG_WZ_FIELDS],
+  },
+  {
+    id: 'COMARCH_OPTIMA_VAT_TXT',
+    name: 'Comarch Optima → JPK_V7M Sprzedaż (TXT)',
+    system: 'COMARCH_OPTIMA',
+    jpkType: 'JPK_VDEK',
+    subType: 'SprzedazWiersz',
+    columnMap: COMARCH_OPTIMA_VAT_TXT_MAP,
+    fields: JPK_V7M_SPRZEDAZ_FIELDS,
+  },
+  {
+    id: 'COMARCH_OPTIMA_XML_FA',
+    name: 'Comarch Optima → JPK_FA Faktura (XML)',
+    system: 'COMARCH_OPTIMA',
+    jpkType: 'JPK_FA',
+    subType: 'Faktura',
+    columnMap: COMARCH_OPTIMA_XML_FA_MAP,
+    fields: JPK_FA_FAKTURA_FIELDS,
   },
 ]
 

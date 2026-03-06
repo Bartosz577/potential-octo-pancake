@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<DokumentyHandlowe>
+  <Faktura>
+    <KodWaluty>PLN</KodWaluty>
+    <DataWystawienia>2026-01-10</DataWystawienia>
+    <NumerFaktury>FV/OPT/2026/001</NumerFaktury>
+    <NazwaKontrahenta>Producent Sp. z o.o.</NazwaKontrahenta>
+    <AdresKontrahenta>ul. Fabryczna 10, 00-100 Warszawa</AdresKontrahenta>
+    <NazwaSprzedawcy>Optima Trade Sp. z o.o.</NazwaSprzedawcy>
+    <AdresSprzedawcy>ul. Handlowa 5, 30-200 Kraków</AdresSprzedawcy>
+    <KrajSprzedawcy>PL</KrajSprzedawcy>
+    <NIPSprzedawcy>6781234567</NIPSprzedawcy>
+    <KrajNabywcy>PL</KrajNabywcy>
+    <NIPNabywcy>5213456789</NIPNabywcy>
+    <Netto23>1500.00</Netto23>
+    <VAT23>345.00</VAT23>
+    <Netto8>0.00</Netto8>
+    <VAT8>0.00</VAT8>
+    <Netto5>0.00</Netto5>
+    <VAT5>0.00</VAT5>
+    <BruttoRazem>1845.00</BruttoRazem>
+    <RodzajFaktury>VAT</RodzajFaktury>
+  </Faktura>
+  <Faktura>
+    <KodWaluty>PLN</KodWaluty>
+    <DataWystawienia>2026-01-15</DataWystawienia>
+    <NumerFaktury>FV/OPT/2026/002</NumerFaktury>
+    <NazwaKontrahenta>Sklep Jan Nowak</NazwaKontrahenta>
+    <AdresKontrahenta>ul. Rynkowa 3, 31-100 Kraków</AdresKontrahenta>
+    <NazwaSprzedawcy>Optima Trade Sp. z o.o.</NazwaSprzedawcy>
+    <AdresSprzedawcy>ul. Handlowa 5, 30-200 Kraków</AdresSprzedawcy>
+    <KrajSprzedawcy>PL</KrajSprzedawcy>
+    <NIPSprzedawcy>6781234567</NIPSprzedawcy>
+    <KrajNabywcy>PL</KrajNabywcy>
+    <NIPNabywcy>7891234560</NIPNabywcy>
+    <Netto23>800.00</Netto23>
+    <VAT23>184.00</VAT23>
+    <Netto8>200.00</Netto8>
+    <VAT8>16.00</VAT8>
+    <Netto5>0.00</Netto5>
+    <VAT5>0.00</VAT5>
+    <BruttoRazem>1200.00</BruttoRazem>
+    <RodzajFaktury>VAT</RodzajFaktury>
+  </Faktura>
+  <Faktura>
+    <KodWaluty>EUR</KodWaluty>
+    <DataWystawienia>2026-01-20</DataWystawienia>
+    <NumerFaktury>FV/OPT/2026/003</NumerFaktury>
+    <NazwaKontrahenta>Export GmbH</NazwaKontrahenta>
+    <AdresKontrahenta>Berliner Str. 42, 10115 Berlin</AdresKontrahenta>
+    <NazwaSprzedawcy>Optima Trade Sp. z o.o.</NazwaSprzedawcy>
+    <AdresSprzedawcy>ul. Handlowa 5, 30-200 Kraków</AdresSprzedawcy>
+    <KrajSprzedawcy>PL</KrajSprzedawcy>
+    <NIPSprzedawcy>6781234567</NIPSprzedawcy>
+    <KrajNabywcy>DE</KrajNabywcy>
+    <NIPNabywcy>DE123456789</NIPNabywcy>
+    <Netto23>0.00</Netto23>
+    <VAT23>0.00</VAT23>
+    <Netto8>0.00</Netto8>
+    <VAT8>0.00</VAT8>
+    <Netto5>0.00</Netto5>
+    <VAT5>0.00</VAT5>
+    <BruttoRazem>5000.00</BruttoRazem>
+    <RodzajFaktury>VAT</RodzajFaktury>
+  </Faktura>
+</DokumentyHandlowe>

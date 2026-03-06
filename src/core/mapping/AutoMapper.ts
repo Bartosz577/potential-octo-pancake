@@ -247,6 +247,69 @@ export function autoMap(sheet: RawSheet, fields: JpkFieldDef[]): MappingResult {
   }
 }
 
+/** Heuristic profile detection result */
+export interface ProfileHint {
+  /** Profile ID from SystemProfiles */
+  profileId: string
+  /** Detection confidence 0.0–1.0 */
+  confidence: number
+  /** Reason for the match */
+  reason: string
+}
+
+/**
+ * Heuristic detection of Comarch Optima profiles from sheet data.
+ *
+ * Two detection strategies:
+ * 1. XML element match: presence of Comarch-specific XML element names
+ *    in headers (e.g. NazwaKontrahenta, NIPNabywcy, BruttoRazem) → 95%
+ * 2. TXT pipe-delimited: 14 columns, NIP pattern in col 3, date in col 1 → 92%
+ */
+export function detectProfileHint(sheet: RawSheet): ProfileHint | null {
+  const columnCount = sheet.rows.length > 0 ? sheet.rows[0].cells.length : 0
+
+  // Strategy 1: XML element match — headers contain Comarch XML element names
+  if (sheet.headers && sheet.headers.length > 0) {
+    const COMARCH_XML_MARKERS = ['NazwaKontrahenta', 'AdresKontrahenta', 'NIPNabywcy', 'NIPSprzedawcy', 'BruttoRazem', 'NumerFaktury']
+    const normHeaders = sheet.headers.map((h) => h.trim())
+    const matchCount = COMARCH_XML_MARKERS.filter((marker) =>
+      normHeaders.some((h) => h === marker)
+    ).length
+
+    if (matchCount >= 3) {
+      return {
+        profileId: 'COMARCH_OPTIMA_XML_FA',
+        confidence: 0.95,
+        reason: `XML element match: ${matchCount} Comarch Optima markers found`,
+      }
+    }
+  }
+
+  // Strategy 2: TXT pipe-delimited — 14 columns, NIP in col 3, date in col 1
+  if (columnCount >= 13 && columnCount <= 15) {
+    const NIP_PATTERN = /^(\d{10}|\d{3}-\d{3}-\d{2}-\d{2}|brak)$/
+    const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/
+    const sampleRows = sheet.rows.slice(0, 10)
+
+    if (sampleRows.length > 0) {
+      const nipMatches = sampleRows.filter((r) => NIP_PATTERN.test((r.cells[3] ?? '').trim())).length
+      const dateMatches = sampleRows.filter((r) => DATE_PATTERN.test((r.cells[1] ?? '').trim())).length
+      const nipRatio = nipMatches / sampleRows.length
+      const dateRatio = dateMatches / sampleRows.length
+
+      if (nipRatio >= 0.7 && dateRatio >= 0.7) {
+        return {
+          profileId: 'COMARCH_OPTIMA_VAT_TXT',
+          confidence: 0.92,
+          reason: `TXT structure match: ${columnCount} cols, NIP in col 3 (${Math.round(nipRatio * 100)}%), date in col 1 (${Math.round(dateRatio * 100)}%)`,
+        }
+      }
+    }
+  }
+
+  return null
+}
+
 /**
  * Apply a pre-defined positional mapping (from SystemProfiles).
  * Each entry maps sourceColumn → targetField with high confidence.

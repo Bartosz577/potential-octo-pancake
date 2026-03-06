@@ -35,6 +35,22 @@ describe('SystemProfiles', () => {
       expect(p!.jpkType).toBe('JPK_MAG')
       expect(p!.subType).toBe('WZ')
     })
+
+    it('contains COMARCH_OPTIMA_VAT_TXT profile', () => {
+      const p = SYSTEM_PROFILES.find((p) => p.id === 'COMARCH_OPTIMA_VAT_TXT')
+      expect(p).toBeDefined()
+      expect(p!.system).toBe('COMARCH_OPTIMA')
+      expect(p!.jpkType).toBe('JPK_VDEK')
+      expect(p!.subType).toBe('SprzedazWiersz')
+    })
+
+    it('contains COMARCH_OPTIMA_XML_FA profile', () => {
+      const p = SYSTEM_PROFILES.find((p) => p.id === 'COMARCH_OPTIMA_XML_FA')
+      expect(p).toBeDefined()
+      expect(p!.system).toBe('COMARCH_OPTIMA')
+      expect(p!.jpkType).toBe('JPK_FA')
+      expect(p!.subType).toBe('Faktura')
+    })
   })
 
   describe('findProfile', () => {
@@ -56,6 +72,18 @@ describe('SystemProfiles', () => {
 
     it('returns null for unknown system even with valid jpkType/subType', () => {
       expect(findProfile('SAP_RE', 'JPK_VDEK', 'SprzedazWiersz')).toBeNull()
+    })
+
+    it('finds COMARCH_OPTIMA VDEK profile', () => {
+      const p = findProfile('COMARCH_OPTIMA', 'JPK_VDEK', 'SprzedazWiersz')
+      expect(p).not.toBeNull()
+      expect(p!.id).toBe('COMARCH_OPTIMA_VAT_TXT')
+    })
+
+    it('finds COMARCH_OPTIMA FA profile', () => {
+      const p = findProfile('COMARCH_OPTIMA', 'JPK_FA', 'Faktura')
+      expect(p).not.toBeNull()
+      expect(p!.id).toBe('COMARCH_OPTIMA_XML_FA')
     })
   })
 
@@ -189,6 +217,128 @@ describe('SystemProfiles', () => {
 
     it('maps col 14 → WartoscPozycji', () => {
       expect(profile.columnMap[14]).toBe('WartoscPozycji')
+    })
+  })
+
+  describe('COMARCH_OPTIMA_VAT_TXT profile', () => {
+    const profile = findProfile('COMARCH_OPTIMA', 'JPK_VDEK', 'SprzedazWiersz')!
+
+    it('exists in the registry', () => {
+      expect(profile).toBeDefined()
+      expect(profile.id).toBe('COMARCH_OPTIMA_VAT_TXT')
+    })
+
+    it('has correct system and target', () => {
+      expect(profile.system).toBe('COMARCH_OPTIMA')
+      expect(profile.jpkType).toBe('JPK_VDEK')
+      expect(profile.subType).toBe('SprzedazWiersz')
+    })
+
+    it('maps col 0 → DowodSprzedazy (NrDokumentu)', () => {
+      expect(profile.columnMap[0]).toBe('DowodSprzedazy')
+    })
+
+    it('maps col 1 → DataWystawienia', () => {
+      expect(profile.columnMap[1]).toBe('DataWystawienia')
+    })
+
+    it('maps col 2 → DataSprzedazy', () => {
+      expect(profile.columnMap[2]).toBe('DataSprzedazy')
+    })
+
+    it('maps col 3 → NrKontrahenta (NIPNabywcy)', () => {
+      expect(profile.columnMap[3]).toBe('NrKontrahenta')
+    })
+
+    it('maps col 4 → NazwaKontrahenta', () => {
+      expect(profile.columnMap[4]).toBe('NazwaKontrahenta')
+    })
+
+    it('maps col 5 → K_10 (NettoPodst23)', () => {
+      expect(profile.columnMap[5]).toBe('K_10')
+    })
+
+    it('maps col 6 → K_11 (Vat23)', () => {
+      expect(profile.columnMap[6]).toBe('K_11')
+    })
+
+    it('maps col 7 → K_12 (NettoPodst8)', () => {
+      expect(profile.columnMap[7]).toBe('K_12')
+    })
+
+    it('maps col 8 → K_13 (Vat8)', () => {
+      expect(profile.columnMap[8]).toBe('K_13')
+    })
+
+    it('maps col 9 → K_14 (NettoPodst5)', () => {
+      expect(profile.columnMap[9]).toBe('K_14')
+    })
+
+    it('maps col 10 → K_15 (Vat5)', () => {
+      expect(profile.columnMap[10]).toBe('K_15')
+    })
+
+    it('maps col 11 → K_17 (NettoZwolnione)', () => {
+      expect(profile.columnMap[11]).toBe('K_17')
+    })
+
+    it('does not map col 12 (Brutto — sum field)', () => {
+      expect(profile.columnMap[12]).toBeUndefined()
+    })
+
+    it('does not map col 13 (KodWaluty — not a V7M field)', () => {
+      expect(profile.columnMap[13]).toBeUndefined()
+    })
+
+    it('has 12 column mappings total', () => {
+      expect(Object.keys(profile.columnMap)).toHaveLength(12)
+    })
+  })
+
+  describe('COMARCH_OPTIMA_XML_FA profile', () => {
+    const profile = findProfile('COMARCH_OPTIMA', 'JPK_FA', 'Faktura')!
+
+    it('exists in the registry', () => {
+      expect(profile).toBeDefined()
+      expect(profile.id).toBe('COMARCH_OPTIMA_XML_FA')
+    })
+
+    it('has correct system and target', () => {
+      expect(profile.system).toBe('COMARCH_OPTIMA')
+      expect(profile.jpkType).toBe('JPK_FA')
+      expect(profile.subType).toBe('Faktura')
+    })
+
+    it('maps col 0 → KodWaluty', () => {
+      expect(profile.columnMap[0]).toBe('KodWaluty')
+    })
+
+    it('maps col 1 → P_1 (DataWystawienia)', () => {
+      expect(profile.columnMap[1]).toBe('P_1')
+    })
+
+    it('maps col 2 → P_2 (NumerFaktury)', () => {
+      expect(profile.columnMap[2]).toBe('P_2')
+    })
+
+    it('maps col 8 → P_5 (NIPSprzedawcy)', () => {
+      expect(profile.columnMap[8]).toBe('P_5')
+    })
+
+    it('maps col 10 → P_6 (NIPNabywcy)', () => {
+      expect(profile.columnMap[10]).toBe('P_6')
+    })
+
+    it('maps col 17 → P_15 (BruttoRazem)', () => {
+      expect(profile.columnMap[17]).toBe('P_15')
+    })
+
+    it('maps col 18 → RodzajFaktury', () => {
+      expect(profile.columnMap[18]).toBe('RodzajFaktury')
+    })
+
+    it('has 19 column mappings total', () => {
+      expect(Object.keys(profile.columnMap)).toHaveLength(19)
     })
   })
 
