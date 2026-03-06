@@ -12,7 +12,7 @@ import {
 } from 'lucide-react'
 import { useCompanyStore, type CompanyData } from '@renderer/stores/companyStore'
 import { useImportStore } from '@renderer/stores/importStore'
-import { useAppStore } from '@renderer/stores/appStore'
+import { useAppStore, type JpkSubtype } from '@renderer/stores/appStore'
 import { validatePolishNip, normalizeNip } from '@renderer/utils/nipValidator'
 
 const MONTHS = [
@@ -173,7 +173,7 @@ export function CompanyStep(): React.JSX.Element {
   const { company, period, savedCompanies, setCompany, setPeriod, saveCompany, loadCompany, removeSavedCompany } =
     useCompanyStore()
   const { files } = useImportStore()
-  const { setCurrentStep } = useAppStore()
+  const { activeJpkType, jpkSubtype, setJpkSubtype, setCurrentStep } = useAppStore()
 
   const faCompanyData = useMemo(() => extractCompanyFromFA(files), [files])
 
@@ -351,6 +351,28 @@ export function CompanyStep(): React.JSX.Element {
       {/* Period */}
       <div className="bg-bg-card rounded-xl border border-border p-5">
         <h2 className="text-sm font-semibold text-text-primary mb-4">Okres rozliczeniowy</h2>
+
+        {/* Monthly / Quarterly toggle — only for V7M type */}
+        {activeJpkType === 'V7M' && (
+          <div className="flex items-center gap-2 mb-4">
+            <span className="text-xs font-medium text-text-secondary">Typ rozliczenia:</span>
+            <div className="flex rounded-lg border border-border overflow-hidden">
+              {(['V7M', 'V7K'] as JpkSubtype[]).map((sub) => (
+                <button
+                  key={sub}
+                  onClick={() => setJpkSubtype(sub)}
+                  className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+                    jpkSubtype === sub
+                      ? 'bg-accent text-white'
+                      : 'bg-bg-input text-text-secondary hover:text-text-primary'
+                  }`}
+                >
+                  {sub === 'V7M' ? 'Miesięczny (V7M)' : 'Kwartalny (V7K)'}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-3 gap-4">
           <FormField label="Rok">

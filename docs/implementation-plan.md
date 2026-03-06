@@ -69,7 +69,22 @@
 - [x] Zaimplementuj `JpkWbGenerator.ts`
 - [x] Testy + walidacja XSD
 
-### 2.5 Generyczny silnik XML
+### 2.5 JPK_V7K(3) — wariant kwartalny V7M
+- [x] Przeanalizuj schemat XSD JPK_V7K(3) (namespace 14089)
+- [x] Zaimplementuj `JpkV7kGenerator.ts` (Deklaracja VAT-7K, Kwartal)
+- [x] Przełącznik miesięczny/kwartalny w CompanyStep
+- [x] Routing jpkSubtype w xmlExporter
+- [x] Testy: `JpkV7kGenerator.test.ts` — 39 testów
+
+### 2.6 JPK_PKPIR(3) — nowy generator
+- [x] Przeanalizuj schemat XSD JPK_PKPIR(3) (namespace 10302)
+- [x] Zaimplementuj `JpkPkpirGenerator.ts` (Naglowek, Podmiot1, PKPIRInfo, PKPIRSpis, PKPIRWiersz, PKPIRCtrl)
+- [x] Dodaj typ JPK_PKPIR do core/models/types.ts i renderer/types
+- [x] Dodaj JPK_PKPIR_WIERSZ_FIELDS do JpkFieldDefinitions.ts (21 pól, K_1..K_17)
+- [x] Integracja: appStore, Sidebar, ImportStep, ExportStep, PreviewStep, ValidationStep, HistoryStep, xmlExporter, validator
+- [x] Testy: `JpkPkpirGenerator.test.ts` — 57 testów
+
+### 2.7 Generyczny silnik XML
 - [x] Refaktor: wydziel wspólną logikę (nagłówek, escape, formatowanie) do `XmlGeneratorEngine.ts`
 - [x] Zdefiniuj interfejs `XmlGenerator` i zarejestruj generatory w registry
 
@@ -176,11 +191,11 @@
 |------|--------|-------|
 | 0 — Przygotowanie | ✅ Done | — |
 | 1 — Core (parsery + mapowanie) | ✅ Done | 309 tests |
-| 2 — Generatory XML | ✅ Done | 594 tests (14 XSD) |
+| 2 — Generatory XML | ✅ Done | 690 tests (14 XSD, +V7K 39, +PKPIR 57) |
 | 3 — UI rozszerzenia | ✅ Done | Web typecheck OK |
 | 4 — Zustand stores | ✅ Done | 632 tests |
 | 5 — Electron main | ✅ Done | Build OK |
-| 6 — Jakość | 🔶 In progress | 761 unit + 1 E2E |
+| 6 — Jakość | 🔶 In progress | 866 unit + 1 E2E |
 | 7 — Release | ⬜ Not started | — |
 
 ### Pozostałe zadania (Faza 3-5)

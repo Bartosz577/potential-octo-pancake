@@ -1,0 +1,481 @@
+// ── JPK_V7K(3) XML Generator ──
+// Quarterly variant of V7M. Shares namespace structure and Ewidencja format.
+// Schema: http://crd.gov.pl/wzor/2025/12/19/14089/
+
+import {
+  escapeXml,
+  formatAmount,
+  formatDeclAmount,
+  formatDateTime,
+  buildElement,
+  parseAmount,
+  XmlGenerator,
+  generatorRegistry,
+} from './XmlGeneratorEngine'
+
+// ── Constants ──
+
+export const V7K_NAMESPACE = 'http://crd.gov.pl/wzor/2025/12/19/14089/'
+export const ETD_NAMESPACE = 'http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2022/09/13/eD/DefinicjeTypy/'
+const SCHEMA_VERSION = '1-0E'
+const KOD_SYSTEMOWY = 'JPK_V7K (3)'
+const WARIANT = '3'
+
+// Deklaracja constants (VAT-7K specific)
+const DEKL_KOD_SYSTEMOWY = 'VAT-7K (17)'
+const DEKL_KOD_PODATKU = 'VAT'
+const DEKL_RODZAJ_ZOBOWIAZANIA = 'Z'
+const DEKL_WARIANT = '17'
+
+// ── Input types ──
+
+export interface V7kNaglowek {
+  celZlozenia: number
+  kodUrzedu: string
+  rok: number
+  miesiac: number
+  nazwaSystemu?: string
+}
+
+export interface V7kPodmiot {
+  typ: 'fizyczna' | 'niefizyczna'
+  nip: string
+  imie?: string
+  nazwisko?: string
+  dataUrodzenia?: string
+  pelnaNazwa?: string
+  email: string
+  telefon?: string
+}
+
+export interface V7kGeneratorInput {
+  naglowek: V7kNaglowek
+  podmiot: V7kPodmiot
+  sprzedazWiersze: Record<string, string>[]
+  zakupWiersze: Record<string, string>[]
+  deklaracja?: Record<string, string | number | undefined>
+  kwartal?: number // 1-4, required when deklaracja is present
+}
+
+// ── XML helpers ──
+
+function tag(name: string, value: string, attrs?: Record<string, string>): string {
+  return buildElement(name, value, attrs)
+}
+
+function boolTag(name: string, value: string | undefined): string {
+  if (!value || value === '' || value === '0' || value === 'false') return ''
+  return `<${name}>1</${name}>`
+}
+
+// ── Field ordering per XSD (identical to V7M) ──
+
+const GTU_CODES = Array.from({ length: 13 }, (_, i) => `GTU_${String(i + 1).padStart(2, '0')}`)
+
+const SPRZEDAZ_PROCEDURES = [
+  'WSTO_EE', 'IED', 'TP', 'TT_WNT', 'TT_D',
+  'MR_T', 'MR_UZ', 'I_42', 'I_63',
+  'B_SPV', 'B_SPV_DOSTAWA', 'B_MPV_PROWIZJA',
+]
+
+const SPRZEDAZ_K_STANDALONE = ['K_10', 'K_11', 'K_12', 'K_13', 'K_14']
+const SPRZEDAZ_K_PAIRS: [string, string][] = [
+  ['K_15', 'K_16'], ['K_17', 'K_18'], ['K_19', 'K_20'],
+]
+const SPRZEDAZ_K_STANDALONE_MID = ['K_21', 'K_22']
+const SPRZEDAZ_K_PAIRS2: [string, string][] = [
+  ['K_23', 'K_24'], ['K_25', 'K_26'], ['K_27', 'K_28'],
+  ['K_29', 'K_30'], ['K_31', 'K_32'],
+]
+const SPRZEDAZ_K_STANDALONE_END = ['K_33', 'K_34', 'K_35', 'K_36', 'K_360']
+
+const ZAKUP_K_PAIRS: [string, string][] = [
+  ['K_40', 'K_41'], ['K_42', 'K_43'],
+]
+const ZAKUP_K_STANDALONE = ['K_44', 'K_45', 'K_46', 'K_47']
+
+// ── Control sum formulas from XSD ──
+
+const PODATEK_NALEZNY_PLUS = ['K_16', 'K_18', 'K_20', 'K_24', 'K_26', 'K_28', 'K_30', 'K_32', 'K_33', 'K_34']
+const PODATEK_NALEZNY_MINUS = ['K_35', 'K_36', 'K_360']
+const PODATEK_NALICZONY_FIELDS = ['K_41', 'K_43', 'K_44', 'K_45', 'K_46', 'K_47']
+
+// ── Deklaracja field definitions (same P_ fields as V7M) ──
+
+const DEKL_STANDALONE_FIELDS = ['P_10']
+const DEKL_SEMI_PAIRS: [string, string][] = [['P_11', 'P_12'], ['P_13', 'P_14']]
+const DEKL_PAIRS: [string, string][] = [
+  ['P_15', 'P_16'], ['P_17', 'P_18'], ['P_19', 'P_20'],
+]
+const DEKL_STANDALONE_2 = ['P_21', 'P_22']
+const DEKL_PAIRS_2: [string, string][] = [
+  ['P_23', 'P_24'], ['P_25', 'P_26'], ['P_27', 'P_28'],
+  ['P_29', 'P_30'], ['P_31', 'P_32'],
+]
+const DEKL_STANDALONE_3 = ['P_33', 'P_34', 'P_35', 'P_36', 'P_360']
+const DEKL_STANDALONE_4 = ['P_37']
+const DEKL_REQUIRED = ['P_38']
+const DEKL_STANDALONE_5 = ['P_39']
+const DEKL_PAIRS_3: [string, string][] = [['P_40', 'P_41'], ['P_42', 'P_43']]
+const DEKL_STANDALONE_6 = ['P_44', 'P_45', 'P_46', 'P_47', 'P_48', 'P_49', 'P_50']
+const DEKL_REQUIRED_2 = ['P_51']
+const DEKL_STANDALONE_7 = ['P_52', 'P_53', 'P_54']
+const DEKL_CHOICE = ['P_540', 'P_55', 'P_56', 'P_560', 'P_58']
+const DEKL_STANDALONE_8 = ['P_62', 'P_63', 'P_64', 'P_65', 'P_66', 'P_660', 'P_67']
+const DEKL_PAIRS_4: [string, string][] = [['P_68', 'P_69']]
+
+// ── K field output helpers ──
+
+function outputKPair(
+  lines: string[], row: Record<string, string>, f1: string, f2: string, indent: string,
+): void {
+  const v1 = row[f1], v2 = row[f2]
+  const h1 = v1 !== undefined && v1 !== ''
+  const h2 = v2 !== undefined && v2 !== ''
+  if (h1 || h2) {
+    lines.push(`${indent}<${f1}>${formatAmount(v1)}</${f1}>`)
+    lines.push(`${indent}<${f2}>${formatAmount(v2)}</${f2}>`)
+  }
+}
+
+function outputKStandalone(
+  lines: string[], row: Record<string, string>, field: string, indent: string,
+): void {
+  const v = row[field]
+  if (v !== undefined && v !== '') {
+    lines.push(`${indent}<${field}>${formatAmount(v)}</${field}>`)
+  }
+}
+
+// ── Deklaracja field output helpers ──
+
+function outputDeklField(
+  lines: string[], d: Record<string, string | number | undefined>, field: string, indent: string,
+): void {
+  const v = d[field]
+  if (v !== undefined && v !== '') {
+    lines.push(`${indent}${tag(field, formatDeclAmount(v))}`)
+  }
+}
+
+function outputDeklFieldRaw(
+  lines: string[], d: Record<string, string | number | undefined>, field: string, indent: string,
+): void {
+  const v = d[field]
+  if (v !== undefined && v !== '') {
+    lines.push(`${indent}${tag(field, String(v))}`)
+  }
+}
+
+function outputDeklPair(
+  lines: string[], d: Record<string, string | number | undefined>,
+  f1: string, f2: string, indent: string,
+): void {
+  const v1 = d[f1], v2 = d[f2]
+  const h1 = v1 !== undefined && v1 !== ''
+  const h2 = v2 !== undefined && v2 !== ''
+  if (h1 || h2) {
+    lines.push(`${indent}${tag(f1, formatDeclAmount(v1))}`)
+    lines.push(`${indent}${tag(f2, formatDeclAmount(v2))}`)
+  }
+}
+
+// ── Main generator function ──
+
+export function generateJpkV7k(input: V7kGeneratorInput): string {
+  const lines: string[] = []
+
+  lines.push('<?xml version="1.0" encoding="UTF-8"?>')
+  lines.push(`<JPK xmlns="${V7K_NAMESPACE}" xmlns:etd="${ETD_NAMESPACE}">`)
+
+  lines.push(generateNaglowek(input.naglowek))
+  lines.push(generatePodmiot(input.podmiot))
+  if (input.deklaracja) {
+    lines.push(generateDeklaracja(input.deklaracja, input.kwartal))
+  }
+  lines.push(generateEwidencja(input.sprzedazWiersze, input.zakupWiersze))
+
+  lines.push('</JPK>')
+
+  return lines.join('\n')
+}
+
+// ── Section generators ──
+
+function generateNaglowek(n: V7kNaglowek): string {
+  const iso = formatDateTime()
+
+  const lines: string[] = []
+  lines.push('  <Naglowek>')
+  lines.push(`    <KodFormularza kodSystemowy="${KOD_SYSTEMOWY}" wersjaSchemy="${SCHEMA_VERSION}">JPK_VAT</KodFormularza>`)
+  lines.push(`    <WariantFormularza>${WARIANT}</WariantFormularza>`)
+  lines.push(`    <DataWytworzeniaJPK>${iso}</DataWytworzeniaJPK>`)
+  if (n.nazwaSystemu) {
+    lines.push(`    ${tag('NazwaSystemu', n.nazwaSystemu)}`)
+  }
+  lines.push(`    <CelZlozenia poz="P_7">${n.celZlozenia}</CelZlozenia>`)
+  lines.push(`    ${tag('KodUrzedu', n.kodUrzedu)}`)
+  lines.push(`    <Rok>${n.rok}</Rok>`)
+  lines.push(`    <Miesiac>${n.miesiac}</Miesiac>`)
+  lines.push('  </Naglowek>')
+  return lines.join('\n')
+}
+
+function generatePodmiot(p: V7kPodmiot): string {
+  const lines: string[] = []
+  lines.push('  <Podmiot1 rola="Podatnik">')
+
+  if (p.typ === 'fizyczna') {
+    lines.push('    <OsobaFizyczna>')
+    lines.push(`      ${tag('etd:NIP', p.nip)}`)
+    if (p.imie) lines.push(`      ${tag('etd:ImiePierwsze', p.imie)}`)
+    if (p.nazwisko) lines.push(`      ${tag('etd:Nazwisko', p.nazwisko)}`)
+    if (p.dataUrodzenia) lines.push(`      ${tag('etd:DataUrodzenia', p.dataUrodzenia)}`)
+    lines.push(`      ${tag('Email', p.email)}`)
+    if (p.telefon) lines.push(`      ${tag('Telefon', p.telefon)}`)
+    lines.push('    </OsobaFizyczna>')
+  } else {
+    lines.push('    <OsobaNiefizyczna>')
+    lines.push(`      ${tag('NIP', p.nip)}`)
+    lines.push(`      ${tag('PelnaNazwa', p.pelnaNazwa || '')}`)
+    lines.push(`      ${tag('Email', p.email)}`)
+    if (p.telefon) lines.push(`      ${tag('Telefon', p.telefon)}`)
+    lines.push('    </OsobaNiefizyczna>')
+  }
+
+  lines.push('  </Podmiot1>')
+  return lines.join('\n')
+}
+
+function generateDeklaracja(
+  d: Record<string, string | number | undefined>,
+  kwartal?: number,
+): string {
+  const lines: string[] = []
+  lines.push('  <Deklaracja>')
+  lines.push('    <Naglowek>')
+  lines.push(`      <KodFormularzaDekl kodSystemowy="${DEKL_KOD_SYSTEMOWY}" kodPodatku="${DEKL_KOD_PODATKU}" rodzajZobowiazania="${DEKL_RODZAJ_ZOBOWIAZANIA}" wersjaSchemy="${SCHEMA_VERSION}">VAT-7K</KodFormularzaDekl>`)
+  lines.push(`      <WariantFormularzaDekl>${DEKL_WARIANT}</WariantFormularzaDekl>`)
+  if (kwartal) {
+    lines.push(`      <Kwartal>${kwartal}</Kwartal>`)
+  }
+  lines.push('    </Naglowek>')
+  lines.push('    <PozycjeSzczegolowe>')
+
+  const indent = '      '
+
+  for (const f of DEKL_STANDALONE_FIELDS) outputDeklField(lines, d, f, indent)
+  for (const [f1, f2] of DEKL_SEMI_PAIRS) outputDeklPair(lines, d, f1, f2, indent)
+  for (const [f1, f2] of DEKL_PAIRS) outputDeklPair(lines, d, f1, f2, indent)
+  for (const f of DEKL_STANDALONE_2) outputDeklField(lines, d, f, indent)
+  for (const [f1, f2] of DEKL_PAIRS_2) outputDeklPair(lines, d, f1, f2, indent)
+  for (const f of DEKL_STANDALONE_3) outputDeklField(lines, d, f, indent)
+  for (const f of DEKL_STANDALONE_4) outputDeklField(lines, d, f, indent)
+  for (const f of DEKL_REQUIRED) {
+    lines.push(`${indent}${tag(f, formatDeclAmount(d[f]))}`)
+  }
+  for (const f of DEKL_STANDALONE_5) outputDeklField(lines, d, f, indent)
+  for (const [f1, f2] of DEKL_PAIRS_3) outputDeklPair(lines, d, f1, f2, indent)
+  for (const f of DEKL_STANDALONE_6) outputDeklField(lines, d, f, indent)
+  for (const f of DEKL_REQUIRED_2) {
+    lines.push(`${indent}${tag(f, formatDeclAmount(d[f]))}`)
+  }
+  for (const f of DEKL_STANDALONE_7) outputDeklField(lines, d, f, indent)
+  for (const f of DEKL_CHOICE) outputDeklField(lines, d, f, indent)
+  outputDeklField(lines, d, 'P_59', indent)
+  outputDeklField(lines, d, 'P_60', indent)
+  outputDeklFieldRaw(lines, d, 'P_61', indent)
+  for (const f of DEKL_STANDALONE_8) outputDeklField(lines, d, f, indent)
+  for (const [f1, f2] of DEKL_PAIRS_4) outputDeklPair(lines, d, f1, f2, indent)
+  outputDeklFieldRaw(lines, d, 'P_ORDZU', indent)
+
+  lines.push('    </PozycjeSzczegolowe>')
+
+  const pouczenia = d['Pouczenia'] ?? '1'
+  lines.push(`    ${tag('Pouczenia', String(pouczenia))}`)
+
+  lines.push('  </Deklaracja>')
+  return lines.join('\n')
+}
+
+function generateEwidencja(
+  sprzedazWiersze: Record<string, string>[],
+  zakupWiersze: Record<string, string>[],
+): string {
+  const lines: string[] = []
+  lines.push('  <Ewidencja>')
+
+  for (let i = 0; i < sprzedazWiersze.length; i++) {
+    lines.push(generateSprzedazWiersz(sprzedazWiersze[i], i + 1))
+  }
+  lines.push(generateSprzedazCtrl(sprzedazWiersze))
+
+  for (let i = 0; i < zakupWiersze.length; i++) {
+    lines.push(generateZakupWiersz(zakupWiersze[i], i + 1))
+  }
+  lines.push(generateZakupCtrl(zakupWiersze))
+
+  lines.push('  </Ewidencja>')
+  return lines.join('\n')
+}
+
+function generateSprzedazWiersz(row: Record<string, string>, lp: number): string {
+  const lines: string[] = []
+  const ind = '      '
+  lines.push('    <SprzedazWiersz>')
+
+  lines.push(`${ind}<LpSprzedazy>${lp}</LpSprzedazy>`)
+
+  if (row['KodKrajuNadaniaTIN']) {
+    lines.push(`${ind}${tag('KodKrajuNadaniaTIN', row['KodKrajuNadaniaTIN'])}`)
+  }
+
+  lines.push(`${ind}${tag('NrKontrahenta', row['NrKontrahenta'] || '')}`)
+  lines.push(`${ind}${tag('NazwaKontrahenta', row['NazwaKontrahenta'] || '')}`)
+  lines.push(`${ind}${tag('DowodSprzedazy', row['DowodSprzedazy'] || '')}`)
+  lines.push(`${ind}${tag('DataWystawienia', row['DataWystawienia'] || '')}`)
+
+  if (row['DataSprzedazy']) {
+    lines.push(`${ind}${tag('DataSprzedazy', row['DataSprzedazy'])}`)
+  }
+
+  if (row['NrKSeF']) {
+    lines.push(`${ind}${tag('NrKSeF', row['NrKSeF'])}`)
+  } else if (row['OFF'] === '1' || row['OFF'] === 'true') {
+    lines.push(`${ind}<OFF>1</OFF>`)
+  } else if (row['DI'] === '1' || row['DI'] === 'true') {
+    lines.push(`${ind}<DI>1</DI>`)
+  } else {
+    lines.push(`${ind}<BFK>1</BFK>`)
+  }
+
+  if (row['TypDokumentu']) {
+    lines.push(`${ind}${tag('TypDokumentu', row['TypDokumentu'])}`)
+  }
+
+  for (const gtu of GTU_CODES) {
+    const v = boolTag(gtu, row[gtu])
+    if (v) lines.push(`${ind}${v}`)
+  }
+
+  for (const proc of SPRZEDAZ_PROCEDURES) {
+    const v = boolTag(proc, row[proc])
+    if (v) lines.push(`${ind}${v}`)
+  }
+
+  if (row['KorektaPodstawyOpodt'] === '1' || row['KorektaPodstawyOpodt'] === 'true') {
+    lines.push(`${ind}<KorektaPodstawyOpodt>1</KorektaPodstawyOpodt>`)
+    if (row['TerminPlatnosci']) {
+      lines.push(`${ind}${tag('TerminPlatnosci', row['TerminPlatnosci'])}`)
+    } else if (row['DataZaplaty']) {
+      lines.push(`${ind}${tag('DataZaplaty', row['DataZaplaty'])}`)
+    }
+  }
+
+  for (const f of SPRZEDAZ_K_STANDALONE) outputKStandalone(lines, row, f, ind)
+  for (const [f1, f2] of SPRZEDAZ_K_PAIRS) outputKPair(lines, row, f1, f2, ind)
+  for (const f of SPRZEDAZ_K_STANDALONE_MID) outputKStandalone(lines, row, f, ind)
+  for (const [f1, f2] of SPRZEDAZ_K_PAIRS2) outputKPair(lines, row, f1, f2, ind)
+  for (const f of SPRZEDAZ_K_STANDALONE_END) outputKStandalone(lines, row, f, ind)
+
+  if (row['SprzedazVAT_Marza']) {
+    lines.push(`${ind}<SprzedazVAT_Marza>${formatAmount(row['SprzedazVAT_Marza'])}</SprzedazVAT_Marza>`)
+  }
+
+  lines.push('    </SprzedazWiersz>')
+  return lines.join('\n')
+}
+
+function generateSprzedazCtrl(rows: Record<string, string>[]): string {
+  const lines: string[] = []
+  lines.push('    <SprzedazCtrl>')
+  lines.push(`      <LiczbaWierszySprzedazy>${rows.length}</LiczbaWierszySprzedazy>`)
+
+  let podatekNalezny = 0
+  for (const row of rows) {
+    if (row['TypDokumentu'] === 'FP') continue
+    for (const f of PODATEK_NALEZNY_PLUS) podatekNalezny += parseAmount(row[f])
+    for (const f of PODATEK_NALEZNY_MINUS) podatekNalezny -= parseAmount(row[f])
+  }
+
+  lines.push(`      <PodatekNalezny>${formatAmount(podatekNalezny)}</PodatekNalezny>`)
+  lines.push('    </SprzedazCtrl>')
+  return lines.join('\n')
+}
+
+function generateZakupWiersz(row: Record<string, string>, lp: number): string {
+  const lines: string[] = []
+  const ind = '      '
+  lines.push('    <ZakupWiersz>')
+
+  lines.push(`${ind}<LpZakupu>${lp}</LpZakupu>`)
+
+  if (row['KodKrajuNadaniaTIN']) {
+    lines.push(`${ind}${tag('KodKrajuNadaniaTIN', row['KodKrajuNadaniaTIN'])}`)
+  }
+
+  lines.push(`${ind}${tag('NrDostawcy', row['NrDostawcy'] || '')}`)
+  lines.push(`${ind}${tag('NazwaDostawcy', row['NazwaDostawcy'] || '')}`)
+  lines.push(`${ind}${tag('DowodZakupu', row['DowodZakupu'] || '')}`)
+  lines.push(`${ind}${tag('DataZakupu', row['DataZakupu'] || '')}`)
+
+  if (row['DataWplywu']) {
+    lines.push(`${ind}${tag('DataWplywu', row['DataWplywu'])}`)
+  }
+
+  if (row['NrKSeF']) {
+    lines.push(`${ind}${tag('NrKSeF', row['NrKSeF'])}`)
+  } else if (row['OFF'] === '1' || row['OFF'] === 'true') {
+    lines.push(`${ind}<OFF>1</OFF>`)
+  } else if (row['DI'] === '1' || row['DI'] === 'true') {
+    lines.push(`${ind}<DI>1</DI>`)
+  } else {
+    lines.push(`${ind}<BFK>1</BFK>`)
+  }
+
+  if (row['DokumentZakupu']) {
+    lines.push(`${ind}${tag('DokumentZakupu', row['DokumentZakupu'])}`)
+  }
+
+  const imp = boolTag('IMP', row['IMP'])
+  if (imp) lines.push(`${ind}${imp}`)
+
+  for (const [f1, f2] of ZAKUP_K_PAIRS) outputKPair(lines, row, f1, f2, ind)
+  for (const f of ZAKUP_K_STANDALONE) outputKStandalone(lines, row, f, ind)
+
+  if (row['ZakupVAT_Marza']) {
+    lines.push(`${ind}<ZakupVAT_Marza>${formatAmount(row['ZakupVAT_Marza'])}</ZakupVAT_Marza>`)
+  }
+
+  lines.push('    </ZakupWiersz>')
+  return lines.join('\n')
+}
+
+function generateZakupCtrl(rows: Record<string, string>[]): string {
+  const lines: string[] = []
+  lines.push('    <ZakupCtrl>')
+  lines.push(`      <LiczbaWierszyZakupow>${rows.length}</LiczbaWierszyZakupow>`)
+
+  let podatekNaliczony = 0
+  for (const row of rows) {
+    for (const f of PODATEK_NALICZONY_FIELDS) podatekNaliczony += parseAmount(row[f])
+  }
+
+  lines.push(`      <PodatekNaliczony>${formatAmount(podatekNaliczony)}</PodatekNaliczony>`)
+  lines.push('    </ZakupCtrl>')
+  return lines.join('\n')
+}
+
+// ── XmlGenerator implementation ──
+
+export const jpkV7kGenerator: XmlGenerator = {
+  jpkType: 'JPK_V7K',
+  version: WARIANT,
+  namespace: V7K_NAMESPACE,
+  generate: (input: unknown) => generateJpkV7k(input as V7kGeneratorInput),
+}
+
+generatorRegistry.register(jpkV7kGenerator)
+
+// Re-export shared helpers from engine
+export { escapeXml, formatAmount, formatDeclAmount }

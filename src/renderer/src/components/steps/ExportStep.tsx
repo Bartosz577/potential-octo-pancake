@@ -31,7 +31,8 @@ const TAB_LABELS: Record<JpkType, string> = {
   JPK_VDEK: 'V7M',
   JPK_FA: 'FA',
   JPK_MAG: 'MAG',
-  JPK_WB: 'WB'
+  JPK_WB: 'WB',
+  JPK_PKPIR: 'PKPiR'
 }
 
 // Simple XML syntax highlighting
@@ -162,7 +163,7 @@ function HighlightedLine({ line }: { line: string }): React.JSX.Element {
 export function ExportStep(): React.JSX.Element {
   const { files } = useImportStore()
   const { company, period } = useCompanyStore()
-  const { setCurrentStep } = useAppStore()
+  const { jpkSubtype, setCurrentStep } = useAppStore()
   const { activeMappings } = useMappingStore()
   const { addRecord } = useHistoryStore()
   const toast = useToast()
@@ -177,10 +178,10 @@ export function ExportStep(): React.JSX.Element {
     const map = new Map<string, XmlExportResult | null>()
     for (const file of files) {
       const mappings = activeMappings[file.id] || []
-      map.set(file.id, generateXmlForFile(file, mappings, company, period))
+      map.set(file.id, generateXmlForFile(file, mappings, company, period, jpkSubtype))
     }
     return map
-  }, [files, activeMappings, company, period])
+  }, [files, activeMappings, company, period, jpkSubtype])
 
   const activeResult = activeFile ? results.get(activeFile.id) ?? null : null
 

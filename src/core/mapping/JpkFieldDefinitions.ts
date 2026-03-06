@@ -163,6 +163,34 @@ export const JPK_MAG_WZ_DOC_FIELDS: JpkFieldDef[] = [
 ]
 
 // ═══════════════════════════════════════════════════════
+//  JPK_PKPIR(3) — PKPIRWiersz
+// ═══════════════════════════════════════════════════════
+
+export const JPK_PKPIR_WIERSZ_FIELDS: JpkFieldDef[] = [
+  { name: 'K_1', label: 'Lp.', type: 'integer', required: true, description: 'Liczba porządkowa wiersza', synonyms: ['lp', 'nr', 'numer', 'wiersz', 'pozycja'] },
+  { name: 'K_2', label: 'Data zdarzenia', type: 'date', required: true, description: 'Data zdarzenia gospodarczego', synonyms: ['data', 'data_zdarzenia', 'data_operacji'] },
+  { name: 'K_3A', label: 'Nr dowodu', type: 'string', required: true, description: 'Nr dowodu księgowego', synonyms: ['dowod', 'nr_dowodu', 'numer_dowodu', 'dokument', 'nr_dokumentu'] },
+  { name: 'K_3B', label: 'Nr KSeF', type: 'string', required: false, description: 'Numer KSeF faktury', synonyms: ['ksef', 'nr_ksef', 'numer_ksef'] },
+  { name: 'K_4A', label: 'Kod kraju', type: 'country', required: false, description: 'Kod kraju kontrahenta', synonyms: ['kod_kraju', 'kraj'] },
+  { name: 'K_4B', label: 'NIP kontrahenta', type: 'nip', required: false, description: 'NIP kontrahenta', synonyms: ['nip', 'nip_kontrahenta'] },
+  { name: 'K_5A', label: 'Kontrahent', type: 'string', required: true, description: 'Imię i nazwisko / firma kontrahenta', synonyms: ['kontrahent', 'nazwa', 'nazwa_kontrahenta', 'firma'] },
+  { name: 'K_5B', label: 'Adres kontrahenta', type: 'string', required: true, description: 'Adres kontrahenta', synonyms: ['adres', 'adres_kontrahenta'] },
+  { name: 'K_6', label: 'Opis zdarzenia', type: 'string', required: true, description: 'Opis zdarzenia gospodarczego', synonyms: ['opis', 'opis_zdarzenia', 'tresc', 'tytul'] },
+  { name: 'K_7', label: 'Przychód — sprzedaż', type: 'decimal', required: false, description: 'Wartość sprzedanych towarów i usług', synonyms: ['przychod', 'przychod_sprzedaz', 'sprzedaz'] },
+  { name: 'K_8', label: 'Przychód — pozostałe', type: 'decimal', required: false, description: 'Pozostałe przychody', synonyms: ['przychod_pozostale', 'pozostale_przychody'] },
+  { name: 'K_9', label: 'Przychód — razem', type: 'decimal', required: false, description: 'Razem przychód (K_7 + K_8)', synonyms: ['przychod_razem', 'razem_przychod'] },
+  { name: 'K_10', label: 'Zakup towarów', type: 'decimal', required: false, description: 'Zakup towarów handlowych i materiałów', synonyms: ['zakup', 'zakup_towarow', 'towary'] },
+  { name: 'K_11', label: 'Koszty uboczne', type: 'decimal', required: false, description: 'Koszty uboczne zakupu', synonyms: ['koszty_uboczne'] },
+  { name: 'K_12', label: 'Wynagrodzenia', type: 'decimal', required: false, description: 'Wynagrodzenia w gotówce i naturze', synonyms: ['wynagrodzenia', 'wynagrodzenie', 'pensje'] },
+  { name: 'K_13', label: 'Pozostałe koszty', type: 'decimal', required: false, description: 'Pozostałe wydatki', synonyms: ['koszty', 'koszty_pozostale', 'pozostale_koszty', 'wydatki'] },
+  { name: 'K_14', label: 'Koszty — razem', type: 'decimal', required: false, description: 'Razem wydatki (K_12 + K_13)', synonyms: ['koszty_razem', 'razem_koszty'] },
+  { name: 'K_15', label: 'Koszty — wolne', type: 'decimal', required: false, description: 'Pole wolne — inne koszty' },
+  { name: 'K_16A', label: 'B+R opis', type: 'string', required: false, description: 'Koszty B+R — opis kosztu' },
+  { name: 'K_16B', label: 'B+R wartość', type: 'decimal', required: false, description: 'Koszty B+R — wartość' },
+  { name: 'K_17', label: 'Uwagi', type: 'string', required: false, description: 'Uwagi / adnotacje', synonyms: ['uwagi', 'komentarz', 'notatka'] },
+]
+
+// ═══════════════════════════════════════════════════════
 //  Section definitions (for registry / lookup)
 // ═══════════════════════════════════════════════════════
 
@@ -181,6 +209,11 @@ export const JPK_SECTIONS: Record<string, JpkSectionDef> = {
     sectionName: 'WZ',
     label: 'Magazyn — wydania zewnętrzne',
     fields: JPK_MAG_WZ_FIELDS,
+  },
+  'JPK_PKPIR.PKPIRWiersz': {
+    sectionName: 'PKPIRWiersz',
+    label: 'KPiR — wiersze',
+    fields: JPK_PKPIR_WIERSZ_FIELDS,
   },
 }
 

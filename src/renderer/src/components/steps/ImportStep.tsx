@@ -10,7 +10,8 @@ import {
   Package,
   Info,
   AlertTriangle,
-  Wallet
+  Wallet,
+  BookOpen
 } from 'lucide-react'
 import { useImportStore } from '@renderer/stores/importStore'
 import { useAppStore } from '@renderer/stores/appStore'
@@ -36,7 +37,8 @@ const JPK_BADGE_CONFIG: Record<JpkType, { label: string; className: string; icon
   JPK_VDEK: { label: 'V7M', className: 'bg-accent/15 text-accent', icon: FileText },
   JPK_FA: { label: 'FA', className: 'bg-purple-500/15 text-purple-400', icon: FileSpreadsheet },
   JPK_MAG: { label: 'MAG', className: 'bg-amber-500/15 text-amber-400', icon: Package },
-  JPK_WB: { label: 'WB', className: 'bg-cyan-500/15 text-cyan-400', icon: Wallet }
+  JPK_WB: { label: 'WB', className: 'bg-cyan-500/15 text-cyan-400', icon: Wallet },
+  JPK_PKPIR: { label: 'PKPiR', className: 'bg-emerald-500/15 text-emerald-400', icon: BookOpen }
 }
 
 function formatFileSize(bytes: number): string {

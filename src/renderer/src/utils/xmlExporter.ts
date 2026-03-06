@@ -3,16 +3,21 @@
 import { generatorRegistry } from '../../../core/generators/XmlGeneratorEngine'
 // Import generators to trigger auto-registration in the registry
 import '../../../core/generators/JpkV7mGenerator'
+import '../../../core/generators/JpkV7kGenerator'
 import '../../../core/generators/JpkFaGenerator'
 import '../../../core/generators/JpkMagGenerator'
 import '../../../core/generators/JpkWbGenerator'
+import '../../../core/generators/JpkPkpirGenerator'
 import type { V7mGeneratorInput } from '../../../core/generators/JpkV7mGenerator'
+import type { V7kGeneratorInput } from '../../../core/generators/JpkV7kGenerator'
 import type { FaGeneratorInput } from '../../../core/generators/JpkFaGenerator'
 import type { MagGeneratorInput, MagDokument } from '../../../core/generators/JpkMagGenerator'
 import type { WbGeneratorInput, WbWiersz } from '../../../core/generators/JpkWbGenerator'
+import type { PkpirGeneratorInput } from '../../../core/generators/JpkPkpirGenerator'
 import type { ColumnMapping } from '../../../core/mapping/AutoMapper'
 import type { ParsedFile, JpkType } from '../types'
 import type { CompanyData, PeriodData } from '../stores/companyStore'
+import type { JpkSubtype } from '../stores/appStore'
 import { normalizeNip } from './nipValidator'
 
 export interface XmlExportResult {
@@ -29,14 +34,16 @@ const JPK_REGISTRY_KEYS: Record<JpkType, string> = {
   JPK_VDEK: 'JPK_V7M',
   JPK_FA: 'JPK_FA',
   JPK_MAG: 'JPK_MAG',
-  JPK_WB: 'JPK_WB'
+  JPK_WB: 'JPK_WB',
+  JPK_PKPIR: 'JPK_PKPIR'
 }
 
 const JPK_FILE_PREFIXES: Record<JpkType, string> = {
   JPK_VDEK: 'JPK_V7M',
   JPK_FA: 'JPK_FA',
   JPK_MAG: 'JPK_MAG',
-  JPK_WB: 'JPK_WB'
+  JPK_WB: 'JPK_WB',
+  JPK_PKPIR: 'JPK_PKPIR'
 }
 
 // Convert file rows to Record<string, string>[] using column mappings
@@ -82,6 +89,32 @@ function buildV7mInput(
     },
     sprzedazWiersze: records,
     zakupWiersze: []
+  }
+}
+
+function buildV7kInput(
+  records: Record<string, string>[],
+  company: CompanyData,
+  period: PeriodData
+): V7kGeneratorInput {
+  const kwartal = Math.ceil(period.month / 3)
+  return {
+    naglowek: {
+      celZlozenia: period.celZlozenia,
+      kodUrzedu: company.kodUrzedu,
+      rok: period.year,
+      miesiac: period.month,
+      nazwaSystemu: 'JPK Converter 2.0'
+    },
+    podmiot: {
+      typ: 'niefizyczna',
+      nip: normalizeNip(company.nip),
+      pelnaNazwa: company.fullName,
+      email: company.email
+    },
+    sprzedazWiersze: records,
+    zakupWiersze: [],
+    kwartal
   }
 }
 
@@ -200,21 +233,56 @@ function buildWbInput(
   }
 }
 
-function buildGeneratorInput(
+function buildPkpirInput(
   file: ParsedFile,
   records: Record<string, string>[],
   company: CompanyData,
   period: PeriodData
+): PkpirGeneratorInput {
+  const mm = String(period.month).padStart(2, '0')
+  return {
+    naglowek: {
+      celZlozenia: period.celZlozenia,
+      dataOd: file.dateFrom || `${period.year}-${mm}-01`,
+      dataDo: file.dateTo || `${period.year}-12-31`,
+      kodUrzedu: company.kodUrzedu
+    },
+    podmiot: {
+      typ: 'niefizyczna',
+      nip: normalizeNip(company.nip),
+      pelnaNazwa: company.fullName,
+      email: company.email
+    },
+    pkpirInfo: {
+      spisPoczatek: 0,
+      spisKoniec: 0,
+      kosztyRazem: 0,
+      dochod: 0
+    },
+    wiersze: records
+  }
+}
+
+function buildGeneratorInput(
+  file: ParsedFile,
+  records: Record<string, string>[],
+  company: CompanyData,
+  period: PeriodData,
+  jpkSubtype: JpkSubtype = 'V7M'
 ): unknown {
   switch (file.jpkType) {
     case 'JPK_VDEK':
-      return buildV7mInput(records, company, period)
+      return jpkSubtype === 'V7K'
+        ? buildV7kInput(records, company, period)
+        : buildV7mInput(records, company, period)
     case 'JPK_FA':
       return buildFaInput(file, records, company, period)
     case 'JPK_MAG':
       return buildMagInput(file, records, company, period)
     case 'JPK_WB':
       return buildWbInput(file, records, company, period)
+    case 'JPK_PKPIR':
+      return buildPkpirInput(file, records, company, period)
   }
 }
 
@@ -222,19 +290,21 @@ export function generateXmlForFile(
   file: ParsedFile,
   mappings: ColumnMapping[],
   company: CompanyData,
-  period: PeriodData
+  period: PeriodData,
+  jpkSubtype: JpkSubtype = 'V7M'
 ): XmlExportResult | null {
-  const registryKey = JPK_REGISTRY_KEYS[file.jpkType]
+  const baseKey = JPK_REGISTRY_KEYS[file.jpkType]
+  const registryKey = file.jpkType === 'JPK_VDEK' && jpkSubtype === 'V7K' ? 'JPK_V7K' : baseKey
   const generator = generatorRegistry.get(registryKey)
   if (!generator) return null
 
   const records = rowsToRecords(file.rows, mappings)
-  const input = buildGeneratorInput(file, records, company, period)
+  const input = buildGeneratorInput(file, records, company, period, jpkSubtype)
 
   const xml = generator.generate(input)
   const nip = normalizeNip(company.nip)
   const mm = String(period.month).padStart(2, '0')
-  const prefix = JPK_FILE_PREFIXES[file.jpkType]
+  const prefix = file.jpkType === 'JPK_VDEK' && jpkSubtype === 'V7K' ? 'JPK_V7K' : JPK_FILE_PREFIXES[file.jpkType]
   const filename = `${prefix}_${nip}_${period.year}-${mm}.xml`
 
   return {

@@ -1,5 +1,5 @@
-export type JpkType = 'JPK_VDEK' | 'JPK_FA' | 'JPK_MAG' | 'JPK_WB'
-export type SubType = 'SprzedazWiersz' | 'Faktura' | 'WZ' | 'RW' | 'ZakupWiersz' | 'FakturaWiersz' | 'PZ' | 'MM'
+export type JpkType = 'JPK_VDEK' | 'JPK_FA' | 'JPK_MAG' | 'JPK_WB' | 'JPK_PKPIR'
+export type SubType = 'SprzedazWiersz' | 'Faktura' | 'WZ' | 'RW' | 'ZakupWiersz' | 'FakturaWiersz' | 'PZ' | 'MM' | 'PKPIRWiersz'
 export type ErpSystem = 'NAMOS' | 'ESO' | 'UNKNOWN'
 export type FileFormat = 'txt' | 'csv' | 'xlsx' | 'json' | 'xml'
 

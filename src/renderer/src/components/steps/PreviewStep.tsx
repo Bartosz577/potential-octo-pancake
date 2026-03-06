@@ -339,7 +339,8 @@ const TAB_LABELS: Record<JpkType, string> = {
   JPK_VDEK: 'Sprzedaż V7M',
   JPK_FA: 'Faktury',
   JPK_MAG: 'Magazyn',
-  JPK_WB: 'Wyciągi bankowe'
+  JPK_WB: 'Wyciągi bankowe',
+  JPK_PKPIR: 'KPiR'
 }
 
 export function PreviewStep(): React.JSX.Element {
