@@ -33,7 +33,8 @@ const TAB_LABELS: Record<JpkType, string> = {
   JPK_MAG: 'MAG',
   JPK_WB: 'WB',
   JPK_PKPIR: 'PKPiR',
-  JPK_EWP: 'EWP'
+  JPK_EWP: 'EWP',
+  JPK_KR_PD: 'KR_PD'
 }
 
 // Simple XML syntax highlighting

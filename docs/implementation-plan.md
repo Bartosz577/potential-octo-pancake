@@ -92,7 +92,17 @@
 - [x] Integracja: appStore, Sidebar, ImportStep, ExportStep, PreviewStep, ValidationStep, HistoryStep, xmlExporter, validator
 - [x] Testy: `JpkEwpGenerator.test.ts` — 42 testy
 
-### 2.8 Generyczny silnik XML
+### 2.8 JPK_KR_PD(1) — nowy generator (księgi rachunkowe CIT/PIT)
+- [x] Schemat XSD JPK_KR_PD(1) (namespace 09041) — już w /schemas
+- [x] Zaimplementuj `JpkKrPdGenerator.ts` (Naglowek, Podmiot1+AdresPol+EST/MSSF, Kontrahent, ZOiS7, Dziennik+KontoZapis, Ctrl C_1..C_5, RPD K_1..K_8)
+- [x] Dodaj typ JPK_KR_PD do core/models/types.ts i renderer/types
+- [x] Dodaj JPK_KR_PD_DZIENNIK_FIELDS do JpkFieldDefinitions.ts (12 pól D_1..D_12)
+- [x] Integracja: appStore, Sidebar, ImportStep, ExportStep, PreviewStep, ValidationStep, HistoryStep, xmlExporter, validator
+- [x] TMapKontaPD enum (28 wartości: 13 bilansowych + 15 pozabilansowych) z walidacją
+- [x] KontoZapis: xsd:choice debit (Z_4/Z_5/Z_6) vs credit (Z_7/Z_8/Z_9) z obsługą walut
+- [x] Testy: `JpkKrPdGenerator.test.ts` — 54 testy
+
+### 2.9 Generyczny silnik XML
 - [x] Refaktor: wydziel wspólną logikę (nagłówek, escape, formatowanie) do `XmlGeneratorEngine.ts`
 - [x] Zdefiniuj interfejs `XmlGenerator` i zarejestruj generatory w registry
 
@@ -199,11 +209,11 @@
 |------|--------|-------|
 | 0 — Przygotowanie | ✅ Done | — |
 | 1 — Core (parsery + mapowanie) | ✅ Done | 309 tests |
-| 2 — Generatory XML | ✅ Done | 732 tests (14 XSD, +V7K 39, +PKPIR 57, +EWP 42) |
+| 2 — Generatory XML | ✅ Done | 786 tests (14 XSD, +V7K 39, +PKPIR 57, +EWP 42, +KR_PD 54) |
 | 3 — UI rozszerzenia | ✅ Done | Web typecheck OK |
 | 4 — Zustand stores | ✅ Done | 632 tests |
 | 5 — Electron main | ✅ Done | Build OK |
-| 6 — Jakość | 🔶 In progress | 908 unit + 1 E2E |
+| 6 — Jakość | 🔶 In progress | 962 unit + 1 E2E |
 | 7 — Release | ⬜ Not started | — |
 
 ### Pozostałe zadania (Faza 3-5)

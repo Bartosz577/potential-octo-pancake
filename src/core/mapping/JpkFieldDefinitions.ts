@@ -208,6 +208,25 @@ export const JPK_EWP_WIERSZ_FIELDS: JpkFieldDef[] = [
 ]
 
 // ═══════════════════════════════════════════════════════
+//  JPK_KR_PD (Księgi rachunkowe — Dziennik)
+// ═══════════════════════════════════════════════════════
+
+export const JPK_KR_PD_DZIENNIK_FIELDS: JpkFieldDef[] = [
+  { name: 'D_1', label: 'Nr zapisu', type: 'string', required: true, description: 'Numer zapisu w dzienniku', synonyms: ['numer_zapisu', 'nr_zapisu', 'lp'] },
+  { name: 'D_2', label: 'Dziennik', type: 'string', required: true, description: 'Nazwa dziennika cząstkowego', synonyms: ['dziennik', 'nazwa_dziennika'] },
+  { name: 'D_3', label: 'Kod kontrahenta', type: 'string', required: false, description: 'Kod kontrahenta', synonyms: ['kontrahent', 'kod_kontrahenta'] },
+  { name: 'D_4', label: 'Nr dowodu', type: 'string', required: true, description: 'Numer dowodu księgowego', synonyms: ['dowod', 'nr_dowodu', 'numer_dowodu', 'dokument'] },
+  { name: 'D_5', label: 'Rodzaj dowodu', type: 'string', required: true, description: 'Typ dowodu księgowego', synonyms: ['rodzaj_dowodu', 'typ_dowodu', 'typ_dokumentu'] },
+  { name: 'D_6', label: 'Data operacji', type: 'date', required: true, description: 'Data zdarzenia gospodarczego', synonyms: ['data', 'data_operacji'] },
+  { name: 'D_7', label: 'Data dowodu', type: 'date', required: true, description: 'Data wystawienia dowodu', synonyms: ['data_dowodu', 'data_wystawienia'] },
+  { name: 'D_8', label: 'Data księgowania', type: 'date', required: true, description: 'Data wpisu do ksiąg', synonyms: ['data_ksiegowania', 'data_wpisu'] },
+  { name: 'D_9', label: 'Osoba', type: 'string', required: true, description: 'Osoba odpowiedzialna za zapis', synonyms: ['osoba', 'odpowiedzialny', 'uzytkownik'] },
+  { name: 'D_10', label: 'Opis operacji', type: 'string', required: true, description: 'Opis zdarzenia gospodarczego', synonyms: ['opis', 'opis_operacji', 'tresc'] },
+  { name: 'D_11', label: 'Kwota operacji', type: 'decimal', required: true, description: 'Kwota operacji', synonyms: ['kwota', 'kwota_operacji', 'wartosc'] },
+  { name: 'D_12', label: 'Nr KSeF', type: 'string', required: false, description: 'Numer KSeF faktury', synonyms: ['ksef', 'nr_ksef'] },
+]
+
+// ═══════════════════════════════════════════════════════
 //  Section definitions (for registry / lookup)
 // ═══════════════════════════════════════════════════════
 
@@ -236,6 +255,11 @@ export const JPK_SECTIONS: Record<string, JpkSectionDef> = {
     sectionName: 'EWPWiersz',
     label: 'EWP — ewidencja przychodów',
     fields: JPK_EWP_WIERSZ_FIELDS,
+  },
+  'JPK_KR_PD.Dziennik': {
+    sectionName: 'Dziennik',
+    label: 'KR_PD — dziennik księgowy',
+    fields: JPK_KR_PD_DZIENNIK_FIELDS,
   },
 }
 

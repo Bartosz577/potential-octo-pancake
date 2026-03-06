@@ -39,7 +39,8 @@ const JPK_BADGE_CONFIG: Record<JpkType, { label: string; className: string; icon
   JPK_MAG: { label: 'MAG', className: 'bg-amber-500/15 text-amber-400', icon: Package },
   JPK_WB: { label: 'WB', className: 'bg-cyan-500/15 text-cyan-400', icon: Wallet },
   JPK_PKPIR: { label: 'PKPiR', className: 'bg-emerald-500/15 text-emerald-400', icon: BookOpen },
-  JPK_EWP: { label: 'EWP', className: 'bg-rose-500/15 text-rose-400', icon: BookOpen }
+  JPK_EWP: { label: 'EWP', className: 'bg-rose-500/15 text-rose-400', icon: BookOpen },
+  JPK_KR_PD: { label: 'KR_PD', className: 'bg-indigo-500/15 text-indigo-400', icon: BookOpen }
 }
 
 function formatFileSize(bytes: number): string {

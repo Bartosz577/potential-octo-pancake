@@ -9,6 +9,7 @@ import '../../../core/generators/JpkMagGenerator'
 import '../../../core/generators/JpkWbGenerator'
 import '../../../core/generators/JpkPkpirGenerator'
 import '../../../core/generators/JpkEwpGenerator'
+import '../../../core/generators/JpkKrPdGenerator'
 import type { V7mGeneratorInput } from '../../../core/generators/JpkV7mGenerator'
 import type { V7kGeneratorInput } from '../../../core/generators/JpkV7kGenerator'
 import type { FaGeneratorInput } from '../../../core/generators/JpkFaGenerator'
@@ -16,6 +17,7 @@ import type { MagGeneratorInput, MagDokument } from '../../../core/generators/Jp
 import type { WbGeneratorInput, WbWiersz } from '../../../core/generators/JpkWbGenerator'
 import type { PkpirGeneratorInput } from '../../../core/generators/JpkPkpirGenerator'
 import type { EwpGeneratorInput } from '../../../core/generators/JpkEwpGenerator'
+import type { KrPdGeneratorInput } from '../../../core/generators/JpkKrPdGenerator'
 import type { ColumnMapping } from '../../../core/mapping/AutoMapper'
 import type { ParsedFile, JpkType } from '../types'
 import type { CompanyData, PeriodData } from '../stores/companyStore'
@@ -38,7 +40,8 @@ const JPK_REGISTRY_KEYS: Record<JpkType, string> = {
   JPK_MAG: 'JPK_MAG',
   JPK_WB: 'JPK_WB',
   JPK_PKPIR: 'JPK_PKPIR',
-  JPK_EWP: 'JPK_EWP'
+  JPK_EWP: 'JPK_EWP',
+  JPK_KR_PD: 'JPK_KR_PD'
 }
 
 const JPK_FILE_PREFIXES: Record<JpkType, string> = {
@@ -47,7 +50,8 @@ const JPK_FILE_PREFIXES: Record<JpkType, string> = {
   JPK_MAG: 'JPK_MAG',
   JPK_WB: 'JPK_WB',
   JPK_PKPIR: 'JPK_PKPIR',
-  JPK_EWP: 'JPK_EWP'
+  JPK_EWP: 'JPK_EWP',
+  JPK_KR_PD: 'JPK_KR_PD'
 }
 
 // Convert file rows to Record<string, string>[] using column mappings
@@ -291,6 +295,39 @@ function buildEwpInput(
   }
 }
 
+function buildKrPdInput(
+  file: ParsedFile,
+  _records: Record<string, string>[],
+  company: CompanyData,
+  period: PeriodData
+): KrPdGeneratorInput {
+  const mm = String(period.month).padStart(2, '0')
+  return {
+    naglowek: {
+      celZlozenia: period.celZlozenia,
+      dataOd: file.dateFrom || `${period.year}-${mm}-01`,
+      dataDo: file.dateTo || `${period.year}-12-31`,
+      rokDataOd: `${period.year}-01-01`,
+      rokDataDo: `${period.year}-12-31`,
+      kodUrzedu: company.kodUrzedu
+    },
+    podmiot: {
+      nip: normalizeNip(company.nip),
+      pelnaNazwa: company.fullName,
+      regon: company.regon || undefined,
+      adres: {
+        kodKraju: 'PL',
+        nrDomu: '-',
+        miejscowosc: '-',
+        kodPocztowy: '00-000'
+      }
+    },
+    zpisSald: [],
+    dziennik: [],
+    rpd: { k1: 0, k2: 0, k3: 0, k4: 0, k5: 0, k6: 0, k7: 0, k8: 0 }
+  }
+}
+
 function buildGeneratorInput(
   file: ParsedFile,
   records: Record<string, string>[],
@@ -313,6 +350,8 @@ function buildGeneratorInput(
       return buildPkpirInput(file, records, company, period)
     case 'JPK_EWP':
       return buildEwpInput(file, records, company, period)
+    case 'JPK_KR_PD':
+      return buildKrPdInput(file, records, company, period)
   }
 }
 
