@@ -26,7 +26,7 @@ function StepPlaceholder(): React.JSX.Element {
           {STEP_LABELS[currentStep]}
         </h2>
         <p className="text-sm text-text-secondary">
-          JPK {activeJpkType} — Krok {currentStep} z 7
+          {activeJpkType.replace('JPK_', 'JPK ')} — Krok {currentStep} z 7
         </p>
       </div>
     </div>

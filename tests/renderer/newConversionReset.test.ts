@@ -12,7 +12,7 @@ import type { ParsedFile } from '../../src/renderer/src/types'
 function simulateNewConversion(): void {
   useImportStore.getState().clearFiles()
   useMappingStore.getState().clearMappings()
-  useAppStore.getState().setActiveJpkType('V7M')
+  useAppStore.getState().setActiveJpkType('JPK_VDEK')
   useAppStore.getState().setJpkSubtype('V7M')
   useAppStore.getState().setMode('conversion')
   useAppStore.getState().setValidationXml(null)
@@ -37,7 +37,7 @@ describe('New Conversion Reset', () => {
   beforeEach(() => {
     // Set up dirty state simulating a completed conversion
     useAppStore.setState({
-      activeJpkType: 'FA',
+      activeJpkType: 'JPK_FA',
       jpkSubtype: 'V7K',
       currentStep: 6,
       mode: 'validation',
@@ -69,9 +69,9 @@ describe('New Conversion Reset', () => {
     expect(useAppStore.getState().currentStep).toBe(1)
   })
 
-  it('resets activeJpkType to V7M', () => {
+  it('resets activeJpkType to JPK_VDEK', () => {
     simulateNewConversion()
-    expect(useAppStore.getState().activeJpkType).toBe('V7M')
+    expect(useAppStore.getState().activeJpkType).toBe('JPK_VDEK')
   })
 
   it('resets jpkSubtype to V7M', () => {

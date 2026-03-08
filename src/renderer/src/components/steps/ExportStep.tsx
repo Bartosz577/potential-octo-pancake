@@ -182,7 +182,7 @@ export function ExportStep(): React.JSX.Element {
   const handleNewConversion = useCallback(() => {
     clearFiles()
     clearMappings()
-    setActiveJpkType('V7M')
+    setActiveJpkType('JPK_VDEK')
     setJpkSubtype('V7M')
     setMode('conversion')
     setValidationXml(null)

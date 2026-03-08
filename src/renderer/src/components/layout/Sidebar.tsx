@@ -2,17 +2,17 @@ import { FileText, FileSpreadsheet, Package, Clock, Wallet, BookOpen, Receipt, S
 import { useAppStore, type JpkType } from '@renderer/stores/appStore'
 
 const NAV_ITEMS: { type: JpkType; label: string; sublabel: string; icon: typeof FileText }[] = [
-  { type: 'V7M', label: 'JPK V7M', sublabel: 'Ewidencja VAT', icon: FileText },
-  { type: 'FA', label: 'JPK FA', sublabel: 'Faktury', icon: FileSpreadsheet },
-  { type: 'MAG', label: 'JPK MAG', sublabel: 'Magazyn', icon: Package },
-  { type: 'WB', label: 'JPK WB', sublabel: 'Wyciągi bankowe', icon: Wallet },
-  { type: 'PKPIR', label: 'JPK PKPiR', sublabel: 'Księga przychodów', icon: BookOpen },
-  { type: 'EWP', label: 'JPK EWP', sublabel: 'Ewidencja ryczałtu', icon: Receipt },
-  { type: 'KR_PD', label: 'JPK KR_PD', sublabel: 'Księgi rachunkowe (CIT)', icon: Scale },
-  { type: 'ST', label: 'JPK ST', sublabel: 'Środki trwałe (EWP/PKPiR)', icon: Landmark },
-  { type: 'ST_KR', label: 'JPK ST_KR', sublabel: 'Środki trwałe (KR)', icon: Landmark },
-  { type: 'FA_RR', label: 'JPK FA_RR', sublabel: 'Faktury VAT RR', icon: Tractor },
-  { type: 'KR', label: 'JPK KR', sublabel: 'Księgi rachunkowe (legacy)', icon: BookMarked }
+  { type: 'JPK_VDEK', label: 'JPK V7M', sublabel: 'Ewidencja VAT', icon: FileText },
+  { type: 'JPK_FA', label: 'JPK FA', sublabel: 'Faktury', icon: FileSpreadsheet },
+  { type: 'JPK_MAG', label: 'JPK MAG', sublabel: 'Magazyn', icon: Package },
+  { type: 'JPK_WB', label: 'JPK WB', sublabel: 'Wyciągi bankowe', icon: Wallet },
+  { type: 'JPK_PKPIR', label: 'JPK PKPiR', sublabel: 'Księga przychodów', icon: BookOpen },
+  { type: 'JPK_EWP', label: 'JPK EWP', sublabel: 'Ewidencja ryczałtu', icon: Receipt },
+  { type: 'JPK_KR_PD', label: 'JPK KR_PD', sublabel: 'Księgi rachunkowe (CIT)', icon: Scale },
+  { type: 'JPK_ST', label: 'JPK ST', sublabel: 'Środki trwałe (EWP/PKPiR)', icon: Landmark },
+  { type: 'JPK_ST_KR', label: 'JPK ST_KR', sublabel: 'Środki trwałe (KR)', icon: Landmark },
+  { type: 'JPK_FA_RR', label: 'JPK FA_RR', sublabel: 'Faktury VAT RR', icon: Tractor },
+  { type: 'JPK_KR', label: 'JPK KR', sublabel: 'Księgi rachunkowe (legacy)', icon: BookMarked }
 ]
 
 export function Sidebar(): React.JSX.Element {

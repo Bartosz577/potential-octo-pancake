@@ -353,7 +353,7 @@ export function CompanyStep(): React.JSX.Element {
         <h2 className="text-sm font-semibold text-text-primary mb-4">Okres rozliczeniowy</h2>
 
         {/* Monthly / Quarterly toggle — only for V7M type */}
-        {activeJpkType === 'V7M' && (
+        {activeJpkType === 'JPK_VDEK' && (
           <div className="flex items-center gap-2 mb-4">
             <span className="text-xs font-medium text-text-secondary">Typ rozliczenia:</span>
             <div className="flex rounded-lg border border-border overflow-hidden">
