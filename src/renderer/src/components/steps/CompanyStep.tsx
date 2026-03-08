@@ -8,19 +8,48 @@ import {
   Download,
   CheckCircle2,
   XCircle,
-  Trash2
+  Trash2,
+  Calendar,
+  CreditCard,
+  FileText,
+  Warehouse,
+  ShieldCheck,
+  Info
 } from 'lucide-react'
 import { useCompanyStore, type CompanyData } from '@renderer/stores/companyStore'
+import type { PeriodData } from '@renderer/stores/companyStore'
 import { useImportStore } from '@renderer/stores/importStore'
-import { useAppStore, type JpkSubtype } from '@renderer/stores/appStore'
+import { useAppStore, type JpkSubtype, type JpkType } from '@renderer/stores/appStore'
 import { validatePolishNip, normalizeNip } from '@renderer/utils/nipValidator'
+import { jpkTypeToLabel } from '../../../../core/mapping/jpkTypeUtils'
 
 const MONTHS = [
   'Styczeń', 'Luty', 'Marzec', 'Kwiecień', 'Maj', 'Czerwiec',
   'Lipiec', 'Sierpień', 'Wrzesień', 'Październik', 'Listopad', 'Grudzień'
 ]
 
-const YEARS = [2024, 2025, 2026]
+const YEARS = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i)
+
+const QUARTERS = [
+  { value: 1, label: 'I kwartał (sty–mar)' },
+  { value: 2, label: 'II kwartał (kwi–cze)' },
+  { value: 3, label: 'III kwartał (lip–wrz)' },
+  { value: 4, label: 'IV kwartał (paź–gru)' }
+]
+
+const TYPE_COLORS: Record<string, string> = {
+  V7M: 'border-l-blue-500',
+  FA: 'border-l-purple-500',
+  FA_RR: 'border-l-purple-400',
+  MAG: 'border-l-green-500',
+  WB: 'border-l-orange-500',
+  PKPIR: 'border-l-cyan-500',
+  EWP: 'border-l-teal-500',
+  KR_PD: 'border-l-rose-500',
+  KR: 'border-l-rose-400',
+  ST: 'border-l-amber-500',
+  ST_KR: 'border-l-amber-400'
+}
 
 // FA data column indices (0-based, after 6 meta columns)
 const FA_SELLER_NAME_COL = 5  // P_3C
@@ -41,17 +70,20 @@ function extractCompanyFromFA(files: ReturnType<typeof useImportStore.getState>[
 function FormField({
   label,
   children,
-  optional = false
+  optional = false,
+  required = false
 }: {
   label: string
   children: React.ReactNode
   optional?: boolean
+  required?: boolean
 }): React.JSX.Element {
   return (
     <div className="flex flex-col gap-1.5">
       <label className="text-xs font-medium text-text-secondary">
         {label}
-        {optional && <span className="text-text-muted ml-1">(opcjonalnie)</span>}
+        {required && <span className="text-red-500 ml-0.5">*</span>}
+        {optional && <span className="text-zinc-400 ml-1">(opcjonalnie)</span>}
       </label>
       {children}
     </div>
@@ -169,12 +201,183 @@ function SavedCompanySelector({
   )
 }
 
+/** Period card for V7M/V7K — monthly/quarterly toggle + year/month/quarter selects */
+function V7MPeriodCard({
+  period,
+  jpkSubtype,
+  onSetPeriod,
+  onSetSubtype
+}: {
+  period: PeriodData
+  jpkSubtype: JpkSubtype
+  onSetPeriod: (data: Partial<PeriodData>) => void
+  onSetSubtype: (sub: JpkSubtype) => void
+}): React.JSX.Element {
+  return (
+    <div className={`bg-bg-card rounded-xl border border-border border-l-4 ${TYPE_COLORS['V7M']} p-5`}>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-sm font-semibold text-text-primary">
+          {jpkSubtype === 'V7K' ? 'JPK_V7K — kwartalny' : 'JPK_V7M — miesięczny'}
+        </h3>
+        <div className="flex rounded-lg border border-border overflow-hidden">
+          {(['V7M', 'V7K'] as JpkSubtype[]).map((sub) => (
+            <button
+              key={sub}
+              onClick={() => onSetSubtype(sub)}
+              className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+                jpkSubtype === sub
+                  ? 'bg-accent text-white'
+                  : 'bg-bg-input text-text-secondary hover:text-text-primary'
+              }`}
+            >
+              {sub === 'V7M' ? 'Miesięczny' : 'Kwartalny'}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-3 gap-4">
+        <FormField label="Rok" required>
+          <SelectInput
+            value={period.year}
+            onChange={(v) => onSetPeriod({ year: parseInt(v, 10) })}
+            options={YEARS.map((y) => ({ value: y, label: String(y) }))}
+          />
+        </FormField>
+
+        {jpkSubtype === 'V7K' ? (
+          <FormField label="Kwartał" required>
+            <SelectInput
+              value={period.quarter ?? 1}
+              onChange={(v) => onSetPeriod({ quarter: parseInt(v, 10) })}
+              options={QUARTERS.map((q) => ({ value: q.value, label: q.label }))}
+            />
+          </FormField>
+        ) : (
+          <FormField label="Miesiąc" required>
+            <SelectInput
+              value={period.month ?? 1}
+              onChange={(v) => onSetPeriod({ month: parseInt(v, 10) })}
+              options={MONTHS.map((m, i) => ({ value: i + 1, label: `${i + 1} — ${m}` }))}
+            />
+          </FormField>
+        )}
+
+        <FormField label="Cel złożenia" required>
+          <div className="flex items-center gap-4 h-[38px]">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="radio"
+                name="celZlozenia-V7M"
+                checked={period.celZlozenia === 1}
+                onChange={() => onSetPeriod({ celZlozenia: 1 })}
+                className="accent-accent"
+              />
+              <span className="text-sm text-text-primary">Złożenie (1)</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="radio"
+                name="celZlozenia-V7M"
+                checked={period.celZlozenia === 2}
+                onChange={() => onSetPeriod({ celZlozenia: 2 })}
+                className="accent-accent"
+              />
+              <span className="text-sm text-text-primary">Korekta (2)</span>
+            </label>
+          </div>
+        </FormField>
+      </div>
+    </div>
+  )
+}
+
+/** Period card for non-V7M types — dataOd/dataDo date inputs */
+function GenericPeriodCard({
+  jpkType,
+  period,
+  onSetPeriod
+}: {
+  jpkType: JpkType
+  period: PeriodData
+  onSetPeriod: (data: Partial<PeriodData>) => void
+}): React.JSX.Element {
+  const label = jpkTypeToLabel(jpkType)
+  const colorClass = TYPE_COLORS[jpkType] || 'border-l-zinc-500'
+
+  return (
+    <div className={`bg-bg-card rounded-xl border border-border border-l-4 ${colorClass} p-5`}>
+      <h3 className="text-sm font-semibold text-text-primary mb-4">{label}</h3>
+
+      <div className="grid grid-cols-3 gap-4">
+        <FormField label="Data od" required>
+          <input
+            type="date"
+            value={period.dataOd ?? ''}
+            onChange={(e) => onSetPeriod({ dataOd: e.target.value })}
+            className="w-full px-3 py-2 bg-bg-input rounded-lg text-sm font-mono text-text-primary border border-border focus:border-accent outline-none transition-colors"
+          />
+        </FormField>
+
+        <FormField label="Data do" required>
+          <input
+            type="date"
+            value={period.dataDo ?? ''}
+            onChange={(e) => onSetPeriod({ dataDo: e.target.value })}
+            className="w-full px-3 py-2 bg-bg-input rounded-lg text-sm font-mono text-text-primary border border-border focus:border-accent outline-none transition-colors"
+          />
+        </FormField>
+
+        <FormField label="Cel złożenia" required>
+          <div className="flex items-center gap-4 h-[38px]">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="radio"
+                name={`celZlozenia-${jpkType}`}
+                checked={period.celZlozenia === 1}
+                onChange={() => onSetPeriod({ celZlozenia: 1 })}
+                className="accent-accent"
+              />
+              <span className="text-sm text-text-primary">Złożenie (1)</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="radio"
+                name={`celZlozenia-${jpkType}`}
+                checked={period.celZlozenia === 2}
+                onChange={() => onSetPeriod({ celZlozenia: 2 })}
+                className="accent-accent"
+              />
+              <span className="text-sm text-text-primary">Korekta (2)</span>
+            </label>
+          </div>
+        </FormField>
+      </div>
+    </div>
+  )
+}
+
 export function CompanyStep(): React.JSX.Element {
   const { company, savedCompanies, setCompany, setPeriod, getPeriod, saveCompany, loadCompany, removeSavedCompany } =
     useCompanyStore()
   const { files } = useImportStore()
   const { activeJpkType, jpkSubtype, setJpkSubtype, setCurrentStep } = useAppStore()
-  const period = getPeriod(activeJpkType)
+
+  // Detect unique JPK types from imported files
+  const detectedTypes = useMemo<JpkType[]>(() => {
+    const types = new Set<JpkType>()
+    for (const f of files) {
+      if (f.jpkType) types.add(f.jpkType)
+    }
+    // If no files detected, fall back to activeJpkType
+    if (types.size === 0) types.add(activeJpkType)
+    return Array.from(types)
+  }, [files, activeJpkType])
+
+  const hasV7 = detectedTypes.includes('V7M')
+  const hasFA = detectedTypes.includes('FA') || detectedTypes.includes('FA_RR')
+  const hasMAG = detectedTypes.includes('MAG')
+  const hasWB = detectedTypes.includes('WB')
 
   const faCompanyData = useMemo(() => extractCompanyFromFA(files), [files])
 
@@ -201,13 +404,42 @@ export function CompanyStep(): React.JSX.Element {
 
   const nipNormalized = normalizeNip(company.nip)
   const nipValid = nipNormalized.length === 10 && validatePolishNip(nipNormalized)
-  const canProceed = nipValid && company.fullName.trim().length > 0
+
+  // Validation — canProceed
+  const canProceed = useMemo(() => {
+    // Base: NIP + fullName required
+    if (!nipValid) return false
+    if (company.fullName.trim().length === 0) return false
+
+    // Per-type period validation
+    for (const t of detectedTypes) {
+      const p = getPeriod(t)
+      if (t === 'V7M') {
+        // V7M/V7K: year required; month or quarter required depending on subtype
+        if (!p.year) return false
+        if (jpkSubtype === 'V7K') {
+          if (!p.quarter) return false
+        } else {
+          if (!p.month) return false
+        }
+      } else {
+        // All other types: dataOd + dataDo required
+        if (!p.dataOd || !p.dataDo) return false
+      }
+    }
+
+    // WB: numerRachunku required
+    if (hasWB && !company.numerRachunku?.trim()) return false
+
+    return true
+  }, [nipValid, company, detectedTypes, getPeriod, jpkSubtype, hasWB])
 
   // Check if FA data differs from current form
   const faDataAvailable = faCompanyData !== null
   const faDataDiffers = faCompanyData &&
     (normalizeNip(faCompanyData.nip || '') !== nipNormalized ||
      faCompanyData.fullName !== company.fullName)
+  const period = getPeriod(activeJpkType)
   const periodDiffers = filePeriod &&
     (filePeriod.year !== period.year || filePeriod.month !== (period.month ?? 1))
 
@@ -217,9 +449,31 @@ export function CompanyStep(): React.JSX.Element {
       <div>
         <h1 className="text-xl font-semibold text-text-primary mb-1">Dane podmiotu</h1>
         <p className="text-sm text-text-secondary">
-          Uzupełnij dane firmy dla nagłówka JPK
+          Uzupełnij dane firmy i okresy rozliczeniowe dla nagłówków JPK
         </p>
       </div>
+
+      {/* Detected types banner */}
+      {files.length > 0 ? (
+        <div className="flex items-center gap-2 px-4 py-3 bg-blue-500/10 rounded-lg border border-blue-500/20">
+          <Info className="w-4 h-4 text-blue-400 shrink-0" />
+          <span className="text-xs text-text-secondary">
+            Wykryte typy JPK:{' '}
+            {detectedTypes.map((t) => (
+              <span key={t} className="inline-block px-1.5 py-0.5 mx-0.5 bg-blue-500/15 text-blue-300 rounded text-xs font-medium">
+                {jpkTypeToLabel(t, t === 'V7M' ? jpkSubtype : null)}
+              </span>
+            ))}
+          </span>
+        </div>
+      ) : (
+        <div className="flex items-center gap-2 px-4 py-3 bg-yellow-500/10 rounded-lg border border-yellow-500/20">
+          <Info className="w-4 h-4 text-yellow-400 shrink-0" />
+          <span className="text-xs text-yellow-300/80">
+            Brak zaimportowanych plików — używam domyślnego typu {jpkTypeToLabel(activeJpkType, jpkSubtype)}
+          </span>
+        </div>
+      )}
 
       {/* Auto-fill from FA */}
       {faDataAvailable && faDataDiffers && (
@@ -268,7 +522,7 @@ export function CompanyStep(): React.JSX.Element {
         onRemove={removeSavedCompany}
       />
 
-      {/* Form */}
+      {/* Section 1: Dane firmy */}
       <div className="bg-bg-card rounded-xl border border-border p-5">
         <div className="flex items-center gap-2 mb-5">
           <Building2 className="w-4 h-4 text-accent" />
@@ -276,11 +530,11 @@ export function CompanyStep(): React.JSX.Element {
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-          <FormField label="NIP">
+          <FormField label="NIP" required>
             <NipInput value={company.nip} onChange={(nip) => setCompany({ nip })} />
           </FormField>
 
-          <FormField label="Pełna nazwa">
+          <FormField label="Pełna nazwa" required>
             <input
               type="text"
               value={company.fullName}
@@ -301,7 +555,7 @@ export function CompanyStep(): React.JSX.Element {
             />
           </FormField>
 
-          <FormField label="Kod urzędu skarbowego">
+          <FormField label="Kod urzędu skarbowego" required>
             <input
               type="text"
               value={company.kodUrzedu}
@@ -349,75 +603,153 @@ export function CompanyStep(): React.JSX.Element {
         </div>
       </div>
 
-      {/* Period */}
-      <div className="bg-bg-card rounded-xl border border-border p-5">
-        <h2 className="text-sm font-semibold text-text-primary mb-4">Okres rozliczeniowy</h2>
-
-        {/* Monthly / Quarterly toggle — only for V7M type */}
-        {activeJpkType === 'V7M' && (
-          <div className="flex items-center gap-2 mb-4">
-            <span className="text-xs font-medium text-text-secondary">Typ rozliczenia:</span>
-            <div className="flex rounded-lg border border-border overflow-hidden">
-              {(['V7M', 'V7K'] as JpkSubtype[]).map((sub) => (
-                <button
-                  key={sub}
-                  onClick={() => setJpkSubtype(sub)}
-                  className={`px-3 py-1.5 text-xs font-medium transition-colors ${
-                    jpkSubtype === sub
-                      ? 'bg-accent text-white'
-                      : 'bg-bg-input text-text-secondary hover:text-text-primary'
-                  }`}
-                >
-                  {sub === 'V7M' ? 'Miesięczny (V7M)' : 'Kwartalny (V7K)'}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        <div className="grid grid-cols-3 gap-4">
-          <FormField label="Rok">
-            <SelectInput
-              value={period.year}
-              onChange={(v) => setPeriod(activeJpkType, { year: parseInt(v, 10) })}
-              options={YEARS.map((y) => ({ value: y, label: String(y) }))}
-            />
-          </FormField>
-
-          <FormField label="Miesiąc">
-            <SelectInput
-              value={period.month ?? 1}
-              onChange={(v) => setPeriod(activeJpkType, { month: parseInt(v, 10) })}
-              options={MONTHS.map((m, i) => ({ value: i + 1, label: `${i + 1} — ${m}` }))}
-            />
-          </FormField>
-
-          <FormField label="Cel złożenia">
-            <div className="flex items-center gap-4 h-[38px]">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="radio"
-                  name="celZlozenia"
-                  checked={period.celZlozenia === 1}
-                  onChange={() => setPeriod(activeJpkType, { celZlozenia: 1 })}
-                  className="accent-accent"
-                />
-                <span className="text-sm text-text-primary">Złożenie (1)</span>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="radio"
-                  name="celZlozenia"
-                  checked={period.celZlozenia === 2}
-                  onChange={() => setPeriod(activeJpkType, { celZlozenia: 2 })}
-                  className="accent-accent"
-                />
-                <span className="text-sm text-text-primary">Korekta (2)</span>
-              </label>
-            </div>
-          </FormField>
+      {/* Section 2: Okresy rozliczeniowe — per-type cards */}
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center gap-2">
+          <Calendar className="w-4 h-4 text-accent" />
+          <h2 className="text-sm font-semibold text-text-primary">Okresy rozliczeniowe</h2>
         </div>
+
+        {detectedTypes.map((t) =>
+          t === 'V7M' ? (
+            <V7MPeriodCard
+              key={t}
+              period={getPeriod('V7M')}
+              jpkSubtype={jpkSubtype}
+              onSetPeriod={(data) => setPeriod('V7M', data)}
+              onSetSubtype={setJpkSubtype}
+            />
+          ) : (
+            <GenericPeriodCard
+              key={t}
+              jpkType={t}
+              period={getPeriod(t)}
+              onSetPeriod={(data) => setPeriod(t, data)}
+            />
+          )
+        )}
       </div>
+
+      {/* Section 3: KSeF — only when V7M detected */}
+      {hasV7 && (
+        <div className="bg-bg-card rounded-xl border border-border p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <ShieldCheck className="w-4 h-4 text-accent" />
+            <h2 className="text-sm font-semibold text-text-primary">KSeF</h2>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <FormField label="Data objęcia KSeF" optional>
+              <input
+                type="date"
+                value={company.objetyKsefOd ?? ''}
+                onChange={(e) => setCompany({ objetyKsefOd: e.target.value })}
+                className="w-full px-3 py-2 bg-bg-input rounded-lg text-sm font-mono text-text-primary border border-border focus:border-accent outline-none transition-colors"
+              />
+            </FormField>
+          </div>
+        </div>
+      )}
+
+      {/* Section 4: Dane rachunku bankowego — only when WB detected */}
+      {hasWB && (
+        <div className="bg-bg-card rounded-xl border border-border p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <CreditCard className="w-4 h-4 text-orange-400" />
+            <h2 className="text-sm font-semibold text-text-primary">Dane rachunku bankowego</h2>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <FormField label="Numer rachunku" required>
+              <input
+                type="text"
+                value={company.numerRachunku ?? ''}
+                onChange={(e) => setCompany({ numerRachunku: e.target.value })}
+                placeholder="PL00 0000 0000 0000 0000 0000 0000"
+                className="w-full px-3 py-2 bg-bg-input rounded-lg text-sm font-mono text-text-primary placeholder:text-text-muted border border-border focus:border-accent outline-none transition-colors"
+              />
+            </FormField>
+
+            <FormField label="Waluta rachunku" optional>
+              <SelectInput
+                value={company.walutaRachunku ?? 'PLN'}
+                onChange={(v) => setCompany({ walutaRachunku: v })}
+                options={[
+                  { value: 'PLN', label: 'PLN — złoty' },
+                  { value: 'EUR', label: 'EUR — euro' },
+                  { value: 'USD', label: 'USD — dolar' },
+                  { value: 'GBP', label: 'GBP — funt' }
+                ]}
+              />
+            </FormField>
+
+            <FormField label="Saldo początkowe" optional>
+              <input
+                type="number"
+                step="0.01"
+                value={company.saldoPoczatkowe ?? ''}
+                onChange={(e) => setCompany({ saldoPoczatkowe: e.target.value ? parseFloat(e.target.value) : undefined })}
+                placeholder="0.00"
+                className="w-full px-3 py-2 bg-bg-input rounded-lg text-sm font-mono text-text-primary placeholder:text-text-muted border border-border focus:border-accent outline-none transition-colors"
+              />
+            </FormField>
+          </div>
+        </div>
+      )}
+
+      {/* Section 5: Dane faktury — only when FA detected */}
+      {hasFA && (
+        <div className="bg-bg-card rounded-xl border border-border p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <FileText className="w-4 h-4 text-purple-400" />
+            <h2 className="text-sm font-semibold text-text-primary">Dane faktury</h2>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <FormField label="Miejsce wystawienia (P_1M)" optional>
+              <input
+                type="text"
+                value={company.miejsceWystawienia ?? ''}
+                onChange={(e) => setCompany({ miejsceWystawienia: e.target.value })}
+                placeholder="Warszawa"
+                className="w-full px-3 py-2 bg-bg-input rounded-lg text-sm text-text-primary placeholder:text-text-muted border border-border focus:border-accent outline-none transition-colors"
+              />
+            </FormField>
+          </div>
+        </div>
+      )}
+
+      {/* Section 6: Dane magazynu — only when MAG detected */}
+      {hasMAG && (
+        <div className="bg-bg-card rounded-xl border border-border p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <Warehouse className="w-4 h-4 text-green-400" />
+            <h2 className="text-sm font-semibold text-text-primary">Dane magazynu</h2>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <FormField label="Kod magazynu" optional>
+              <input
+                type="text"
+                value={company.kodMagazynu ?? ''}
+                onChange={(e) => setCompany({ kodMagazynu: e.target.value })}
+                placeholder="MAG-01"
+                className="w-full px-3 py-2 bg-bg-input rounded-lg text-sm font-mono text-text-primary placeholder:text-text-muted border border-border focus:border-accent outline-none transition-colors"
+              />
+            </FormField>
+
+            <FormField label="Nazwa magazynu" optional>
+              <input
+                type="text"
+                value={company.nazwaMagazynu ?? ''}
+                onChange={(e) => setCompany({ nazwaMagazynu: e.target.value })}
+                placeholder="Magazyn główny"
+                className="w-full px-3 py-2 bg-bg-input rounded-lg text-sm text-text-primary placeholder:text-text-muted border border-border focus:border-accent outline-none transition-colors"
+              />
+            </FormField>
+          </div>
+        </div>
+      )}
 
       {/* Footer */}
       <div className="mt-auto pt-4 flex justify-between">
