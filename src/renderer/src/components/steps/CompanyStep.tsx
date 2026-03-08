@@ -22,6 +22,7 @@ import { useImportStore } from '@renderer/stores/importStore'
 import { useAppStore, type JpkSubtype, type JpkType } from '@renderer/stores/appStore'
 import { validatePolishNip, normalizeNip } from '@renderer/utils/nipValidator'
 import { jpkTypeToLabel } from '../../../../core/mapping/jpkTypeUtils'
+import { getDetectedTypes, computeSectionFlags, computeCanProceed } from './companyStepLogic'
 
 const MONTHS = [
   'Styczeń', 'Luty', 'Marzec', 'Kwiecień', 'Maj', 'Czerwiec',
@@ -201,6 +202,29 @@ function SavedCompanySelector({
   )
 }
 
+/** Correction number input — shown when celZlozenia === 2 */
+function NumerKorektyInput({
+  value,
+  onChange
+}: {
+  value: number | undefined
+  onChange: (v: number | undefined) => void
+}): React.JSX.Element {
+  return (
+    <FormField label="Numer korekty" required>
+      <input
+        type="number"
+        min={1}
+        max={99}
+        value={value ?? ''}
+        onChange={(e) => onChange(e.target.value ? parseInt(e.target.value, 10) : undefined)}
+        placeholder="1"
+        className="w-full px-3 py-2 bg-bg-input rounded-lg text-sm font-mono text-text-primary placeholder:text-text-muted border border-border focus:border-accent outline-none transition-colors"
+      />
+    </FormField>
+  )
+}
+
 /** Period card for V7M/V7K — monthly/quarterly toggle + year/month/quarter selects */
 function V7MPeriodCard({
   period,
@@ -236,7 +260,7 @@ function V7MPeriodCard({
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className={`grid ${period.celZlozenia === 2 ? 'grid-cols-4' : 'grid-cols-3'} gap-4`}>
         <FormField label="Rok" required>
           <SelectInput
             value={period.year}
@@ -270,7 +294,7 @@ function V7MPeriodCard({
                 type="radio"
                 name="celZlozenia-V7M"
                 checked={period.celZlozenia === 1}
-                onChange={() => onSetPeriod({ celZlozenia: 1 })}
+                onChange={() => onSetPeriod({ celZlozenia: 1, numerKorekty: undefined })}
                 className="accent-accent"
               />
               <span className="text-sm text-text-primary">Złożenie (1)</span>
@@ -287,6 +311,13 @@ function V7MPeriodCard({
             </label>
           </div>
         </FormField>
+
+        {period.celZlozenia === 2 && (
+          <NumerKorektyInput
+            value={period.numerKorekty}
+            onChange={(v) => onSetPeriod({ numerKorekty: v })}
+          />
+        )}
       </div>
     </div>
   )
@@ -309,7 +340,7 @@ function GenericPeriodCard({
     <div className={`bg-bg-card rounded-xl border border-border border-l-4 ${colorClass} p-5`}>
       <h3 className="text-sm font-semibold text-text-primary mb-4">{label}</h3>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className={`grid ${period.celZlozenia === 2 ? 'grid-cols-4' : 'grid-cols-3'} gap-4`}>
         <FormField label="Data od" required>
           <input
             type="date"
@@ -335,7 +366,7 @@ function GenericPeriodCard({
                 type="radio"
                 name={`celZlozenia-${jpkType}`}
                 checked={period.celZlozenia === 1}
-                onChange={() => onSetPeriod({ celZlozenia: 1 })}
+                onChange={() => onSetPeriod({ celZlozenia: 1, numerKorekty: undefined })}
                 className="accent-accent"
               />
               <span className="text-sm text-text-primary">Złożenie (1)</span>
@@ -352,6 +383,13 @@ function GenericPeriodCard({
             </label>
           </div>
         </FormField>
+
+        {period.celZlozenia === 2 && (
+          <NumerKorektyInput
+            value={period.numerKorekty}
+            onChange={(v) => onSetPeriod({ numerKorekty: v })}
+          />
+        )}
       </div>
     </div>
   )
@@ -364,20 +402,17 @@ export function CompanyStep(): React.JSX.Element {
   const { activeJpkType, jpkSubtype, setJpkSubtype, setCurrentStep } = useAppStore()
 
   // Detect unique JPK types from imported files
-  const detectedTypes = useMemo<JpkType[]>(() => {
-    const types = new Set<JpkType>()
-    for (const f of files) {
-      if (f.jpkType) types.add(f.jpkType)
-    }
-    // If no files detected, fall back to activeJpkType
-    if (types.size === 0) types.add(activeJpkType)
-    return Array.from(types)
-  }, [files, activeJpkType])
+  const detectedTypes = useMemo(() => getDetectedTypes(files), [files])
+  const { showAll, hasV7, hasFA, hasMAG, hasWB } = useMemo(
+    () => computeSectionFlags(detectedTypes),
+    [detectedTypes]
+  )
 
-  const hasV7 = detectedTypes.includes('V7M')
-  const hasFA = detectedTypes.includes('FA') || detectedTypes.includes('FA_RR')
-  const hasMAG = detectedTypes.includes('MAG')
-  const hasWB = detectedTypes.includes('WB')
+  // Types used for period cards and validation
+  const typesToValidate = useMemo(
+    () => (showAll ? [activeJpkType] : detectedTypes),
+    [showAll, activeJpkType, detectedTypes]
+  )
 
   const faCompanyData = useMemo(() => extractCompanyFromFA(files), [files])
 
@@ -405,34 +440,11 @@ export function CompanyStep(): React.JSX.Element {
   const nipNormalized = normalizeNip(company.nip)
   const nipValid = nipNormalized.length === 10 && validatePolishNip(nipNormalized)
 
-  // Validation — canProceed
-  const canProceed = useMemo(() => {
-    // Base: NIP + fullName required
-    if (!nipValid) return false
-    if (company.fullName.trim().length === 0) return false
-
-    // Per-type period validation
-    for (const t of detectedTypes) {
-      const p = getPeriod(t)
-      if (t === 'V7M') {
-        // V7M/V7K: year required; month or quarter required depending on subtype
-        if (!p.year) return false
-        if (jpkSubtype === 'V7K') {
-          if (!p.quarter) return false
-        } else {
-          if (!p.month) return false
-        }
-      } else {
-        // All other types: dataOd + dataDo required
-        if (!p.dataOd || !p.dataDo) return false
-      }
-    }
-
-    // WB: numerRachunku required
-    if (hasWB && !company.numerRachunku?.trim()) return false
-
-    return true
-  }, [nipValid, company, detectedTypes, getPeriod, jpkSubtype, hasWB])
+  // canProceed — delegated to pure function
+  const canProceed = useMemo(
+    () => computeCanProceed({ company, typesToValidate, jpkSubtype, getPeriod }),
+    [company, typesToValidate, jpkSubtype, getPeriod]
+  )
 
   // Check if FA data differs from current form
   const faDataAvailable = faCompanyData !== null
@@ -610,7 +622,7 @@ export function CompanyStep(): React.JSX.Element {
           <h2 className="text-sm font-semibold text-text-primary">Okresy rozliczeniowe</h2>
         </div>
 
-        {detectedTypes.map((t) =>
+        {typesToValidate.map((t) =>
           t === 'V7M' ? (
             <V7MPeriodCard
               key={t}
@@ -648,6 +660,15 @@ export function CompanyStep(): React.JSX.Element {
               />
             </FormField>
           </div>
+
+          {company.objetyKsefOd && (
+            <div className="mt-3 flex items-center gap-2 px-3 py-2 bg-blue-500/10 rounded-lg">
+              <Info className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+              <span className="text-xs text-blue-300">
+                Faktury przed {company.objetyKsefOd} → oznaczane BFK
+              </span>
+            </div>
+          )}
         </div>
       )}
 
