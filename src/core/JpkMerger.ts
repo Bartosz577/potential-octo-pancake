@@ -4,6 +4,7 @@
 // Concatenates row sections, renumbers LP fields, recalculates Ctrl sums.
 
 import { XMLParser, XMLBuilder } from 'fast-xml-parser'
+import { sumAmounts } from './utils/mathUtils'
 
 // ── Merge configuration types ──
 
@@ -309,16 +310,16 @@ export function mergeJpkFiles(xmlFiles: string[]): string {
 
     // Sum up sum fields from all files
     for (const sumField of group.ctrl.sumFields) {
-      let total = 0
+      const values: number[] = []
       for (const jpk of jpkRoots) {
         const container = getContainer(jpk, config)
         if (!container) continue
         const ctrl = container[group.ctrl.element] as Record<string, unknown> | undefined
         if (ctrl && ctrl[sumField] !== undefined) {
-          total += parseFloat(String(ctrl[sumField])) || 0
+          values.push(parseFloat(String(ctrl[sumField])) || 0)
         }
       }
-      newCtrl[sumField] = formatSum(total)
+      newCtrl[sumField] = formatSum(sumAmounts(values))
     }
 
     resultContainer[group.ctrl.element] = newCtrl

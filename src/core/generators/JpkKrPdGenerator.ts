@@ -11,6 +11,7 @@ import {
   XmlGenerator,
   generatorRegistry,
 } from './XmlGeneratorEngine'
+import { sumAmounts } from '../utils/mathUtils'
 
 // ── Constants ──
 
@@ -350,26 +351,29 @@ function generateCtrl(dziennik: KrPdDziennik[]): string {
   // C_1: count of Dziennik entries
   const c1 = dziennik.length
   // C_2: sum of D_11 (operation amounts)
-  let c2 = 0
+  const c2Values: number[] = []
   // C_3: total count of KontoZapis across all Dziennik
   let c3 = 0
   // C_4: sum of Z_4 (debit postings)
-  let c4 = 0
+  const c4Values: number[] = []
   // C_5: sum of Z_7 (credit postings)
-  let c5 = 0
+  const c5Values: number[] = []
 
   for (const d of dziennik) {
-    c2 += parseAmount(String(d.kwotaOperacji))
+    c2Values.push(parseAmount(String(d.kwotaOperacji)))
     for (const kz of d.kontoZapisy) {
       c3++
       if (kz.kwotaWn !== undefined && kz.kwotaWn !== '') {
-        c4 += parseAmount(String(kz.kwotaWn))
+        c4Values.push(parseAmount(String(kz.kwotaWn)))
       }
       if (kz.kwotaMa !== undefined && kz.kwotaMa !== '') {
-        c5 += parseAmount(String(kz.kwotaMa))
+        c5Values.push(parseAmount(String(kz.kwotaMa)))
       }
     }
   }
+  const c2 = sumAmounts(c2Values)
+  const c4 = sumAmounts(c4Values)
+  const c5 = sumAmounts(c5Values)
 
   const lines: string[] = []
   lines.push('  <Ctrl>')

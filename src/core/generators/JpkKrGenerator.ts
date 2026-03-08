@@ -11,6 +11,7 @@ import {
   XmlGenerator,
   generatorRegistry,
 } from './XmlGeneratorEngine'
+import { sumAmounts } from '../utils/mathUtils'
 
 // ── Constants ──
 
@@ -242,10 +243,7 @@ function generateDziennik(d: KrDziennik): string {
 }
 
 function generateDziennikCtrl(dziennik: KrDziennik[]): string {
-  let sumaKwot = 0
-  for (const d of dziennik) {
-    sumaKwot += parseAmount(String(d.dziennikKwotaOperacji))
-  }
+  const sumaKwot = sumAmounts(dziennik.map(d => parseAmount(String(d.dziennikKwotaOperacji))))
 
   const lines: string[] = []
   lines.push('  <DziennikCtrl>')
@@ -292,12 +290,8 @@ function generateKontoZapis(kz: KrKontoZapis): string {
 }
 
 function generateKontoZapisCtrl(zapisy: KrKontoZapis[]): string {
-  let sumaWinien = 0
-  let sumaMa = 0
-  for (const kz of zapisy) {
-    sumaWinien += parseAmount(String(kz.kwotaWinien))
-    sumaMa += parseAmount(String(kz.kwotaMa))
-  }
+  const sumaWinien = sumAmounts(zapisy.map(kz => parseAmount(String(kz.kwotaWinien))))
+  const sumaMa = sumAmounts(zapisy.map(kz => parseAmount(String(kz.kwotaMa))))
 
   const lines: string[] = []
   lines.push('  <KontoZapisCtrl>')

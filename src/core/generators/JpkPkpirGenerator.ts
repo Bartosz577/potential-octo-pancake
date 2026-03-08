@@ -11,6 +11,7 @@ import {
   XmlGenerator,
   generatorRegistry,
 } from './XmlGeneratorEngine'
+import { sumAmounts } from '../utils/mathUtils'
 
 // ── Constants ──
 
@@ -245,10 +246,7 @@ function generatePkpirCtrl(rows: Record<string, string>[]): string {
   lines.push(`    <LiczbaWierszy>${rows.length}</LiczbaWierszy>`)
 
   // SumaPrzychodow = sum of K_9 across all rows
-  let sumaPrzychodow = 0
-  for (const row of rows) {
-    sumaPrzychodow += parseAmount(row['K_9'])
-  }
+  const sumaPrzychodow = sumAmounts(rows.map(row => parseAmount(row['K_9'])))
   lines.push(`    <SumaPrzychodow>${formatAmount(sumaPrzychodow)}</SumaPrzychodow>`)
 
   lines.push('  </PKPIRCtrl>')

@@ -11,6 +11,7 @@ import {
   XmlGenerator,
   generatorRegistry,
 } from './XmlGeneratorEngine'
+import { sumAmounts } from '../utils/mathUtils'
 
 // ── Constants ──
 
@@ -183,10 +184,7 @@ function generateEwpCtrl(rows: Record<string, string>[]): string {
   lines.push(`    <LiczbaWierszy>${rows.length}</LiczbaWierszy>`)
 
   // SumaPrzychodow = sum of K_8 across all rows
-  let sumaPrzychodow = 0
-  for (const row of rows) {
-    sumaPrzychodow += parseAmount(row['K_8'])
-  }
+  const sumaPrzychodow = sumAmounts(rows.map(row => parseAmount(row['K_8'])))
   lines.push(`    <SumaPrzychodow>${formatAmount(sumaPrzychodow)}</SumaPrzychodow>`)
 
   lines.push('  </EWPCtrl>')

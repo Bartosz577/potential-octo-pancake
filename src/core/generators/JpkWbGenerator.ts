@@ -10,6 +10,7 @@ import {
   XmlGenerator,
   generatorRegistry,
 } from './XmlGeneratorEngine'
+import { sumAmounts } from '../utils/mathUtils'
 
 // ── Constants ──
 
@@ -166,17 +167,19 @@ function generateWyciagWiersz(w: WbWiersz, lp: number): string {
 }
 
 function generateWyciagCtrl(wiersze: WbWiersz[]): string {
-  let sumaObciazen = 0
-  let sumaUznan = 0
+  const obciazeniaValues: number[] = []
+  const uznanValues: number[] = []
 
   for (const w of wiersze) {
     const kwota = parseAmount(w.kwotaOperacji)
     if (kwota < 0) {
-      sumaObciazen += Math.abs(kwota)
+      obciazeniaValues.push(Math.abs(kwota))
     } else {
-      sumaUznan += kwota
+      uznanValues.push(kwota)
     }
   }
+  const sumaObciazen = sumAmounts(obciazeniaValues)
+  const sumaUznan = sumAmounts(uznanValues)
 
   const lines: string[] = []
   lines.push('  <WyciagCtrl>')

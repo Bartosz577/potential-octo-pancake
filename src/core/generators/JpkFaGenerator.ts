@@ -10,6 +10,7 @@ import {
   XmlGenerator,
   generatorRegistry,
 } from './XmlGeneratorEngine'
+import { sumAmounts } from '../utils/mathUtils'
 
 // ── Constants ──
 
@@ -296,10 +297,7 @@ function generateFakturaCtrl(faktury: Record<string, string>[]): string {
   lines.push('  <FakturaCtrl>')
   lines.push(`    <LiczbaFaktur>${faktury.length}</LiczbaFaktur>`)
 
-  let wartoscFaktur = 0
-  for (const f of faktury) {
-    wartoscFaktur += parseAmount(f['P_15'])
-  }
+  const wartoscFaktur = sumAmounts(faktury.map(f => parseAmount(f['P_15'])))
   lines.push(`    <WartoscFaktur>${formatAmount(wartoscFaktur)}</WartoscFaktur>`)
 
   lines.push('  </FakturaCtrl>')
@@ -353,10 +351,7 @@ function generateFakturaWierszCtrl(wiersze: Record<string, string>[]): string {
   lines.push('  <FakturaWierszCtrl>')
   lines.push(`    <LiczbaWierszyFaktur>${wiersze.length}</LiczbaWierszyFaktur>`)
 
-  let wartoscWierszy = 0
-  for (const w of wiersze) {
-    wartoscWierszy += parseAmount(w['P_11'])
-  }
+  const wartoscWierszy = sumAmounts(wiersze.map(w => parseAmount(w['P_11'])))
   lines.push(`    <WartoscWierszyFaktur>${formatAmount(wartoscWierszy)}</WartoscWierszyFaktur>`)
 
   lines.push('  </FakturaWierszCtrl>')

@@ -12,6 +12,7 @@ import {
   XmlGenerator,
   generatorRegistry,
 } from './XmlGeneratorEngine'
+import { sumAmounts } from '../utils/mathUtils'
 
 // ── Constants ──
 
@@ -391,12 +392,14 @@ function generateSprzedazCtrl(rows: Record<string, string>[]): string {
   lines.push('    <SprzedazCtrl>')
   lines.push(`      <LiczbaWierszySprzedazy>${rows.length}</LiczbaWierszySprzedazy>`)
 
-  let podatekNalezny = 0
+  const plusValues: number[] = []
+  const minusValues: number[] = []
   for (const row of rows) {
     if (row['TypDokumentu'] === 'FP') continue
-    for (const f of PODATEK_NALEZNY_PLUS) podatekNalezny += parseAmount(row[f])
-    for (const f of PODATEK_NALEZNY_MINUS) podatekNalezny -= parseAmount(row[f])
+    for (const f of PODATEK_NALEZNY_PLUS) plusValues.push(parseAmount(row[f]))
+    for (const f of PODATEK_NALEZNY_MINUS) minusValues.push(parseAmount(row[f]))
   }
+  const podatekNalezny = sumAmounts(plusValues) - sumAmounts(minusValues)
 
   lines.push(`      <PodatekNalezny>${formatAmount(podatekNalezny)}</PodatekNalezny>`)
   lines.push('    </SprzedazCtrl>')
@@ -456,10 +459,11 @@ function generateZakupCtrl(rows: Record<string, string>[]): string {
   lines.push('    <ZakupCtrl>')
   lines.push(`      <LiczbaWierszyZakupow>${rows.length}</LiczbaWierszyZakupow>`)
 
-  let podatekNaliczony = 0
+  const naliczonyValues: number[] = []
   for (const row of rows) {
-    for (const f of PODATEK_NALICZONY_FIELDS) podatekNaliczony += parseAmount(row[f])
+    for (const f of PODATEK_NALICZONY_FIELDS) naliczonyValues.push(parseAmount(row[f]))
   }
+  const podatekNaliczony = sumAmounts(naliczonyValues)
 
   lines.push(`      <PodatekNaliczony>${formatAmount(podatekNaliczony)}</PodatekNaliczony>`)
   lines.push('    </ZakupCtrl>')
