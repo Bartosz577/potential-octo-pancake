@@ -3,7 +3,7 @@
 ![CI](https://github.com/Bartosz577/potential-octo-pancake/actions/workflows/ci.yml/badge.svg)
 ![Electron](https://img.shields.io/badge/Electron-39-47848F?logo=electron&logoColor=white)
 ![License](https://img.shields.io/badge/license-MIT-blue)
-![Version](https://img.shields.io/badge/version-2.1.0-green)
+![Version](https://img.shields.io/badge/version-3.0.0-green)
 
 Desktopowe narzedzie do konwersji plikow z systemow ERP na pliki XML w formacie **JPK** (Jednolity Plik Kontrolny) wymagane przez Ministerstwo Finansow RP. Uniwersalne narzedzie obsługujace wszystkie popularne formaty wejsciowe i wszystkie struktury JPK.
 
@@ -96,11 +96,26 @@ Desktopowe narzedzie do konwersji plikow z systemow ERP na pliki XML w formacie 
 - Zamiana przecinkow na kropki w kwotach
 - Przycisk "Napraw automatycznie" — per problem, per grupa, globalnie
 
+### Dane podmiotu (CompanyStep)
+- Dynamiczne sekcje wg wykrytych typow JPK z zaimportowanych plikow
+- Okresy rozliczeniowe per typ JPK (V7M miesiecznie/kwartalnie, inne: dataOd/dataDo)
+- Karty okresow z kolorowym border-left wg typu (V7M=blue, FA=purple, MAG=green, WB=orange)
+- Sekcja KSeF: data objecia, badge "Faktury przed X → oznaczane BFK"
+- Sekcje kontekstowe: dane bankowe (WB), dane faktury (FA), dane magazynu (MAG)
+- Obsluga korekt: numerKorekty wymagany gdy celZlozenia=2
+- Zapisane firmy: zapamiętaj / wczytaj dane z localStorage
+- Walidacja: NIP checksum + fullName + kodUrzedu(4) + per-type period + numerRachunku(WB)
+
 ### Historia konwersji
 - Lista poprzednich eksportow z data, typem JPK, firma, rozmiarem
 - Filtrowanie po typie + wyszukiwarka (nazwa/firma/NIP)
 - Ponowne pobranie XML z historii
+- Przycisk "Nowa konwersja" (reset wszystkich storow)
 - Dane persistowane w localStorage
+
+### Motyw jasny/ciemny
+- Przelacznik light/dark theme w Sidebar
+- Preferencja persistowana w localStorage
 
 ## Narzedzia dodatkowe
 
@@ -147,7 +162,7 @@ npm run build:linux  # Linux
 ## Testy
 
 ```bash
-# Testy jednostkowe (1426 testow)
+# Testy jednostkowe (1986 testow, 54 pliki testowe)
 npm test
 
 # Testy z pokryciem kodu (threshold 80%)
@@ -246,20 +261,27 @@ src/
         │       ├── ExportStep.tsx
         │       └── HistoryStep.tsx
         ├── stores/                #   Zustand stores
-        │   ├── appStore.ts        #     Aktywny typ JPK, krok, tryb
-        │   ├── importStore.ts     #     Zaimportowane pliki
-        │   ├── mappingStore.ts    #     Mapowania kolumn, profile
-        │   ├── companyStore.ts    #     Dane firmy, okres
+        │   ├── appStore.ts        #     Aktywny typ JPK, krok, tryb, JpkType/JpkSubtype
+        │   ├── importStore.ts     #     Zaimportowane pliki, per-file type detection
+        │   ├── mappingStore.ts    #     Mapowania kolumn, profile, matchedProfiles
+        │   ├── companyStore.ts    #     Dane firmy, okresy per typ JPK, zapisane firmy
         │   ├── historyStore.ts    #     Historia konwersji
+        │   ├── themeStore.ts      #     Light/dark theme toggle
         │   └── toastStore.ts      #     Powiadomienia toast
+        ├── bridge/                #   Pipeline bridge
+        │   ├── PipelineBridge.ts   #     processFile() → XML result
+        │   ├── pipelineStore.ts   #     Status/results pipeline
+        │   └── usePipelineBridge.ts #   React hook: validate/generate/runAll
         └── utils/                 #   Utility renderera
             ├── xmlExporter.ts     #     Bridge: stores → generatory XML
             ├── validator.ts       #     4-poziomowa walidacja + standalone validator
             └── nipValidator.ts    #     Walidacja checksum NIP
 
-tests/                             # Testy (1426)
+tests/                             # Testy (1986, 54 pliki)
 ├── core/                          #   Testy jednostkowe core
-├── renderer/                      #   Testy stores i utils
+├── renderer/                      #   Testy stores, utils i components
+│   └── components/                #     Testy logiki komponentow (pure functions)
+├── bridge/                        #   Testy PipelineBridge
 ├── e2e/                           #   Playwright E2E
 └── fixtures/                      #   Dane testowe
 

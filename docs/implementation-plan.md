@@ -239,10 +239,48 @@
 
 ## Faza 7 — Release
 
-- [ ] Wersja beta: build Win/Mac/Linux
+- [x] electron-builder config (Win NSIS+portable, Mac DMG, Linux AppImage+deb)
+- [x] App icon (1024x1024 PNG → ico/icns/png)
+- [x] GitHub Actions release workflow (matrix Win/Mac/Linux, draft release on v* tag)
+- [x] Version 3.0.0 (bumped from 2.1.0)
 - [ ] Testy manualne z rzeczywistymi plikami z różnych systemów ERP
-- [ ] Feedback loop: korekty na podstawie testów
-- [ ] Wersja 2.0.0: release publiczny
+- [ ] Dokumentacja użytkownika ze screenshotami
+- [ ] Wersja 3.0.0: release publiczny
+
+## Faza 8 — Jakość kodu i refaktory (post-release)
+
+### 8.1 Poprawki jakości kodu
+- [x] CQ-1: Zamiana float accumulation na integer math we wszystkich generatorach
+- [x] CQ-2: XML escaping w string interpolations we wszystkich generatorach
+- [x] CQ-3: Runtime input validation we wszystkich generatorach
+- [x] TB-1: Dodanie `src/core` do pipeline typecheck (tsconfig.core.json)
+- [x] TB-2/TB-3: Enforced noImplicitAny, typecheck dla wszystkich platform builds
+- [x] UI-1: Immutable Zustand store updates (replace direct mutation)
+- [x] TKwotowy decimal 18,2 compliance we wszystkich generatorach
+
+### 8.2 Unifikacja typów
+- [x] JpkType — single source of truth w `appStore.ts` (reeksport z `core/models/types.ts`)
+- [x] `jpkTypeUtils.ts` — normalizeJpkType, jpkTypeToLabel, jpkTypeToXmlCode, getAllJpkTypes
+- [x] Per-file JPK type detection via `jpkTypeFromHeaders()` w ImportStep
+- [x] Per-file JPK type selector w ImportStep (dropdown override)
+
+### 8.3 CompanyStep rewrite
+- [x] PeriodData per JpkType: `periods: Partial<Record<JpkType, PeriodData>>` (z migracją localStorage)
+- [x] CompanyData rozszerzone o pola: objetyKsefOd, numerRachunku, walutaRachunku, saldoPoczatkowe, miejsceWystawienia, kodMagazynu, nazwaMagazynu
+- [x] Dynamiczne sekcje wg wykrytych typów JPK z plików (showAll gdy brak plików)
+- [x] Per-type period cards z kolorowym border-left (V7M→blue, FA→purple, MAG→green, WB→orange)
+- [x] V7M: toggle miesięczny/kwartalny, rok/miesiąc/kwartał selects
+- [x] Non-V7M: dataOd/dataDo date inputs
+- [x] Sekcje: KSeF (V7M), dane bankowe (WB), dane faktury (FA), dane magazynu (MAG)
+- [x] numerKorekty input gdy celZlozenia === 2
+- [x] KSeF badge: "Faktury przed X → oznaczane BFK"
+- [x] Walidacja canProceed: NIP + fullName + kodUrzedu(4) + per-type period + numerKorekty + numerRachunku(WB)
+- [x] Pure functions extracted to `companyStepLogic.ts` (getDetectedTypes, computeSectionFlags, computeCanProceed)
+- [x] 39 testów walidacji logiki CompanyStep
+
+### 8.4 UI features
+- [x] Light/dark theme toggle (themeStore z persist)
+- [x] Przycisk "Nowa konwersja" w HistoryStep i ExportStep (reset stores)
 
 ---
 
@@ -252,12 +290,13 @@
 |------|--------|-------|
 | 0 — Przygotowanie | ✅ Done | — |
 | 1 — Core (parsery + mapowanie) | ✅ Done | 309 tests |
-| 2 — Generatory XML | ✅ Done | 871 tests (14 XSD, +V7K 39, +PKPIR 57, +EWP 42, +KR_PD 54, +ST 42, +ST_KR 43) |
+| 2 — Generatory XML | ✅ Done | 871 tests |
 | 3 — UI rozszerzenia | ✅ Done | Web typecheck OK |
 | 4 — Zustand stores | ✅ Done | 632 tests |
 | 5 — Electron main | ✅ Done | Build OK |
-| 6 — Jakość | 🔶 In progress | 1047 unit + 1 E2E |
-| 7 — Release | ⬜ Not started | — |
+| 6 — Jakość | ✅ Done | 1986 unit + 1 E2E, 54 test files |
+| 7 — Release | 🔶 In progress | Build config done |
+| 8 — Jakość kodu i refaktory | ✅ Done | +39 CompanyStep tests |
 
 ### Pozostałe zadania (Faza 3-5)
 - ~~Wybór kodowania w ImportStep (dropdown fallback)~~ ✅

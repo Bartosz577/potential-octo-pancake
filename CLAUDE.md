@@ -62,16 +62,29 @@ src/core/
 src/renderer/components/
 ├── layout/          # AppShell, TitleBar, Sidebar, StepIndicator
 ├── steps/           # ImportStep, MappingStep, CompanyStep, PreviewStep, ValidationStep, ExportStep, HistoryStep
+│   └── companyStepLogic.ts  # Pure functions: getDetectedTypes, computeSectionFlags, computeCanProceed
 ├── mapping/         # ColumnMappingUI, FieldPreview, TransformConfig, SavedMappings
 └── shared/          # FormatBadge, EncodingSelector
 ```
 
+### Bridge (pipeline)
+```
+src/renderer/bridge/
+├── PipelineBridge.ts      # processFile(): ParsedFile + mappings + company → XML result
+├── pipelineStore.ts       # Status/results store for pipeline execution
+├── usePipelineBridge.ts   # React hook: validateAll, generateAll, processOne, runAll
+└── types.ts               # BridgeSummary, FileProcessingResult
+```
+
 ### State (Zustand stores)
-- `appStore` — aktywny typ JPK, bieżący krok (1-7)
-- `importStore` — zaimportowane pliki (ParsedFile[])
-- `companyStore` — dane firmy, okres, zapamiętane firmy (localStorage)
-- `mappingStore` — aktywne mapowanie kolumn, zapisane profile
+- `appStore` — aktywny typ JPK (JpkType), podtyp (JpkSubtype V7M/V7K), bieżący krok (1-7), tryb (conversion/validation)
+- `importStore` — zaimportowane pliki (ParsedFile[]), per-file JPK type detection
+- `companyStore` — dane firmy (CompanyData), okresy per typ JPK (periods: Partial<Record<JpkType, PeriodData>>), zapamiętane firmy (localStorage persist z migracją)
+- `mappingStore` — aktywne mapowanie kolumn, zapisane profile, matchedProfiles per file
 - `historyStore` — historia konwersji (ConversionRecord[]), persistowany localStorage
+- `pipelineStore` — status pipeline (idle/validating/generating/success/error), wyniki per file
+- `themeStore` — light/dark theme toggle, persistowany localStorage
+- `toastStore` — powiadomienia toast (success/error/info)
 
 ## Komendy
 - `npm run dev` — development
