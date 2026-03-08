@@ -584,9 +584,19 @@ export function validateFiles(
   return { reports, totalErrors, totalWarnings, totalAutoFixes }
 }
 
-export function applyFixes(file: ParsedFile, fixes: AutoFix[]): void {
+export function applyFixes(file: ParsedFile, fixes: AutoFix[]): ParsedFile {
+  if (fixes.length === 0) return file
+  const fixMap = new Map<string, string>()
   for (const fix of fixes) {
-    file.rows[fix.rowIndex][fix.colIndex] = fix.newValue
+    fixMap.set(`${fix.rowIndex}:${fix.colIndex}`, fix.newValue)
+  }
+  return {
+    ...file,
+    rows: file.rows.map((row, ri) => {
+      const hasFixInRow = fixes.some((f) => f.rowIndex === ri)
+      if (!hasFixInRow) return row
+      return row.map((cell, ci) => fixMap.get(`${ri}:${ci}`) ?? cell)
+    })
   }
 }
 

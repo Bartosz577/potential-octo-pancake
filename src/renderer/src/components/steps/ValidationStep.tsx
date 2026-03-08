@@ -359,22 +359,22 @@ function ConversionValidationView(): React.JSX.Element {
   const company = useCompanyStore((s) => s.company)
   const period = useCompanyStore((s) => s.period)
   const toast = useToast()
-  const [fixVersion, setFixVersion] = useState(0)
+  const updateFile = useImportStore((s) => s.updateFile)
 
   const { reports, totalErrors, totalWarnings, totalAutoFixes } = useMemo(
     () => validateFiles(files, activeMappings, company, period),
-    [files, activeMappings, company, period, fixVersion]
+    [files, activeMappings, company, period]
   )
 
   const canExport = totalErrors === 0
 
   const handleApplyFixes = useCallback(
     (file: ParsedFile, fixes: AutoFix[]) => {
-      applyFixes(file, fixes)
-      setFixVersion((v) => v + 1)
+      const updated = applyFixes(file, fixes)
+      updateFile(file.id, updated)
       toast.success(`Naprawiono ${fixes.length} ${fixes.length === 1 ? 'problem' : fixes.length < 5 ? 'problemy' : 'problemów'} w pliku ${file.filename}`)
     },
-    [toast]
+    [updateFile, toast]
   )
 
   const handleFixAll = useCallback(() => {
@@ -383,12 +383,12 @@ function ConversionValidationView(): React.JSX.Element {
       if (!report) continue
       const allFixes = report.groups.flatMap((g) => g.items.flatMap((i) => i.fixes))
       if (allFixes.length > 0) {
-        applyFixes(file, allFixes)
+        const updated = applyFixes(file, allFixes)
+        updateFile(file.id, updated)
       }
     }
-    setFixVersion((v) => v + 1)
     toast.success('Naprawiono automatycznie wszystkie problemy')
-  }, [files, reports, toast])
+  }, [files, reports, updateFile, toast])
 
   return (
     <div className="flex-1 flex flex-col min-h-0">

@@ -192,9 +192,11 @@ function SummaryBar({
  */
 function DataTable({
   file,
+  fileIndex,
   columns
 }: {
   file: ParsedFile
+  fileIndex: number
   columns: DynColumnDef[]
 }): React.JSX.Element {
   const [page, setPage] = useState(0)
@@ -208,10 +210,9 @@ function DataTable({
   const handleCellEdit = useCallback(
     (rowIndex: number, colIndex: number, newValue: string) => {
       const globalRow = page * ROWS_PER_PAGE + rowIndex
-      // eslint-disable-next-line react-hooks/immutability -- intentional in-place edit for cell editing
-      file.rows[globalRow][colIndex] = newValue
+      useImportStore.getState().updateCell(fileIndex, globalRow, colIndex, newValue)
     },
-    [file.rows, page]
+    [fileIndex, page]
   )
 
   return (
@@ -355,7 +356,8 @@ export function PreviewStep(): React.JSX.Element {
   const { activeMappings } = useMappingStore()
   const [activeFileId, setActiveFileId] = useState<string>(files[0]?.id || '')
 
-  const activeFile = files.find((f) => f.id === activeFileId) || files[0]
+  const activeFileIndex = files.findIndex((f) => f.id === activeFileId)
+  const activeFile = activeFileIndex >= 0 ? files[activeFileIndex] : files[0]
 
   const columns = useMemo(() => {
     if (!activeFile) return []
@@ -409,7 +411,7 @@ export function PreviewStep(): React.JSX.Element {
 
       {/* DataTable renders: scroll area (flex-1) + SummaryBar (shrink-0) + pagination (shrink-0) */}
       {activeFile && columns.length > 0 ? (
-        <DataTable file={activeFile} columns={columns} />
+        <DataTable file={activeFile} fileIndex={activeFileIndex >= 0 ? activeFileIndex : 0} columns={columns} />
       ) : (
         <div className="flex-1 flex items-center justify-center text-text-muted text-sm">
           Brak zaimportowanych plików

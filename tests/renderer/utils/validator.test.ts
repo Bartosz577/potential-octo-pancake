@@ -683,7 +683,7 @@ describe('validateFiles', () => {
 // ── applyFixes ──
 
 describe('applyFixes', () => {
-  it('applies fixes to file rows', () => {
+  it('returns new file with fixes applied without mutating original', () => {
     const file = makeParsedFile('JPK_VDEK', 'SprzedazWiersz', [
       ['15.03.2024', '100,50'],
       ['20.04.2024', '200,75']
@@ -695,18 +695,24 @@ describe('applyFixes', () => {
       { rowIndex: 1, colIndex: 0, oldValue: '20.04.2024', newValue: '2024-04-20' }
     ]
 
-    applyFixes(file, fixes)
+    const result = applyFixes(file, fixes)
 
-    expect(file.rows[0][0]).toBe('2024-03-15')
-    expect(file.rows[0][1]).toBe('100.50')
-    expect(file.rows[1][0]).toBe('2024-04-20')
-    expect(file.rows[1][1]).toBe('200,75') // unchanged
+    expect(result.rows[0][0]).toBe('2024-03-15')
+    expect(result.rows[0][1]).toBe('100.50')
+    expect(result.rows[1][0]).toBe('2024-04-20')
+    expect(result.rows[1][1]).toBe('200,75') // unchanged
+
+    // Original file must NOT be mutated
+    expect(file.rows[0][0]).toBe('15.03.2024')
+    expect(file.rows[0][1]).toBe('100,50')
+    expect(file.rows[1][0]).toBe('20.04.2024')
   })
 
-  it('handles empty fixes array', () => {
+  it('returns same file reference for empty fixes array', () => {
     const file = makeParsedFile('JPK_VDEK', 'SprzedazWiersz', [['original']], { columnCount: 1 })
-    applyFixes(file, [])
-    expect(file.rows[0][0]).toBe('original')
+    const result = applyFixes(file, [])
+    expect(result).toBe(file)
+    expect(result.rows[0][0]).toBe('original')
   })
 })
 
