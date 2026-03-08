@@ -123,7 +123,7 @@ function percentTag(name: string, value: string | number | undefined): string {
   if (value === undefined || value === '') return ''
   const num = typeof value === 'number' ? value : parseFloat(String(value).replace(',', '.'))
   if (isNaN(num)) return ''
-  return `<${name}>${num}</${name}>`
+  return `<${name}>${escapeXml(num)}</${name}>`
 }
 
 // ── Main generator function ──
@@ -200,7 +200,7 @@ function generateEwpSection(wiersze: StEwpWiersz[]): string {
   for (const w of wiersze) {
     lines.push('    <Wiersz>')
     const ind = '      '
-    lines.push(`${ind}<F_1>${w.F_1}</F_1>`)
+    lines.push(`${ind}<F_1>${escapeXml(w.F_1)}</F_1>`)
 
     // Choice: F_2 (fixed asset) or F_3 (intangible)
     if (w.F_2) {
@@ -221,10 +221,10 @@ function generateEwpSection(wiersze: StEwpWiersz[]): string {
     if (f8) lines.push(f8)
 
     lines.push(`${ind}${percentTag('F_9', w.F_9)}`)
-    lines.push(`${ind}<F_10>${formatAmount(w.F_10)}</F_10>`)
+    lines.push(`${ind}<F_10>${escapeXml(formatAmount(w.F_10))}</F_10>`)
 
     if (w.F_11 !== undefined && w.F_11 !== '') {
-      lines.push(`${ind}<F_11>${formatAmount(w.F_11)}</F_11>`)
+      lines.push(`${ind}<F_11>${escapeXml(formatAmount(w.F_11))}</F_11>`)
     }
 
     // Deregistration group (all three or none)
@@ -241,7 +241,7 @@ function generateEwpSection(wiersze: StEwpWiersz[]): string {
       }
     }
 
-    lines.push(`${ind}<F_16>${w.F_16}</F_16>`)
+    lines.push(`${ind}<F_16>${escapeXml(w.F_16)}</F_16>`)
     lines.push('    </Wiersz>')
   }
 
@@ -256,7 +256,7 @@ function generatePkpirSection(wiersze: StPkpirWiersz[]): string {
   for (const w of wiersze) {
     lines.push('    <Wiersz>')
     const ind = '      '
-    lines.push(`${ind}<G_1>${w.G_1}</G_1>`)
+    lines.push(`${ind}<G_1>${escapeXml(w.G_1)}</G_1>`)
 
     // Choice: G_2 (fixed asset) or G_3 (intangible)
     if (w.G_2) {
@@ -283,21 +283,21 @@ function generatePkpirSection(wiersze: StPkpirWiersz[]): string {
       lines.push(`${ind}${percentTag('G_11', w.G_11)}`)
     }
 
-    lines.push(`${ind}<G_12>${formatAmount(w.G_12)}</G_12>`)
+    lines.push(`${ind}<G_12>${escapeXml(formatAmount(w.G_12))}</G_12>`)
 
     if (w.G_13 !== undefined && w.G_13 !== '') {
-      lines.push(`${ind}<G_13>${formatAmount(w.G_13)}</G_13>`)
+      lines.push(`${ind}<G_13>${escapeXml(formatAmount(w.G_13))}</G_13>`)
     }
 
-    lines.push(`${ind}<G_14>${formatAmount(w.G_14)}</G_14>`)
-    lines.push(`${ind}<G_15>${formatAmount(w.G_15)}</G_15>`)
+    lines.push(`${ind}<G_14>${escapeXml(formatAmount(w.G_14))}</G_14>`)
+    lines.push(`${ind}<G_15>${escapeXml(formatAmount(w.G_15))}</G_15>`)
 
     if (w.G_16 !== undefined && w.G_16 !== '') {
-      lines.push(`${ind}<G_16>${formatAmount(w.G_16)}</G_16>`)
+      lines.push(`${ind}<G_16>${escapeXml(formatAmount(w.G_16))}</G_16>`)
     }
 
     if (w.G_17 !== undefined && w.G_17 !== '') {
-      lines.push(`${ind}<G_17>${formatAmount(w.G_17)}</G_17>`)
+      lines.push(`${ind}<G_17>${escapeXml(formatAmount(w.G_17))}</G_17>`)
     }
 
     // Deregistration group (all three or none)
@@ -314,7 +314,7 @@ function generatePkpirSection(wiersze: StPkpirWiersz[]): string {
       }
     }
 
-    lines.push(`${ind}<G_22>${w.G_22}</G_22>`)
+    lines.push(`${ind}<G_22>${escapeXml(w.G_22)}</G_22>`)
     lines.push('    </Wiersz>')
   }
 

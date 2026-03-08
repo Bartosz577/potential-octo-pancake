@@ -132,12 +132,12 @@ function percentTag(name: string, value: string | number | undefined): string {
   if (value === undefined || value === '') return ''
   const num = typeof value === 'number' ? value : parseFloat(String(value).replace(',', '.'))
   if (isNaN(num)) return ''
-  return `<${name}>${num}</${name}>`
+  return `<${name}>${escapeXml(num)}</${name}>`
 }
 
 function optionalAmountTag(name: string, value: string | number | undefined, indent: string): string {
   if (value === undefined || value === '') return ''
-  return `${indent}<${name}>${formatAmount(value)}</${name}>`
+  return `${indent}<${name}>${escapeXml(formatAmount(value))}</${name}>`
 }
 
 // ── Main generator function ──
@@ -253,13 +253,13 @@ function generateStKrWiersz(w: StKrWiersz): string {
 
   // Tax rates (both required)
   lines.push(`${ind}${percentTag('E_10A', w.E_10A)}`)
-  lines.push(`${ind}<E_10B>${formatAmount(w.E_10B)}</E_10B>`)
+  lines.push(`${ind}<E_10B>${escapeXml(formatAmount(w.E_10B))}</E_10B>`)
 
   if (w.E_11 !== undefined && w.E_11 !== '') {
     lines.push(`${ind}${percentTag('E_11', w.E_11)}`)
   }
 
-  lines.push(`${ind}<E_12>${formatAmount(w.E_12)}</E_12>`)
+  lines.push(`${ind}<E_12>${escapeXml(formatAmount(w.E_12))}</E_12>`)
 
   const e13 = optionalAmountTag('E_13', w.E_13, ind)
   if (e13) lines.push(e13)
@@ -275,11 +275,11 @@ function generateStKrWiersz(w: StKrWiersz): string {
   const e18 = optionalAmountTag('E_18', w.E_18, ind)
   if (e18) lines.push(e18)
 
-  lines.push(`${ind}<E_19>${formatAmount(w.E_19)}</E_19>`)
-  lines.push(`${ind}<E_20>${formatAmount(w.E_20)}</E_20>`)
+  lines.push(`${ind}<E_19>${escapeXml(formatAmount(w.E_19))}</E_19>`)
+  lines.push(`${ind}<E_20>${escapeXml(formatAmount(w.E_20))}</E_20>`)
 
   // Accounting fields
-  lines.push(`${ind}<E_21>${formatAmount(w.E_21)}</E_21>`)
+  lines.push(`${ind}<E_21>${escapeXml(formatAmount(w.E_21))}</E_21>`)
   const e22 = optionalAmountTag('E_22', w.E_22, ind)
   if (e22) lines.push(e22)
   const e23 = optionalAmountTag('E_23', w.E_23, ind)
@@ -287,9 +287,9 @@ function generateStKrWiersz(w: StKrWiersz): string {
   const e24 = optionalAmountTag('E_24', w.E_24, ind)
   if (e24) lines.push(e24)
   lines.push(`${ind}${percentTag('E_25A', w.E_25A)}`)
-  lines.push(`${ind}<E_25B>${formatAmount(w.E_25B)}</E_25B>`)
-  lines.push(`${ind}<E_26>${formatAmount(w.E_26)}</E_26>`)
-  lines.push(`${ind}<E_27>${formatAmount(w.E_27)}</E_27>`)
+  lines.push(`${ind}<E_25B>${escapeXml(formatAmount(w.E_25B))}</E_25B>`)
+  lines.push(`${ind}<E_26>${escapeXml(formatAmount(w.E_26))}</E_26>`)
+  lines.push(`${ind}<E_27>${escapeXml(formatAmount(w.E_27))}</E_27>`)
 
   // Deregistration group (all three or none)
   if (w.E_28 && w.E_29 && w.E_30) {
@@ -305,7 +305,7 @@ function generateStKrWiersz(w: StKrWiersz): string {
     }
   }
 
-  lines.push(`${ind}<E_32>${w.E_32}</E_32>`)
+  lines.push(`${ind}<E_32>${escapeXml(w.E_32)}</E_32>`)
   lines.push('  </ST_KR>')
   return lines.join('\n')
 }

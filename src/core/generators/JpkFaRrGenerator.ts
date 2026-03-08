@@ -124,7 +124,7 @@ function amountTag(name: string, value: string | number | undefined): string {
 
 function quantityTag(name: string, value: string | number): string {
   const num = typeof value === 'number' ? value : parseFloat(String(value).replace(',', '.')) || 0
-  return `<${name}>${num}</${name}>`
+  return `<${name}>${escapeXml(num)}</${name}>`
 }
 
 function generatePodpis(p: FaRrPodpis, indent: string): string {
