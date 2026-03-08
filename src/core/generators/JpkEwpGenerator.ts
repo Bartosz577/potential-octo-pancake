@@ -12,6 +12,7 @@ import {
   generatorRegistry,
 } from './XmlGeneratorEngine'
 import { sumAmounts } from '../utils/mathUtils'
+import { validateGeneratorInput } from '../utils/inputValidator'
 
 // ── Constants ──
 
@@ -197,7 +198,14 @@ export const jpkEwpGenerator: XmlGenerator = {
   jpkType: 'JPK_EWP',
   version: WARIANT,
   namespace: EWP_NAMESPACE,
-  generate: (input: unknown) => generateJpkEwp(input as EwpGeneratorInput),
+  generate: (input: unknown) => {
+    const data = validateGeneratorInput<EwpGeneratorInput>(
+      input,
+      ['naglowek', 'podmiot', 'wiersze'],
+      'JPK_EWP',
+    )
+    return generateJpkEwp(data)
+  },
 }
 
 generatorRegistry.register(jpkEwpGenerator)

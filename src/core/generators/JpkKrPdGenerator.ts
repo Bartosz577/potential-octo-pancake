@@ -12,6 +12,7 @@ import {
   generatorRegistry,
 } from './XmlGeneratorEngine'
 import { sumAmounts } from '../utils/mathUtils'
+import { validateGeneratorInput } from '../utils/inputValidator'
 
 // ── Constants ──
 
@@ -413,7 +414,14 @@ export const jpkKrPdGenerator: XmlGenerator = {
   jpkType: 'JPK_KR_PD',
   version: WARIANT,
   namespace: KR_PD_NAMESPACE,
-  generate: (input: unknown) => generateJpkKrPd(input as KrPdGeneratorInput),
+  generate: (input: unknown) => {
+    const data = validateGeneratorInput<KrPdGeneratorInput>(
+      input,
+      ['naglowek', 'podmiot', 'zpisSald', 'dziennik', 'rpd'],
+      'JPK_KR_PD',
+    )
+    return generateJpkKrPd(data)
+  },
 }
 
 generatorRegistry.register(jpkKrPdGenerator)

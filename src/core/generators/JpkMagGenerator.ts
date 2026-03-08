@@ -12,6 +12,7 @@ import {
   XmlGenerator,
   generatorRegistry,
 } from './XmlGeneratorEngine'
+import { validateGeneratorInput } from '../utils/inputValidator'
 
 // ── Constants ──
 
@@ -474,7 +475,14 @@ export const jpkMagGenerator: XmlGenerator = {
   jpkType: 'JPK_MAG',
   version: WARIANT,
   namespace: MAG_NAMESPACE,
-  generate: (input: unknown) => generateJpkMag(input as MagGeneratorInput),
+  generate: (input: unknown) => {
+    const data = validateGeneratorInput<MagGeneratorInput>(
+      input,
+      ['naglowek', 'podmiot', 'magazyn', 'metoda'],
+      'JPK_MAG',
+    )
+    return generateJpkMag(data)
+  },
 }
 
 generatorRegistry.register(jpkMagGenerator)

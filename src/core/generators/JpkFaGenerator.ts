@@ -11,6 +11,7 @@ import {
   generatorRegistry,
 } from './XmlGeneratorEngine'
 import { sumAmounts } from '../utils/mathUtils'
+import { validateGeneratorInput } from '../utils/inputValidator'
 
 // ── Constants ──
 
@@ -364,7 +365,14 @@ export const jpkFaGenerator: XmlGenerator = {
   jpkType: 'JPK_FA',
   version: WARIANT,
   namespace: FA_NAMESPACE,
-  generate: (input: unknown) => generateJpkFa(input as FaGeneratorInput),
+  generate: (input: unknown) => {
+    const data = validateGeneratorInput<FaGeneratorInput>(
+      input,
+      ['naglowek', 'podmiot', 'faktury', 'wiersze'],
+      'JPK_FA',
+    )
+    return generateJpkFa(data)
+  },
 }
 
 generatorRegistry.register(jpkFaGenerator)

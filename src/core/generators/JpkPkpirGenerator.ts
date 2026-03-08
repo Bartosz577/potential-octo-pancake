@@ -12,6 +12,7 @@ import {
   generatorRegistry,
 } from './XmlGeneratorEngine'
 import { sumAmounts } from '../utils/mathUtils'
+import { validateGeneratorInput } from '../utils/inputValidator'
 
 // ── Constants ──
 
@@ -259,7 +260,14 @@ export const jpkPkpirGenerator: XmlGenerator = {
   jpkType: 'JPK_PKPIR',
   version: WARIANT,
   namespace: PKPIR_NAMESPACE,
-  generate: (input: unknown) => generateJpkPkpir(input as PkpirGeneratorInput),
+  generate: (input: unknown) => {
+    const data = validateGeneratorInput<PkpirGeneratorInput>(
+      input,
+      ['naglowek', 'podmiot', 'pkpirInfo', 'wiersze'],
+      'JPK_PKPIR',
+    )
+    return generateJpkPkpir(data)
+  },
 }
 
 generatorRegistry.register(jpkPkpirGenerator)

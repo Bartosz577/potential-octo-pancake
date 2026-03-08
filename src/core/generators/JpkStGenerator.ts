@@ -11,6 +11,7 @@ import {
   XmlGenerator,
   generatorRegistry,
 } from './XmlGeneratorEngine'
+import { validateGeneratorInput } from '../utils/inputValidator'
 
 // ── Constants ──
 
@@ -342,7 +343,14 @@ export const jpkStGenerator: XmlGenerator = {
   jpkType: 'JPK_ST',
   version: WARIANT,
   namespace: ST_NAMESPACE,
-  generate: (input: unknown) => generateJpkSt(input as StGeneratorInput),
+  generate: (input: unknown) => {
+    const data = validateGeneratorInput<StGeneratorInput>(
+      input,
+      ['naglowek', 'podmiot'],
+      'JPK_ST',
+    )
+    return generateJpkSt(data)
+  },
 }
 
 generatorRegistry.register(jpkStGenerator)

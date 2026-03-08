@@ -11,6 +11,7 @@ import {
   generatorRegistry,
 } from './XmlGeneratorEngine'
 import { sumAmounts } from '../utils/mathUtils'
+import { validateGeneratorInput } from '../utils/inputValidator'
 
 // ── Constants ──
 
@@ -196,7 +197,14 @@ export const jpkWbGenerator: XmlGenerator = {
   jpkType: 'JPK_WB',
   version: WARIANT,
   namespace: WB_NAMESPACE,
-  generate: (input: unknown) => generateJpkWb(input as WbGeneratorInput),
+  generate: (input: unknown) => {
+    const data = validateGeneratorInput<WbGeneratorInput>(
+      input,
+      ['naglowek', 'podmiot', 'numerRachunku', 'saldoPoczatkowe', 'saldoKoncowe', 'wiersze'],
+      'JPK_WB',
+    )
+    return generateJpkWb(data)
+  },
 }
 
 generatorRegistry.register(jpkWbGenerator)

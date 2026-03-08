@@ -12,6 +12,7 @@ import {
   generatorRegistry,
 } from './XmlGeneratorEngine'
 import { sumAmounts } from '../utils/mathUtils'
+import { validateGeneratorInput } from '../utils/inputValidator'
 
 // ── Constants ──
 
@@ -344,7 +345,14 @@ export const jpkFaRrGenerator: XmlGenerator = {
   jpkType: 'JPK_FA_RR',
   version: WARIANT,
   namespace: FA_RR_NAMESPACE,
-  generate: (input: unknown) => generateJpkFaRr(input as FaRrGeneratorInput),
+  generate: (input: unknown) => {
+    const data = validateGeneratorInput<FaRrGeneratorInput>(
+      input,
+      ['naglowek', 'podmiot', 'faktury', 'wiersze'],
+      'JPK_FA_RR',
+    )
+    return generateJpkFaRr(data)
+  },
 }
 
 generatorRegistry.register(jpkFaRrGenerator)

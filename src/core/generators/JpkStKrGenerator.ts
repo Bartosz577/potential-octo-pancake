@@ -11,6 +11,7 @@ import {
   XmlGenerator,
   generatorRegistry,
 } from './XmlGeneratorEngine'
+import { validateGeneratorInput } from '../utils/inputValidator'
 
 // ── Constants ──
 
@@ -334,7 +335,14 @@ export const jpkStKrGenerator: XmlGenerator = {
   jpkType: 'JPK_ST_KR',
   version: WARIANT,
   namespace: ST_KR_NAMESPACE,
-  generate: (input: unknown) => generateJpkStKr(input as StKrGeneratorInput),
+  generate: (input: unknown) => {
+    const data = validateGeneratorInput<StKrGeneratorInput>(
+      input,
+      ['naglowek', 'podmiot', 'wiersze'],
+      'JPK_ST_KR',
+    )
+    return generateJpkStKr(data)
+  },
 }
 
 generatorRegistry.register(jpkStKrGenerator)

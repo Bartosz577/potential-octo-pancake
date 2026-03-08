@@ -12,6 +12,7 @@ import {
   generatorRegistry,
 } from './XmlGeneratorEngine'
 import { sumAmounts } from '../utils/mathUtils'
+import { validateGeneratorInput } from '../utils/inputValidator'
 
 // ── Constants ──
 
@@ -515,7 +516,14 @@ export const jpkV7mGenerator: XmlGenerator = {
   jpkType: 'JPK_V7M',
   version: WARIANT,
   namespace: V7M_NAMESPACE,
-  generate: (input: unknown) => generateJpkV7m(input as V7mGeneratorInput),
+  generate: (input: unknown) => {
+    const data = validateGeneratorInput<V7mGeneratorInput>(
+      input,
+      ['naglowek', 'podmiot', 'sprzedazWiersze', 'zakupWiersze'],
+      'JPK_V7M',
+    )
+    return generateJpkV7m(data)
+  },
 }
 
 generatorRegistry.register(jpkV7mGenerator)
