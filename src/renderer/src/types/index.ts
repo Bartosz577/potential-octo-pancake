@@ -2,6 +2,7 @@ export type JpkType = 'V7M' | 'FA' | 'MAG' | 'WB' | 'PKPIR' | 'EWP' | 'KR_PD' | 
 export type SubType = 'SprzedazWiersz' | 'Faktura' | 'WZ' | 'RW' | 'ZakupWiersz' | 'FakturaWiersz' | 'PZ' | 'MM' | 'PKPIRWiersz' | 'EWPWiersz' | 'Dziennik' | 'STWiersz' | 'STKrWiersz' | 'FaRrFaktura' | 'KrDziennik'
 export type ErpSystem = 'NAMOS' | 'ESO' | 'UNKNOWN'
 export type FileFormat = 'txt' | 'csv' | 'xlsx' | 'json' | 'xml'
+export type JpkDetectionConfidence = 'high' | 'medium' | 'manual' | 'none'
 
 export interface ParsedFile {
   id: string
@@ -21,4 +22,5 @@ export interface ParsedFile {
   filePath?: string
   warnings?: string[]
   headers?: string[]
+  jpkDetectionConfidence?: JpkDetectionConfidence
 }

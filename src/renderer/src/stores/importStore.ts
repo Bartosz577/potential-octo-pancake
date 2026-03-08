@@ -1,5 +1,7 @@
 import { create } from 'zustand'
-import type { ParsedFile } from '../types'
+import type { ParsedFile, JpkType } from '../types'
+import type { JpkSubtype } from '../../../../core/mapping/jpkTypeUtils'
+import { useAppStore } from './appStore'
 
 interface ImportState {
   files: ParsedFile[]
@@ -8,6 +10,7 @@ interface ImportState {
   updateCell: (fileIndex: number, rowIndex: number, colIndex: number, value: string) => void
   removeFile: (id: string) => void
   clearFiles: () => void
+  setFileJpkType: (fileId: string, type: JpkType, subtype: JpkSubtype | null) => void
 }
 
 export const useImportStore = create<ImportState>((set) => ({
@@ -30,5 +33,17 @@ export const useImportStore = create<ImportState>((set) => ({
       })
     })),
   removeFile: (id) => set((state) => ({ files: state.files.filter((f) => f.id !== id) })),
-  clearFiles: () => set({ files: [] })
+  clearFiles: () => set({ files: [] }),
+  setFileJpkType: (fileId, type, subtype) => {
+    set((state) => ({
+      files: state.files.map((f) =>
+        f.id === fileId
+          ? { ...f, jpkType: type, jpkDetectionConfidence: 'manual' as const }
+          : f
+      )
+    }))
+    if (subtype) {
+      useAppStore.getState().setJpkSubtype(subtype)
+    }
+  }
 }))

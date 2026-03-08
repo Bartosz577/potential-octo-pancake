@@ -5,10 +5,18 @@ import type { JpkType } from '../models/types'
 /** Sub-type within JPK_V7M — monthly (V7M) or quarterly (V7K) */
 export type JpkSubtype = 'V7M' | 'V7K'
 
+/** Confidence level of automatic JPK type detection */
+export type JpkDetectionConfidence = 'high' | 'medium' | 'none'
+
 /** Result of normalizing a raw JPK type string */
 export interface NormalizedJpkType {
   type: JpkType
   subtype: JpkSubtype | null
+}
+
+/** Result of detecting JPK type with confidence */
+export interface DetectedJpkType extends NormalizedJpkType {
+  confidence: JpkDetectionConfidence
 }
 
 const ALL_JPK_TYPES: JpkType[] = [
@@ -125,11 +133,74 @@ const FILENAME_PATTERNS: [RegExp, NormalizedJpkType][] = [
 
 /**
  * Attempts to detect the JpkType from a filename using regex patterns.
- * Returns null if no pattern matches.
+ * Returns DetectedJpkType with confidence='high' on match, or null.
  */
-export function jpkTypeFromFilename(filename: string): NormalizedJpkType | null {
+export function jpkTypeFromFilename(filename: string): DetectedJpkType | null {
   for (const [pattern, result] of FILENAME_PATTERNS) {
-    if (pattern.test(filename)) return result
+    if (pattern.test(filename)) return { ...result, confidence: 'high' }
+  }
+  return null
+}
+
+/** Header marker sets for detecting JPK type from column headers */
+type HeaderRule = {
+  match: (headers: Set<string>) => boolean
+  result: NormalizedJpkType
+}
+
+const has = (set: Set<string>, key: string): boolean => set.has(key.toLowerCase())
+const hasAny = (set: Set<string>, ...keys: string[]): boolean => keys.some((k) => has(set, k))
+
+const HEADER_RULES: HeaderRule[] = [
+  // V7M — combined sales + purchases
+  {
+    match: (h) => has(h, 'lpsprzedazy') && has(h, 'lpzakupu'),
+    result: { type: 'V7M', subtype: 'V7M' },
+  },
+  // V7M — sales indicators
+  {
+    match: (h) => hasAny(h, 'lpsprzedazy', 'dowodsprzedazy', 'k_10', 'k_11'),
+    result: { type: 'V7M', subtype: 'V7M' },
+  },
+  // V7M — purchase indicators
+  {
+    match: (h) => hasAny(h, 'lpzakupu', 'dowodzakupu', 'k_40'),
+    result: { type: 'V7M', subtype: 'V7M' },
+  },
+  // FA — invoice indicators
+  {
+    match: (h) => hasAny(h, 'numerfaktury', 'p_2', 'rodzajfaktury'),
+    result: { type: 'FA', subtype: null },
+  },
+  // MAG — warehouse indicators
+  {
+    match: (h) => has(h, 'numerwiersza') && hasAny(h, 'iloscprzyjeta', 'iloscwydana'),
+    result: { type: 'MAG', subtype: null },
+  },
+  // WB — bank statement indicators
+  {
+    match: (h) => has(h, 'numerrachunku') || (has(h, 'kwotaoperacji') && has(h, 'saldooperacji')),
+    result: { type: 'WB', subtype: null },
+  },
+  // PKPIR — revenue & expense book
+  {
+    match: (h) => has(h, 'kodkontrahenta') && has(h, 'przychod'),
+    result: { type: 'PKPIR', subtype: null },
+  },
+]
+
+/**
+ * Attempts to detect the JpkType from column headers using heuristics.
+ * Returns DetectedJpkType with confidence='medium' on match, or null.
+ * Headers are compared case-insensitively with trimming.
+ */
+export function jpkTypeFromHeaders(headers: string[]): DetectedJpkType | null {
+  if (headers.length === 0) return null
+
+  const normalized = new Set(headers.map((h) => h.trim().toLowerCase()))
+
+  for (const rule of HEADER_RULES) {
+    if (rule.match(normalized)) return { ...rule.result, confidence: 'medium' }
   }
   return null
 }

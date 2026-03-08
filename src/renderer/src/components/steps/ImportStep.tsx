@@ -1,4 +1,4 @@
-import { useState, useCallback, type DragEvent } from 'react'
+import { useState, useCallback, useRef, useEffect, type DragEvent } from 'react'
 import {
   Upload,
   FileText,
@@ -17,16 +17,19 @@ import {
   Trash2,
   ShieldCheck,
   ArrowUpCircle,
-  CheckCircle2
+  CheckCircle2,
+  Pencil
 } from 'lucide-react'
 import { mergeJpkFiles } from '../../../../core/JpkMerger'
 import { convertJpkVersion, detectUpgradeNeeded } from '../../../../core/JpkVersionConverter'
+import { normalizeJpkType as coreNormalizeJpkType, jpkTypeFromFilename, jpkTypeFromHeaders, jpkTypeToLabel, getAllJpkTypes } from '../../../../core/mapping/jpkTypeUtils'
+import type { JpkSubtype } from '../../../../core/mapping/jpkTypeUtils'
 import { detectJpkLabel } from '@renderer/utils/validator'
 import { useImportStore } from '@renderer/stores/importStore'
 import { useAppStore } from '@renderer/stores/appStore'
 import { useToast } from '@renderer/stores/toastStore'
 import { FormatBadge } from '@renderer/components/shared/FormatBadge'
-import type { ParsedFile, JpkType, FileFormat } from '@renderer/types'
+import type { ParsedFile, JpkType, FileFormat, JpkDetectionConfidence } from '@renderer/types'
 
 const ACCEPTED_EXTENSIONS = ['.txt', '.csv', '.xlsx', '.xls', '.json', '.xml', '.dat', '.tsv', '.epp', '.dbf', '.ods']
 
@@ -111,17 +114,157 @@ function EncodingPreview({ rows }: { rows: string[][] }): React.JSX.Element {
   )
 }
 
+// ── JPK Type dropdown options grouped by category ──
+
+interface JpkTypeOption {
+  type: JpkType
+  subtype: JpkSubtype | null
+  label: string
+  group: string
+}
+
+const JPK_TYPE_OPTIONS: JpkTypeOption[] = [
+  { type: 'V7M', subtype: 'V7M', label: 'JPK_V7M (miesięczny)', group: 'VAT' },
+  { type: 'V7M', subtype: 'V7K', label: 'JPK_V7K (kwartalny)', group: 'VAT' },
+  { type: 'FA', subtype: null, label: 'JPK_FA', group: 'Faktury' },
+  { type: 'FA_RR', subtype: null, label: 'JPK_FA RR', group: 'Faktury' },
+  { type: 'MAG', subtype: null, label: 'JPK_MAG', group: 'Pozostałe' },
+  { type: 'WB', subtype: null, label: 'JPK_WB', group: 'Pozostałe' },
+  { type: 'PKPIR', subtype: null, label: 'JPK_PKPIR', group: 'Pozostałe' },
+  { type: 'EWP', subtype: null, label: 'JPK_EWP', group: 'Pozostałe' },
+  { type: 'KR', subtype: null, label: 'JPK_KR', group: 'Pozostałe' },
+  { type: 'KR_PD', subtype: null, label: 'JPK_KR_PD', group: 'Pozostałe' },
+  { type: 'ST', subtype: null, label: 'JPK_ST', group: 'Pozostałe' },
+  { type: 'ST_KR', subtype: null, label: 'JPK_ST_KR', group: 'Pozostałe' },
+]
+
+const CONFIDENCE_STYLES: Record<JpkDetectionConfidence, { border: string; bg: string; text: string; hint: string }> = {
+  high: { border: 'border-success/50', bg: 'bg-success/10', text: 'text-success', hint: 'z nazwy pliku' },
+  medium: { border: 'border-warning/50', bg: 'bg-warning/10', text: 'text-warning', hint: 'z nagłówków' },
+  manual: { border: 'border-accent/50', bg: 'bg-accent/10', text: 'text-accent', hint: 'wybrano ręcznie' },
+  none: { border: 'border-error/50', bg: 'bg-error/10', text: 'text-error', hint: '' },
+}
+
+function JpkTypeSelector({
+  file,
+  onSelect
+}: {
+  file: ParsedFile
+  onSelect: (type: JpkType, subtype: JpkSubtype | null) => void
+}): React.JSX.Element {
+  const confidence = file.jpkDetectionConfidence || 'none'
+  const style = CONFIDENCE_STYLES[confidence]
+  const [isOpen, setIsOpen] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!isOpen) return
+    const handleClickOutside = (e: MouseEvent): void => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setIsOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [isOpen])
+
+  const handleSelect = (opt: JpkTypeOption): void => {
+    onSelect(opt.type, opt.subtype)
+    setIsOpen(false)
+  }
+
+  if (confidence === 'none') {
+    // No detection — show direct dropdown
+    return (
+      <div className="relative" ref={dropdownRef}>
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium border ${style.border} ${style.bg} ${style.text} transition-colors hover:opacity-80`}
+        >
+          Wybierz typ JPK
+          <ChevronDown className={`w-3 h-3 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        </button>
+        {isOpen && <JpkTypeDropdown options={JPK_TYPE_OPTIONS} currentType={file.jpkType} onSelect={handleSelect} />}
+      </div>
+    )
+  }
+
+  // Detected or manual — show badge + change button
+  const label = jpkTypeToLabel(file.jpkType)
+  return (
+    <div className="relative flex items-center gap-1.5" ref={dropdownRef}>
+      <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium border ${style.border} ${style.bg}`}>
+        <span className="text-text-primary">{label}</span>
+        <span className={`${style.text}`}>{style.hint}</span>
+      </div>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="p-1 rounded hover:bg-bg-hover text-text-muted hover:text-text-primary transition-colors"
+        title="Zmień typ JPK"
+      >
+        <Pencil className="w-3 h-3" />
+      </button>
+      {isOpen && <JpkTypeDropdown options={JPK_TYPE_OPTIONS} currentType={file.jpkType} onSelect={handleSelect} />}
+    </div>
+  )
+}
+
+function JpkTypeDropdown({
+  options,
+  currentType,
+  onSelect
+}: {
+  options: JpkTypeOption[]
+  currentType: JpkType
+  onSelect: (opt: JpkTypeOption) => void
+}): React.JSX.Element {
+  const groups = ['VAT', 'Faktury', 'Pozostałe']
+
+  return (
+    <div className="absolute top-full left-0 mt-1 z-50 min-w-[200px] py-1 bg-bg-card rounded-lg border border-border shadow-lg">
+      {groups.map((group) => {
+        const groupOptions = options.filter((o) => o.group === group)
+        return (
+          <div key={group}>
+            <div className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-text-muted">
+              {group}
+            </div>
+            {groupOptions.map((opt) => {
+              const isActive = opt.type === currentType && (opt.subtype === null || opt.type === 'V7M')
+              return (
+                <button
+                  key={`${opt.type}-${opt.subtype}`}
+                  onClick={() => onSelect(opt)}
+                  className={`w-full text-left px-3 py-1.5 text-xs transition-colors ${
+                    isActive
+                      ? 'bg-accent/10 text-accent font-medium'
+                      : 'text-text-secondary hover:bg-bg-hover hover:text-text-primary'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              )
+            })}
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 // ── FileCard — single imported file with encoding controls ──
 
 function FileCard({
   file,
   onRemove,
   onEncodingChange,
+  onTypeChange,
   isReloading
 }: {
   file: ParsedFile
   onRemove: () => void
   onEncodingChange: (encoding: string) => void
+  onTypeChange: (type: JpkType, subtype: JpkSubtype | null) => void
   isReloading: boolean
 }): React.JSX.Element {
   const badge = JPK_BADGE_CONFIG[file.jpkType] || JPK_BADGE_CONFIG.V7M
@@ -181,9 +324,9 @@ function FileCard({
             )
           )}
 
-          <span className={`px-2 py-0.5 rounded text-[11px] font-semibold ${badge.className}`}>
-            {badge.label}
-          </span>
+          {/* JPK Type selector with confidence badge */}
+          <JpkTypeSelector file={file} onSelect={onTypeChange} />
+
           <span className="px-2 py-0.5 rounded text-[11px] font-medium bg-bg-hover text-text-secondary">
             {file.system}
           </span>
@@ -282,18 +425,7 @@ function AutoDetectPanel({ files }: { files: ParsedFile[] }): React.JSX.Element 
   )
 }
 
-/** Normalize JPK type aliases to canonical unprefixed form */
-function normalizeJpkType(raw: string): JpkType {
-  const upper = raw.toUpperCase().trim()
-  if (upper === 'JPK_V7M' || upper === 'JPK_V7K' || upper === 'JPK_VDEK' || upper === 'VDEK') return 'V7M'
-  // Strip JPK_ prefix
-  const stripped = upper.startsWith('JPK_') ? upper.slice(4) : upper
-  const valid: JpkType[] = ['V7M', 'FA', 'MAG', 'WB', 'PKPIR', 'EWP', 'KR_PD', 'ST', 'ST_KR', 'FA_RR', 'KR']
-  if (valid.includes(stripped as JpkType)) return stripped as JpkType
-  return 'V7M'
-}
-
-/** Convert serialized IPC result into a ParsedFile */
+/** Convert serialized IPC result into a ParsedFile with auto-detection */
 function resultToParsedFile(
   result: SerializedFileReadResult,
   filename: string,
@@ -305,12 +437,43 @@ function resultToParsedFile(
   const meta = sheet.metadata || {}
   const rows = sheet.rows
 
+  // Detection cascade: metadata → filename → headers
+  let jpkType: JpkType = 'V7M'
+  let confidence: JpkDetectionConfidence = 'none'
+
+  // 1. Try metadata (from TxtFileReader — NAMOS/ESO prefix)
+  if (meta.jpkType) {
+    const norm = coreNormalizeJpkType(meta.jpkType)
+    if (norm) {
+      jpkType = norm.type
+      confidence = 'high'
+    }
+  }
+
+  // 2. Try filename detection
+  if (confidence === 'none') {
+    const fromFile = jpkTypeFromFilename(filename)
+    if (fromFile) {
+      jpkType = fromFile.type
+      confidence = fromFile.confidence
+    }
+  }
+
+  // 3. Try header detection
+  if (confidence === 'none' && sheet.headers) {
+    const fromHeaders = jpkTypeFromHeaders(sheet.headers)
+    if (fromHeaders) {
+      jpkType = fromHeaders.type
+      confidence = fromHeaders.confidence
+    }
+  }
+
   return {
     id: `file_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
     filename,
     filePath,
     system: (meta.system as ParsedFile['system']) || 'UNKNOWN',
-    jpkType: normalizeJpkType(meta.jpkType || 'V7M'),
+    jpkType,
     subType: (meta.subType as ParsedFile['subType']) || 'SprzedazWiersz',
     pointCode: meta.pointCode || '',
     dateFrom: meta.dateFrom || '',
@@ -322,7 +485,8 @@ function resultToParsedFile(
     format: extensionToFormat(filename),
     encoding: result.encoding,
     warnings: result.warnings.length > 0 ? result.warnings : undefined,
-    headers: sheet.headers
+    headers: sheet.headers,
+    jpkDetectionConfidence: confidence
   }
 }
 
@@ -726,7 +890,7 @@ function ValidateSection(): React.JSX.Element {
 }
 
 export function ImportStep(): React.JSX.Element {
-  const { files, addFile, updateFile, removeFile } = useImportStore()
+  const { files, addFile, updateFile, removeFile, setFileJpkType } = useImportStore()
   const { setCurrentStep } = useAppStore()
   const toast = useToast()
   const [isDragOver, setIsDragOver] = useState(false)
@@ -931,6 +1095,7 @@ export function ImportStep(): React.JSX.Element {
               file={file}
               onRemove={() => removeFile(file.id)}
               onEncodingChange={(encoding) => handleEncodingChange(file.id, encoding)}
+              onTypeChange={(type, subtype) => setFileJpkType(file.id, type, subtype)}
               isReloading={reloadingFileId === file.id}
             />
           ))}
@@ -962,20 +1127,33 @@ export function ImportStep(): React.JSX.Element {
       <ValidateSection />
 
       {/* Footer with Next button */}
-      <div className="mt-auto pt-4 flex justify-end">
-        <button
-          onClick={() => setCurrentStep(2)}
-          disabled={files.length === 0}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-            files.length > 0
-              ? 'bg-accent hover:bg-accent-hover text-white'
-              : 'bg-bg-hover text-text-muted cursor-not-allowed'
-          }`}
-        >
-          Dalej
-          <ChevronRight className="w-4 h-4" />
-        </button>
-      </div>
+      {(() => {
+        const hasUntyped = files.some((f) => (f.jpkDetectionConfidence || 'none') === 'none')
+        const canProceed = files.length > 0 && !hasUntyped
+        return (
+          <div className="mt-auto pt-4 flex flex-col gap-2">
+            {files.length > 0 && hasUntyped && (
+              <p className="text-xs text-error text-right">
+                Wybierz typ JPK dla wszystkich plików aby kontynuować
+              </p>
+            )}
+            <div className="flex justify-end">
+              <button
+                onClick={() => setCurrentStep(2)}
+                disabled={!canProceed}
+                className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                  canProceed
+                    ? 'bg-accent hover:bg-accent-hover text-white'
+                    : 'bg-bg-hover text-text-muted cursor-not-allowed'
+                }`}
+              >
+                Dalej
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )
+      })()}
     </div>
   )
 }

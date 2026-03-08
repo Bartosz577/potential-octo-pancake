@@ -2,11 +2,12 @@ import { describe, it, expect } from 'vitest'
 import {
   normalizeJpkType,
   jpkTypeFromFilename,
+  jpkTypeFromHeaders,
   jpkTypeToLabel,
   jpkTypeToXmlCode,
   getAllJpkTypes,
 } from '../../../src/core/mapping/jpkTypeUtils'
-import type { NormalizedJpkType } from '../../../src/core/mapping/jpkTypeUtils'
+import type { NormalizedJpkType, DetectedJpkType } from '../../../src/core/mapping/jpkTypeUtils'
 
 describe('jpkTypeUtils', () => {
   describe('normalizeJpkType', () => {
@@ -152,93 +153,231 @@ describe('jpkTypeUtils', () => {
   })
 
   describe('jpkTypeFromFilename', () => {
-    describe('V7M/V7K detection', () => {
+    describe('V7M/V7K detection with high confidence', () => {
       it('detects V7M from filename with underscore separator', () => {
-        expect(jpkTypeFromFilename('data_JPK_V7M_01.txt')).toEqual({ type: 'V7M', subtype: 'V7M' })
+        expect(jpkTypeFromFilename('data_JPK_V7M_01.txt')).toEqual({ type: 'V7M', subtype: 'V7M', confidence: 'high' })
       })
 
       it('detects V7K from filename', () => {
-        expect(jpkTypeFromFilename('JPK_V7K_export.csv')).toEqual({ type: 'V7M', subtype: 'V7K' })
+        expect(jpkTypeFromFilename('Eksport_JPK_V7K_Q1_2026.txt')).toEqual({ type: 'V7M', subtype: 'V7K', confidence: 'high' })
       })
 
       it('detects VDEK from filename', () => {
-        expect(jpkTypeFromFilename('JPK_VDEK_2024.txt')).toEqual({ type: 'V7M', subtype: null })
+        expect(jpkTypeFromFilename('NAMOS_JPK_VDEK_SprzedazWiersz_2026.txt')).toEqual({ type: 'V7M', subtype: null, confidence: 'high' })
       })
     })
 
     describe('other JPK types in filenames', () => {
       it('detects FA from filename', () => {
-        expect(jpkTypeFromFilename('JPK_FA_2024.xml')).toEqual({ type: 'FA', subtype: null })
+        expect(jpkTypeFromFilename('faktury_JPK_FA_2026.xml')).toEqual({ type: 'FA', subtype: null, confidence: 'high' })
       })
 
       it('detects FA_RR from filename (before FA match)', () => {
-        expect(jpkTypeFromFilename('JPK_FA_RR_export.xml')).toEqual({ type: 'FA_RR', subtype: null })
+        expect(jpkTypeFromFilename('JPK_FA_RR_export.xml')).toEqual({ type: 'FA_RR', subtype: null, confidence: 'high' })
       })
 
       it('detects MAG from filename', () => {
-        expect(jpkTypeFromFilename('JPK_MAG_WZ_data.txt')).toEqual({ type: 'MAG', subtype: null })
+        expect(jpkTypeFromFilename('JPK_MAG_WZ_data.txt')).toEqual({ type: 'MAG', subtype: null, confidence: 'high' })
       })
 
       it('detects WB from filename', () => {
-        expect(jpkTypeFromFilename('JPK_WB_01_2024.xml')).toEqual({ type: 'WB', subtype: null })
+        expect(jpkTypeFromFilename('JPK_WB_01_2024.xml')).toEqual({ type: 'WB', subtype: null, confidence: 'high' })
       })
 
       it('detects PKPIR from filename', () => {
-        expect(jpkTypeFromFilename('JPK_PKPIR_export.csv')).toEqual({ type: 'PKPIR', subtype: null })
+        expect(jpkTypeFromFilename('JPK_PKPIR_export.csv')).toEqual({ type: 'PKPIR', subtype: null, confidence: 'high' })
       })
 
       it('detects EWP from filename', () => {
-        expect(jpkTypeFromFilename('JPK_EWP_2024.xml')).toEqual({ type: 'EWP', subtype: null })
+        expect(jpkTypeFromFilename('JPK_EWP_2024.xml')).toEqual({ type: 'EWP', subtype: null, confidence: 'high' })
       })
 
       it('detects KR_PD from filename', () => {
-        expect(jpkTypeFromFilename('JPK_KR_PD_dane.xml')).toEqual({ type: 'KR_PD', subtype: null })
+        expect(jpkTypeFromFilename('JPK_KR_PD_dane.xml')).toEqual({ type: 'KR_PD', subtype: null, confidence: 'high' })
       })
 
       it('detects ST from filename', () => {
-        expect(jpkTypeFromFilename('JPK_ST_2024.xml')).toEqual({ type: 'ST', subtype: null })
+        expect(jpkTypeFromFilename('JPK_ST_2024.xml')).toEqual({ type: 'ST', subtype: null, confidence: 'high' })
       })
 
       it('detects ST_KR from filename (before ST match)', () => {
-        expect(jpkTypeFromFilename('JPK_ST_KR_export.xml')).toEqual({ type: 'ST_KR', subtype: null })
+        expect(jpkTypeFromFilename('JPK_ST_KR_export.xml')).toEqual({ type: 'ST_KR', subtype: null, confidence: 'high' })
       })
 
       it('detects KR from filename', () => {
-        expect(jpkTypeFromFilename('JPK_KR_export.xml')).toEqual({ type: 'KR', subtype: null })
+        expect(jpkTypeFromFilename('JPK_KR_export.xml')).toEqual({ type: 'KR', subtype: null, confidence: 'high' })
       })
     })
 
     describe('separator variations in filenames', () => {
       it('handles space separator', () => {
-        expect(jpkTypeFromFilename('JPK V7M export.txt')).toEqual({ type: 'V7M', subtype: 'V7M' })
+        expect(jpkTypeFromFilename('JPK V7M export.txt')).toEqual({ type: 'V7M', subtype: 'V7M', confidence: 'high' })
       })
 
       it('handles dash separator', () => {
-        expect(jpkTypeFromFilename('JPK-FA-2024.xml')).toEqual({ type: 'FA', subtype: null })
+        expect(jpkTypeFromFilename('JPK-FA-2024.xml')).toEqual({ type: 'FA', subtype: null, confidence: 'high' })
       })
 
       it('handles no separator', () => {
-        expect(jpkTypeFromFilename('JPKV7M_data.txt')).toEqual({ type: 'V7M', subtype: 'V7M' })
+        expect(jpkTypeFromFilename('JPKV7M_data.txt')).toEqual({ type: 'V7M', subtype: 'V7M', confidence: 'high' })
       })
     })
 
     describe('case insensitivity', () => {
       it('matches lowercase filename', () => {
-        expect(jpkTypeFromFilename('jpk_v7m_data.txt')).toEqual({ type: 'V7M', subtype: 'V7M' })
+        expect(jpkTypeFromFilename('jpk_v7m_data.txt')).toEqual({ type: 'V7M', subtype: 'V7M', confidence: 'high' })
       })
 
       it('matches mixed case filename', () => {
-        expect(jpkTypeFromFilename('Jpk_Fa_export.xml')).toEqual({ type: 'FA', subtype: null })
+        expect(jpkTypeFromFilename('Jpk_Fa_export.xml')).toEqual({ type: 'FA', subtype: null, confidence: 'high' })
       })
     })
 
     describe('no match', () => {
       it('returns null for a filename with no JPK type', () => {
-        expect(jpkTypeFromFilename('random_file.txt')).toBeNull()
+        expect(jpkTypeFromFilename('dane.csv')).toBeNull()
       })
 
       it('returns null for an empty filename', () => {
         expect(jpkTypeFromFilename('')).toBeNull()
+      })
+    })
+  })
+
+  describe('jpkTypeFromHeaders', () => {
+    describe('V7M detection', () => {
+      it('detects V7M from LpSprzedazy + LpZakupu', () => {
+        expect(jpkTypeFromHeaders(['LpSprzedazy', 'LpZakupu', 'K_10', 'K_40'])).toEqual({
+          type: 'V7M', subtype: 'V7M', confidence: 'medium'
+        })
+      })
+
+      it('detects V7M from DowodSprzedazy alone', () => {
+        expect(jpkTypeFromHeaders(['DowodSprzedazy', 'DataSprzedazy'])).toEqual({
+          type: 'V7M', subtype: 'V7M', confidence: 'medium'
+        })
+      })
+
+      it('detects V7M from K_10', () => {
+        expect(jpkTypeFromHeaders(['Id', 'K_10', 'K_11'])).toEqual({
+          type: 'V7M', subtype: 'V7M', confidence: 'medium'
+        })
+      })
+
+      it('detects V7M from K_11', () => {
+        expect(jpkTypeFromHeaders(['K_11'])).toEqual({
+          type: 'V7M', subtype: 'V7M', confidence: 'medium'
+        })
+      })
+
+      it('detects V7M from LpZakupu', () => {
+        expect(jpkTypeFromHeaders(['LpZakupu', 'DowodZakupu'])).toEqual({
+          type: 'V7M', subtype: 'V7M', confidence: 'medium'
+        })
+      })
+
+      it('detects V7M from K_40', () => {
+        expect(jpkTypeFromHeaders(['K_40', 'DataZakupu'])).toEqual({
+          type: 'V7M', subtype: 'V7M', confidence: 'medium'
+        })
+      })
+    })
+
+    describe('FA detection', () => {
+      it('detects FA from NumerFaktury', () => {
+        expect(jpkTypeFromHeaders(['NumerFaktury', 'DataWystawienia'])).toEqual({
+          type: 'FA', subtype: null, confidence: 'medium'
+        })
+      })
+
+      it('detects FA from P_2', () => {
+        expect(jpkTypeFromHeaders(['P_2', 'P_3A', 'P_15'])).toEqual({
+          type: 'FA', subtype: null, confidence: 'medium'
+        })
+      })
+
+      it('detects FA from RodzajFaktury', () => {
+        expect(jpkTypeFromHeaders(['RodzajFaktury'])).toEqual({
+          type: 'FA', subtype: null, confidence: 'medium'
+        })
+      })
+    })
+
+    describe('MAG detection', () => {
+      it('detects MAG from NumerWiersza + IloscWydana', () => {
+        expect(jpkTypeFromHeaders(['NumerWiersza', 'IloscWydana', 'CenaJednostkowa'])).toEqual({
+          type: 'MAG', subtype: null, confidence: 'medium'
+        })
+      })
+
+      it('detects MAG from NumerWiersza + IloscPrzyjeta', () => {
+        expect(jpkTypeFromHeaders(['NumerWiersza', 'IloscPrzyjeta'])).toEqual({
+          type: 'MAG', subtype: null, confidence: 'medium'
+        })
+      })
+
+      it('does NOT detect MAG from NumerWiersza alone', () => {
+        expect(jpkTypeFromHeaders(['NumerWiersza', 'Something'])).not.toEqual(
+          expect.objectContaining({ type: 'MAG' })
+        )
+      })
+    })
+
+    describe('WB detection', () => {
+      it('detects WB from NumerRachunku', () => {
+        expect(jpkTypeFromHeaders(['NumerRachunku', 'KwotaOperacji'])).toEqual({
+          type: 'WB', subtype: null, confidence: 'medium'
+        })
+      })
+
+      it('detects WB from KwotaOperacji + SaldoOperacji', () => {
+        expect(jpkTypeFromHeaders(['KwotaOperacji', 'SaldoOperacji'])).toEqual({
+          type: 'WB', subtype: null, confidence: 'medium'
+        })
+      })
+    })
+
+    describe('PKPIR detection', () => {
+      it('detects PKPIR from KodKontrahenta + Przychod', () => {
+        expect(jpkTypeFromHeaders(['KodKontrahenta', 'Przychod', 'Rozchod'])).toEqual({
+          type: 'PKPIR', subtype: null, confidence: 'medium'
+        })
+      })
+
+      it('does NOT detect PKPIR from KodKontrahenta alone', () => {
+        // KodKontrahenta alone → falls through to V7M rules if present, or null
+        const result = jpkTypeFromHeaders(['KodKontrahenta'])
+        expect(result?.type).not.toBe('PKPIR')
+      })
+    })
+
+    describe('case insensitivity and trimming', () => {
+      it('trims whitespace from headers', () => {
+        expect(jpkTypeFromHeaders([' LpSprzedazy '])).toEqual({
+          type: 'V7M', subtype: 'V7M', confidence: 'medium'
+        })
+      })
+
+      it('handles mixed-case headers', () => {
+        expect(jpkTypeFromHeaders(['lpsprzedazy'])).toEqual({
+          type: 'V7M', subtype: 'V7M', confidence: 'medium'
+        })
+      })
+
+      it('handles uppercase headers', () => {
+        expect(jpkTypeFromHeaders(['NUMERFAKTURY'])).toEqual({
+          type: 'FA', subtype: null, confidence: 'medium'
+        })
+      })
+    })
+
+    describe('no match', () => {
+      it('returns null for unknown headers', () => {
+        expect(jpkTypeFromHeaders(['foo', 'bar'])).toBeNull()
+      })
+
+      it('returns null for empty array', () => {
+        expect(jpkTypeFromHeaders([])).toBeNull()
       })
     })
   })
