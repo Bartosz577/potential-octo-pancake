@@ -170,10 +170,11 @@ function SavedCompanySelector({
 }
 
 export function CompanyStep(): React.JSX.Element {
-  const { company, period, savedCompanies, setCompany, setPeriod, saveCompany, loadCompany, removeSavedCompany } =
+  const { company, savedCompanies, setCompany, setPeriod, getPeriod, saveCompany, loadCompany, removeSavedCompany } =
     useCompanyStore()
   const { files } = useImportStore()
   const { activeJpkType, jpkSubtype, setJpkSubtype, setCurrentStep } = useAppStore()
+  const period = getPeriod(activeJpkType)
 
   const faCompanyData = useMemo(() => extractCompanyFromFA(files), [files])
 
@@ -191,11 +192,11 @@ export function CompanyStep(): React.JSX.Element {
   const handleFillFromFA = (): void => {
     if (!faCompanyData) return
     setCompany(faCompanyData)
-    if (filePeriod) setPeriod(filePeriod)
+    if (filePeriod) setPeriod(activeJpkType, filePeriod)
   }
 
   const handleFillPeriod = (): void => {
-    if (filePeriod) setPeriod(filePeriod)
+    if (filePeriod) setPeriod(activeJpkType, filePeriod)
   }
 
   const nipNormalized = normalizeNip(company.nip)
@@ -208,7 +209,7 @@ export function CompanyStep(): React.JSX.Element {
     (normalizeNip(faCompanyData.nip || '') !== nipNormalized ||
      faCompanyData.fullName !== company.fullName)
   const periodDiffers = filePeriod &&
-    (filePeriod.year !== period.year || filePeriod.month !== period.month)
+    (filePeriod.year !== period.year || filePeriod.month !== (period.month ?? 1))
 
   return (
     <div className="flex-1 flex flex-col p-6 gap-5 overflow-auto">
@@ -324,8 +325,8 @@ export function CompanyStep(): React.JSX.Element {
           <FormField label="Telefon" optional>
             <input
               type="tel"
-              value={company.phone}
-              onChange={(e) => setCompany({ phone: e.target.value })}
+              value={company.telefon ?? ''}
+              onChange={(e) => setCompany({ telefon: e.target.value })}
               placeholder="+48 000 000 000"
               className="w-full px-3 py-2 bg-bg-input rounded-lg text-sm text-text-primary placeholder:text-text-muted border border-border focus:border-accent outline-none transition-colors"
             />
@@ -378,15 +379,15 @@ export function CompanyStep(): React.JSX.Element {
           <FormField label="Rok">
             <SelectInput
               value={period.year}
-              onChange={(v) => setPeriod({ year: parseInt(v, 10) })}
+              onChange={(v) => setPeriod(activeJpkType, { year: parseInt(v, 10) })}
               options={YEARS.map((y) => ({ value: y, label: String(y) }))}
             />
           </FormField>
 
           <FormField label="Miesiąc">
             <SelectInput
-              value={period.month}
-              onChange={(v) => setPeriod({ month: parseInt(v, 10) })}
+              value={period.month ?? 1}
+              onChange={(v) => setPeriod(activeJpkType, { month: parseInt(v, 10) })}
               options={MONTHS.map((m, i) => ({ value: i + 1, label: `${i + 1} — ${m}` }))}
             />
           </FormField>
@@ -398,7 +399,7 @@ export function CompanyStep(): React.JSX.Element {
                   type="radio"
                   name="celZlozenia"
                   checked={period.celZlozenia === 1}
-                  onChange={() => setPeriod({ celZlozenia: 1 })}
+                  onChange={() => setPeriod(activeJpkType, { celZlozenia: 1 })}
                   className="accent-accent"
                 />
                 <span className="text-sm text-text-primary">Złożenie (1)</span>
@@ -408,7 +409,7 @@ export function CompanyStep(): React.JSX.Element {
                   type="radio"
                   name="celZlozenia"
                   checked={period.celZlozenia === 2}
-                  onChange={() => setPeriod({ celZlozenia: 2 })}
+                  onChange={() => setPeriod(activeJpkType, { celZlozenia: 2 })}
                   className="accent-accent"
                 />
                 <span className="text-sm text-text-primary">Korekta (2)</span>

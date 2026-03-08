@@ -99,7 +99,7 @@ export function generateVdekXml(
   xml += tagAttr('CelZlozenia', { poz: 'P_7' }, String(period.celZlozenia), 2)
   xml += tag('KodUrzedu', company.kodUrzedu, 2)
   xml += tag('Rok', String(period.year), 2)
-  xml += tag('Miesiac', String(period.month), 2)
+  xml += tag('Miesiac', String((period.month ?? 1)), 2)
   xml += '  </Naglowek>\n'
 
   // Podmiot1
@@ -204,7 +204,7 @@ export function getVdekSummary(
   period: PeriodData
 ): XmlSummary {
   const nip = normalizeNip(company.nip)
-  const filename = `JPK_V7M_${nip}_${period.year}-${String(period.month).padStart(2, '0')}.xml`
+  const filename = `JPK_V7M_${nip}_${period.year}-${String((period.month ?? 1)).padStart(2, '0')}.xml`
 
   let vatTotal = 0
   for (const row of file.rows) {

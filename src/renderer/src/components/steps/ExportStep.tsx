@@ -169,7 +169,7 @@ function HighlightedLine({ line }: { line: string }): React.JSX.Element {
 
 export function ExportStep(): React.JSX.Element {
   const { files } = useImportStore()
-  const { company, period } = useCompanyStore()
+  const { company, getPeriod } = useCompanyStore()
   const { jpkSubtype, setCurrentStep, setActiveJpkType, setJpkSubtype, setMode, setValidationXml } = useAppStore()
   const { activeMappings, clearMappings } = useMappingStore()
   const { clearFiles } = useImportStore()
@@ -196,10 +196,11 @@ export function ExportStep(): React.JSX.Element {
     const map = new Map<string, XmlExportResult | null>()
     for (const file of files) {
       const mappings = activeMappings[file.id] || []
+      const period = getPeriod(file.jpkType)
       map.set(file.id, generateXmlForFile(file, mappings, company, period, jpkSubtype))
     }
     return map
-  }, [files, activeMappings, company, period, jpkSubtype])
+  }, [files, activeMappings, company, getPeriod, jpkSubtype])
 
   const activeResult = activeFile ? results.get(activeFile.id) ?? null : null
 

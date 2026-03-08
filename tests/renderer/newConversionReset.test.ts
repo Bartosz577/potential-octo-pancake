@@ -58,9 +58,9 @@ describe('New Conversion Reset', () => {
         regon: '123456789',
         kodUrzedu: '0202',
         email: 'test@test.pl',
-        phone: '123456789'
+        telefon: '123456789'
       },
-      period: { year: 2025, month: 12, celZlozenia: 1 }
+      periods: { V7M: { year: 2025, month: 12, celZlozenia: 1 } }
     })
   })
 
@@ -115,7 +115,7 @@ describe('New Conversion Reset', () => {
 
   it('preserves period data after reset', () => {
     simulateNewConversion()
-    const { period } = useCompanyStore.getState()
+    const period = useCompanyStore.getState().getPeriod('V7M')
     expect(period.year).toBe(2025)
     expect(period.month).toBe(12)
   })

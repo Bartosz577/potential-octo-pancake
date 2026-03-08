@@ -1,7 +1,6 @@
 import { create } from 'zustand'
 import type { ParsedFile, JpkType } from '../types'
-import type { JpkSubtype } from '../../../../core/mapping/jpkTypeUtils'
-import { useAppStore } from './appStore'
+import { useAppStore, type JpkSubtype } from './appStore'
 
 interface ImportState {
   files: ParsedFile[]

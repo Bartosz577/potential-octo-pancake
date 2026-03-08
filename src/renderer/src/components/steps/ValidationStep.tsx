@@ -357,10 +357,12 @@ function ConversionValidationView(): React.JSX.Element {
   const { setCurrentStep } = useAppStore()
   const { activeMappings } = useMappingStore()
   const company = useCompanyStore((s) => s.company)
-  const period = useCompanyStore((s) => s.period)
+  const getPeriod = useCompanyStore((s) => s.getPeriod)
   const toast = useToast()
   const updateFile = useImportStore((s) => s.updateFile)
 
+  // Use V7M period as the default for validation (validator uses inline company/period objects)
+  const period = getPeriod('V7M')
   const { reports, totalErrors, totalWarnings, totalAutoFixes } = useMemo(
     () => validateFiles(files, activeMappings, company, period),
     [files, activeMappings, company, period]

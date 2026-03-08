@@ -10,8 +10,7 @@ const company: CompanyData = {
   fullName: 'Test Sp. z o.o.',
   regon: '123456789',
   kodUrzedu: '1471',
-  email: 'test@test.pl',
-  phone: ''
+  email: 'test@test.pl'
 }
 
 const period: PeriodData = {

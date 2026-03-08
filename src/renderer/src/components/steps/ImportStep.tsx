@@ -22,7 +22,7 @@ import {
 } from 'lucide-react'
 import { mergeJpkFiles } from '../../../../core/JpkMerger'
 import { convertJpkVersion, detectUpgradeNeeded } from '../../../../core/JpkVersionConverter'
-import { normalizeJpkType as coreNormalizeJpkType, jpkTypeFromFilename, jpkTypeFromHeaders, jpkTypeToLabel, getAllJpkTypes } from '../../../../core/mapping/jpkTypeUtils'
+import { normalizeJpkType as coreNormalizeJpkType, jpkTypeFromFilename, jpkTypeFromHeaders, jpkTypeToLabel } from '../../../../core/mapping/jpkTypeUtils'
 import type { JpkSubtype } from '../../../../core/mapping/jpkTypeUtils'
 import { detectJpkLabel } from '@renderer/utils/validator'
 import { useImportStore } from '@renderer/stores/importStore'

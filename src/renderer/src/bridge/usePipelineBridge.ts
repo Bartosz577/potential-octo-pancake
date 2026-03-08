@@ -11,7 +11,7 @@ export function usePipelineBridge() {
   const files = useImportStore((s) => s.files)
   const activeMappings = useMappingStore((s) => s.activeMappings)
   const company = useCompanyStore((s) => s.company)
-  const period = useCompanyStore((s) => s.period)
+  const getPeriod = useCompanyStore((s) => s.getPeriod)
   const addRecord = useHistoryStore((s) => s.addRecord)
 
   const status = usePipelineStore((s) => s.status)
@@ -29,7 +29,7 @@ export function usePipelineBridge() {
     try {
       for (const file of files) {
         const mappings = activeMappings[file.id] || []
-        const result = processFile(file, mappings, company, period, { skipXml: true })
+        const result = processFile(file, mappings, company, getPeriod(file.jpkType), { skipXml: true })
         setFileResult(file.id, result)
         // Yield to React rendering
         await Promise.resolve()
@@ -39,7 +39,7 @@ export function usePipelineBridge() {
       setStatus('error')
       setError(err instanceof Error ? err.message : String(err))
     }
-  }, [files, activeMappings, company, period, setFileResult, setStatus, setError])
+  }, [files, activeMappings, company, getPeriod, setFileResult, setStatus, setError])
 
   const generateAll = useCallback(async () => {
     setStatus('generating')
@@ -48,7 +48,7 @@ export function usePipelineBridge() {
     try {
       for (const file of files) {
         const mappings = activeMappings[file.id] || []
-        const result = processFile(file, mappings, company, period)
+        const result = processFile(file, mappings, company, getPeriod(file.jpkType))
         setFileResult(file.id, result)
 
         // Save successful exports to history
@@ -72,7 +72,7 @@ export function usePipelineBridge() {
       setStatus('error')
       setError(err instanceof Error ? err.message : String(err))
     }
-  }, [files, activeMappings, company, period, addRecord, setFileResult, setStatus, setError])
+  }, [files, activeMappings, company, getPeriod, addRecord, setFileResult, setStatus, setError])
 
   const processOne = useCallback(
     async (fileId: string) => {
@@ -80,7 +80,7 @@ export function usePipelineBridge() {
       if (!file) return
 
       const mappings = activeMappings[file.id] || []
-      const result = processFile(file, mappings, company, period)
+      const result = processFile(file, mappings, company, getPeriod(file.jpkType))
       setFileResult(file.id, result)
 
       if (result.status === 'success' && result.xmlResult) {
@@ -96,7 +96,7 @@ export function usePipelineBridge() {
         })
       }
     },
-    [files, activeMappings, company, period, addRecord, setFileResult]
+    [files, activeMappings, company, getPeriod, addRecord, setFileResult]
   )
 
   const runAll = useCallback(async () => {

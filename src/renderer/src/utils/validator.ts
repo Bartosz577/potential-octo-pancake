@@ -465,8 +465,8 @@ function validateSumyKontrolne(
 function validateSchematXsd(
   file: ParsedFile,
   mappings: ColumnMapping[],
-  company?: { nip: string; fullName: string; regon: string; kodUrzedu: string; email: string; phone: string },
-  period?: { year: number; month: number; celZlozenia: 1 | 2 }
+  company?: { nip: string; fullName: string; regon: string; kodUrzedu: string; email: string; telefon?: string },
+  period?: { year: number; month?: number; celZlozenia: 1 | 2 }
 ): ValidationItem[] {
   const items: ValidationItem[] = []
 
@@ -532,8 +532,8 @@ function validateSchematXsd(
 export function validateFile(
   file: ParsedFile,
   mappings: ColumnMapping[],
-  company?: { nip: string; fullName: string; regon: string; kodUrzedu: string; email: string; phone: string },
-  period?: { year: number; month: number; celZlozenia: 1 | 2 }
+  company?: { nip: string; fullName: string; regon: string; kodUrzedu: string; email: string; telefon?: string },
+  period?: { year: number; month?: number; celZlozenia: 1 | 2 }
 ): ValidationReport {
   const struktura = validateStruktura(file, mappings, file.jpkType, file.subType)
   const merytoryka = validateMerytoryka(file, mappings, file.jpkType, file.subType)
@@ -559,8 +559,8 @@ export function validateFile(
 export function validateFiles(
   files: ParsedFile[],
   allMappings: Record<string, ColumnMapping[]>,
-  company?: { nip: string; fullName: string; regon: string; kodUrzedu: string; email: string; phone: string },
-  period?: { year: number; month: number; celZlozenia: 1 | 2 }
+  company?: { nip: string; fullName: string; regon: string; kodUrzedu: string; email: string; telefon?: string },
+  period?: { year: number; month?: number; celZlozenia: 1 | 2 }
 ): {
   reports: Map<string, ValidationReport>
   totalErrors: number

@@ -102,7 +102,7 @@ function buildV7mInput(
       celZlozenia: period.celZlozenia,
       kodUrzedu: company.kodUrzedu,
       rok: period.year,
-      miesiac: period.month,
+      miesiac: (period.month ?? 1),
       nazwaSystemu: 'JPK Converter 2.0'
     },
     podmiot: {
@@ -121,13 +121,13 @@ function buildV7kInput(
   company: CompanyData,
   period: PeriodData
 ): V7kGeneratorInput {
-  const kwartal = Math.ceil(period.month / 3)
+  const kwartal = Math.ceil((period.month ?? 1) / 3)
   return {
     naglowek: {
       celZlozenia: period.celZlozenia,
       kodUrzedu: company.kodUrzedu,
       rok: period.year,
-      miesiac: period.month,
+      miesiac: (period.month ?? 1),
       nazwaSystemu: 'JPK Converter 2.0'
     },
     podmiot: {
@@ -148,7 +148,7 @@ function buildFaInput(
   company: CompanyData,
   period: PeriodData
 ): FaGeneratorInput {
-  const mm = String(period.month).padStart(2, '0')
+  const mm = String((period.month ?? 1)).padStart(2, '0')
   return {
     naglowek: {
       dataOd: file.dateFrom || `${period.year}-${mm}-01`,
@@ -197,7 +197,7 @@ function buildMagInput(
   company: CompanyData,
   period: PeriodData
 ): MagGeneratorInput {
-  const mm = String(period.month).padStart(2, '0')
+  const mm = String((period.month ?? 1)).padStart(2, '0')
   const config = MAG_CONFIG[file.subType] || MAG_CONFIG['WZ']
   const documents = groupMagDocuments(records, config.numField)
 
@@ -229,7 +229,7 @@ function buildWbInput(
   company: CompanyData,
   period: PeriodData
 ): WbGeneratorInput {
-  const mm = String(period.month).padStart(2, '0')
+  const mm = String((period.month ?? 1)).padStart(2, '0')
   const wiersze: WbWiersz[] = records.map((r) => ({
     dataOperacji: r['DataOperacji'] || '',
     nazwaPodmiotu: r['NazwaKontrahenta'] || r['NazwaPodmiotu'] || '',
@@ -263,7 +263,7 @@ function buildPkpirInput(
   company: CompanyData,
   period: PeriodData
 ): PkpirGeneratorInput {
-  const mm = String(period.month).padStart(2, '0')
+  const mm = String((period.month ?? 1)).padStart(2, '0')
   return {
     naglowek: {
       celZlozenia: period.celZlozenia,
@@ -293,7 +293,7 @@ function buildEwpInput(
   company: CompanyData,
   period: PeriodData
 ): EwpGeneratorInput {
-  const mm = String(period.month).padStart(2, '0')
+  const mm = String((period.month ?? 1)).padStart(2, '0')
   return {
     naglowek: {
       celZlozenia: period.celZlozenia,
@@ -317,7 +317,7 @@ function buildKrPdInput(
   company: CompanyData,
   period: PeriodData
 ): KrPdGeneratorInput {
-  const mm = String(period.month).padStart(2, '0')
+  const mm = String((period.month ?? 1)).padStart(2, '0')
   return {
     naglowek: {
       celZlozenia: period.celZlozenia,
@@ -350,7 +350,7 @@ function buildStInput(
   company: CompanyData,
   period: PeriodData
 ): StGeneratorInput {
-  const mm = String(period.month).padStart(2, '0')
+  const mm = String((period.month ?? 1)).padStart(2, '0')
   return {
     naglowek: {
       celZlozenia: period.celZlozenia,
@@ -403,7 +403,7 @@ function buildFaRrInput(
   company: CompanyData,
   period: PeriodData
 ): FaRrGeneratorInput {
-  const mm = String(period.month).padStart(2, '0')
+  const mm = String((period.month ?? 1)).padStart(2, '0')
   return {
     naglowek: {
       dataOd: file.dateFrom || `${period.year}-${mm}-01`,
@@ -434,7 +434,7 @@ function buildKrInput(
   company: CompanyData,
   period: PeriodData
 ): KrGeneratorInput {
-  const mm = String(period.month).padStart(2, '0')
+  const mm = String((period.month ?? 1)).padStart(2, '0')
   return {
     naglowek: {
       dataOd: file.dateFrom || `${period.year}-${mm}-01`,
@@ -510,7 +510,7 @@ export function generateXmlForFile(
 
   const xml = generator.generate(input)
   const nip = normalizeNip(company.nip)
-  const mm = String(period.month).padStart(2, '0')
+  const mm = String(period.month ?? 1).padStart(2, '0')
   const prefix = file.jpkType === 'V7M' && jpkSubtype === 'V7K' ? 'JPK_V7K' : JPK_FILE_PREFIXES[file.jpkType]
   const filename = `${prefix}_${nip}_${period.year}-${mm}.xml`
 

@@ -7,8 +7,7 @@ const emptyCompany: CompanyData = {
   fullName: '',
   regon: '',
   kodUrzedu: '',
-  email: '',
-  phone: ''
+  email: ''
 }
 
 const currentYear = new Date().getFullYear()
@@ -19,7 +18,7 @@ describe('companyStore', () => {
     localStorage.clear()
     useCompanyStore.setState({
       company: { ...emptyCompany },
-      period: { year: currentYear, month: currentMonth, celZlozenia: 1 },
+      periods: { V7M: { year: currentYear, month: currentMonth, celZlozenia: 1 } },
       savedCompanies: []
     })
   })
@@ -46,22 +45,36 @@ describe('companyStore', () => {
     })
   })
 
-  describe('setPeriod', () => {
-    it('partially updates period data', () => {
-      useCompanyStore.getState().setPeriod({ year: 2025 })
+  describe('setPeriod / getPeriod', () => {
+    it('partially updates period for given JpkType', () => {
+      useCompanyStore.getState().setPeriod('V7M', { year: 2025 })
 
-      const { period } = useCompanyStore.getState()
+      const period = useCompanyStore.getState().getPeriod('V7M')
       expect(period.year).toBe(2025)
       expect(period.month).toBe(currentMonth) // unchanged
       expect(period.celZlozenia).toBe(1) // unchanged
     })
 
     it('can update multiple period fields', () => {
-      useCompanyStore.getState().setPeriod({ month: 6, celZlozenia: 2 })
+      useCompanyStore.getState().setPeriod('V7M', { month: 6, celZlozenia: 2 })
 
-      const { period } = useCompanyStore.getState()
+      const period = useCompanyStore.getState().getPeriod('V7M')
       expect(period.month).toBe(6)
       expect(period.celZlozenia).toBe(2)
+    })
+
+    it('returns default period for types with no explicit period', () => {
+      const period = useCompanyStore.getState().getPeriod('FA')
+      expect(period.year).toBe(currentYear)
+      expect(period.celZlozenia).toBe(1)
+    })
+
+    it('stores separate periods per JpkType', () => {
+      useCompanyStore.getState().setPeriod('V7M', { month: 3 })
+      useCompanyStore.getState().setPeriod('FA', { month: 6 })
+
+      expect(useCompanyStore.getState().getPeriod('V7M').month).toBe(3)
+      expect(useCompanyStore.getState().getPeriod('FA').month).toBe(6)
     })
   })
 
@@ -124,7 +137,7 @@ describe('companyStore', () => {
         regon: '012345678',
         kodUrzedu: '1471',
         email: 'test@test.pl',
-        phone: '123456789'
+        telefon: '123456789'
       })
       useCompanyStore.getState().saveCompany()
 
