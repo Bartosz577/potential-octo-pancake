@@ -43,31 +43,31 @@ export interface XmlExportResult {
 }
 
 const JPK_REGISTRY_KEYS: Record<JpkType, string> = {
-  JPK_VDEK: 'JPK_V7M',
-  JPK_FA: 'JPK_FA',
-  JPK_MAG: 'JPK_MAG',
-  JPK_WB: 'JPK_WB',
-  JPK_PKPIR: 'JPK_PKPIR',
-  JPK_EWP: 'JPK_EWP',
-  JPK_KR_PD: 'JPK_KR_PD',
-  JPK_ST: 'JPK_ST',
-  JPK_ST_KR: 'JPK_ST_KR',
-  JPK_FA_RR: 'JPK_FA_RR',
-  JPK_KR: 'JPK_KR'
+  V7M: 'JPK_V7M',
+  FA: 'JPK_FA',
+  MAG: 'JPK_MAG',
+  WB: 'JPK_WB',
+  PKPIR: 'JPK_PKPIR',
+  EWP: 'JPK_EWP',
+  KR_PD: 'JPK_KR_PD',
+  ST: 'JPK_ST',
+  ST_KR: 'JPK_ST_KR',
+  FA_RR: 'JPK_FA_RR',
+  KR: 'JPK_KR'
 }
 
 const JPK_FILE_PREFIXES: Record<JpkType, string> = {
-  JPK_VDEK: 'JPK_V7M',
-  JPK_FA: 'JPK_FA',
-  JPK_MAG: 'JPK_MAG',
-  JPK_WB: 'JPK_WB',
-  JPK_PKPIR: 'JPK_PKPIR',
-  JPK_EWP: 'JPK_EWP',
-  JPK_KR_PD: 'JPK_KR_PD',
-  JPK_ST: 'JPK_ST',
-  JPK_ST_KR: 'JPK_ST_KR',
-  JPK_FA_RR: 'JPK_FA_RR',
-  JPK_KR: 'JPK_KR'
+  V7M: 'JPK_V7M',
+  FA: 'JPK_FA',
+  MAG: 'JPK_MAG',
+  WB: 'JPK_WB',
+  PKPIR: 'JPK_PKPIR',
+  EWP: 'JPK_EWP',
+  KR_PD: 'JPK_KR_PD',
+  ST: 'JPK_ST',
+  ST_KR: 'JPK_ST_KR',
+  FA_RR: 'JPK_FA_RR',
+  KR: 'JPK_KR'
 }
 
 // Convert file rows to Record<string, string>[] using column mappings
@@ -466,29 +466,29 @@ function buildGeneratorInput(
   jpkSubtype: JpkSubtype = 'V7M'
 ): unknown {
   switch (file.jpkType) {
-    case 'JPK_VDEK':
+    case 'V7M':
       return jpkSubtype === 'V7K'
         ? buildV7kInput(records, company, period)
         : buildV7mInput(records, company, period)
-    case 'JPK_FA':
+    case 'FA':
       return buildFaInput(file, records, company, period)
-    case 'JPK_MAG':
+    case 'MAG':
       return buildMagInput(file, records, company, period)
-    case 'JPK_WB':
+    case 'WB':
       return buildWbInput(file, records, company, period)
-    case 'JPK_PKPIR':
+    case 'PKPIR':
       return buildPkpirInput(file, records, company, period)
-    case 'JPK_EWP':
+    case 'EWP':
       return buildEwpInput(file, records, company, period)
-    case 'JPK_KR_PD':
+    case 'KR_PD':
       return buildKrPdInput(file, records, company, period)
-    case 'JPK_ST':
+    case 'ST':
       return buildStInput(file, records, company, period)
-    case 'JPK_ST_KR':
+    case 'ST_KR':
       return buildStKrInput(file, records, company, period)
-    case 'JPK_FA_RR':
+    case 'FA_RR':
       return buildFaRrInput(file, records, company, period)
-    case 'JPK_KR':
+    case 'KR':
       return buildKrInput(file, records, company, period)
   }
 }
@@ -501,7 +501,7 @@ export function generateXmlForFile(
   jpkSubtype: JpkSubtype = 'V7M'
 ): XmlExportResult | null {
   const baseKey = JPK_REGISTRY_KEYS[file.jpkType]
-  const registryKey = file.jpkType === 'JPK_VDEK' && jpkSubtype === 'V7K' ? 'JPK_V7K' : baseKey
+  const registryKey = file.jpkType === 'V7M' && jpkSubtype === 'V7K' ? 'JPK_V7K' : baseKey
   const generator = generatorRegistry.get(registryKey)
   if (!generator) return null
 
@@ -511,7 +511,7 @@ export function generateXmlForFile(
   const xml = generator.generate(input)
   const nip = normalizeNip(company.nip)
   const mm = String(period.month).padStart(2, '0')
-  const prefix = file.jpkType === 'JPK_VDEK' && jpkSubtype === 'V7K' ? 'JPK_V7K' : JPK_FILE_PREFIXES[file.jpkType]
+  const prefix = file.jpkType === 'V7M' && jpkSubtype === 'V7K' ? 'JPK_V7K' : JPK_FILE_PREFIXES[file.jpkType]
   const filename = `${prefix}_${nip}_${period.year}-${mm}.xml`
 
   return {

@@ -29,17 +29,17 @@ function formatBytes(bytes: number): string {
 }
 
 const TAB_LABELS: Record<JpkType, string> = {
-  JPK_VDEK: 'V7M',
-  JPK_FA: 'FA',
-  JPK_MAG: 'MAG',
-  JPK_WB: 'WB',
-  JPK_PKPIR: 'PKPiR',
-  JPK_EWP: 'EWP',
-  JPK_KR_PD: 'KR_PD',
-  JPK_ST: 'ST',
-  JPK_ST_KR: 'ST_KR',
-  JPK_FA_RR: 'FA_RR',
-  JPK_KR: 'KR'
+  V7M: 'V7M',
+  FA: 'FA',
+  MAG: 'MAG',
+  WB: 'WB',
+  PKPIR: 'PKPiR',
+  EWP: 'EWP',
+  KR_PD: 'KR_PD',
+  ST: 'ST',
+  ST_KR: 'ST_KR',
+  FA_RR: 'FA_RR',
+  KR: 'KR'
 }
 
 // Simple XML syntax highlighting
@@ -182,7 +182,7 @@ export function ExportStep(): React.JSX.Element {
   const handleNewConversion = useCallback(() => {
     clearFiles()
     clearMappings()
-    setActiveJpkType('JPK_VDEK')
+    setActiveJpkType('V7M')
     setJpkSubtype('V7M')
     setMode('conversion')
     setValidationXml(null)

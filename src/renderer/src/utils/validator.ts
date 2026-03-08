@@ -94,17 +94,17 @@ function getMappedColumnsByType(
 
 // Key sum fields per JPK type
 const KEY_SUM_FIELDS: Record<JpkType, string[]> = {
-  JPK_VDEK: ['K_19', 'K_20'],
-  JPK_FA: ['P_15'],
-  JPK_MAG: ['WartoscPozycji'],
-  JPK_WB: ['KwotaOperacji'],
-  JPK_PKPIR: ['K_9'],
-  JPK_EWP: ['K_8'],
-  JPK_KR_PD: ['D_11'],
-  JPK_ST: [],
-  JPK_ST_KR: [],
-  JPK_FA_RR: ['P_12_1'],
-  JPK_KR: ['DziennikKwotaOperacji']
+  V7M: ['K_19', 'K_20'],
+  FA: ['P_15'],
+  MAG: ['WartoscPozycji'],
+  WB: ['KwotaOperacji'],
+  PKPIR: ['K_9'],
+  EWP: ['K_8'],
+  KR_PD: ['D_11'],
+  ST: [],
+  ST_KR: [],
+  FA_RR: ['P_12_1'],
+  KR: ['DziennikKwotaOperacji']
 }
 
 // --- STRUKTURA ---

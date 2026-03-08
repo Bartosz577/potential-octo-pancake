@@ -40,7 +40,7 @@ function makeParsedFile(overrides?: Partial<ParsedFile>): ParsedFile {
     id: 'file-1',
     filename: 'test.txt',
     system: 'NAMOS',
-    jpkType: 'JPK_VDEK',
+    jpkType: 'V7M',
     subType: 'SprzedazWiersz',
     pointCode: '01',
     dateFrom: '2025-01-01',
@@ -72,7 +72,7 @@ const fakeSheet = {
     { index: 0, cells: ['val1', 'val2'] },
     { index: 1, cells: ['val3', 'val4'] }
   ],
-  metadata: { system: 'NAMOS', jpkType: 'JPK_VDEK', subType: 'SprzedazWiersz' }
+  metadata: { system: 'NAMOS', jpkType: 'V7M', subType: 'SprzedazWiersz' }
 }
 
 describe('mappingStore', () => {
@@ -132,7 +132,7 @@ describe('mappingStore', () => {
           id: 'namos-v7m-sprzedaz',
           name: 'NAMOS -> JPK_V7M Sprzedaz',
           system: 'NAMOS',
-          jpkType: 'JPK_VDEK',
+          jpkType: 'V7M',
           subType: 'SprzedazWiersz',
           columnMap: [],
           fields: []
@@ -178,7 +178,7 @@ describe('mappingStore', () => {
       // No profile matched, so matchedProfiles should not have this file
       expect(state.matchedProfiles[file.id]).toBeUndefined()
 
-      expect(mockedGetFieldDefinitions).toHaveBeenCalledWith('JPK_VDEK', 'SprzedazWiersz')
+      expect(mockedGetFieldDefinitions).toHaveBeenCalledWith('V7M', 'SprzedazWiersz')
       expect(mockedAutoMap).toHaveBeenCalled()
     })
 
@@ -320,12 +320,12 @@ describe('mappingStore', () => {
     it('saves a profile from current mappings', () => {
       const mapping = makeMapping()
       useMappingStore.getState().updateMapping('file-1', mapping)
-      useMappingStore.getState().saveProfile('My Profile', 'file-1', 'JPK_VDEK', 'SprzedazWiersz')
+      useMappingStore.getState().saveProfile('My Profile', 'file-1', 'V7M', 'SprzedazWiersz')
 
       const { savedProfiles } = useMappingStore.getState()
       expect(savedProfiles).toHaveLength(1)
       expect(savedProfiles[0].name).toBe('My Profile')
-      expect(savedProfiles[0].jpkType).toBe('JPK_VDEK')
+      expect(savedProfiles[0].jpkType).toBe('V7M')
       expect(savedProfiles[0].subType).toBe('SprzedazWiersz')
       expect(savedProfiles[0].mappings).toHaveLength(1)
       expect(savedProfiles[0].id).toMatch(/^profile_/)
@@ -340,21 +340,21 @@ describe('mappingStore', () => {
       }
       useMappingStore.getState().updateMapping('file-1', makeMapping())
       useMappingStore.getState().setTransformConfig('file-1', config)
-      useMappingStore.getState().saveProfile('Profile with config', 'file-1', 'JPK_VDEK', 'SprzedazWiersz')
+      useMappingStore.getState().saveProfile('Profile with config', 'file-1', 'V7M', 'SprzedazWiersz')
 
       const { savedProfiles } = useMappingStore.getState()
       expect(savedProfiles[0].transformConfig).toEqual(config)
     })
 
     it('saves empty mappings if file has none', () => {
-      useMappingStore.getState().saveProfile('Empty', 'file-1', 'JPK_FA', 'Faktura')
+      useMappingStore.getState().saveProfile('Empty', 'file-1', 'FA', 'Faktura')
 
       const { savedProfiles } = useMappingStore.getState()
       expect(savedProfiles[0].mappings).toEqual([])
     })
 
     it('persists to localStorage', () => {
-      useMappingStore.getState().saveProfile('Persisted', 'file-1', 'JPK_VDEK', 'SprzedazWiersz')
+      useMappingStore.getState().saveProfile('Persisted', 'file-1', 'V7M', 'SprzedazWiersz')
 
       const stored = localStorage.getItem('jpk-mapping-profiles')
       expect(stored).toBeTruthy()
@@ -364,8 +364,8 @@ describe('mappingStore', () => {
     })
 
     it('can save multiple profiles', () => {
-      useMappingStore.getState().saveProfile('Profile A', 'file-1', 'JPK_VDEK', 'SprzedazWiersz')
-      useMappingStore.getState().saveProfile('Profile B', 'file-1', 'JPK_FA', 'Faktura')
+      useMappingStore.getState().saveProfile('Profile A', 'file-1', 'V7M', 'SprzedazWiersz')
+      useMappingStore.getState().saveProfile('Profile B', 'file-1', 'FA', 'Faktura')
 
       expect(useMappingStore.getState().savedProfiles).toHaveLength(2)
     })
@@ -375,7 +375,7 @@ describe('mappingStore', () => {
     it('loads mappings from a saved profile', () => {
       const mapping = makeMapping()
       useMappingStore.getState().updateMapping('file-1', mapping)
-      useMappingStore.getState().saveProfile('LoadMe', 'file-1', 'JPK_VDEK', 'SprzedazWiersz')
+      useMappingStore.getState().saveProfile('LoadMe', 'file-1', 'V7M', 'SprzedazWiersz')
 
       const profileId = useMappingStore.getState().savedProfiles[0].id
 
@@ -395,7 +395,7 @@ describe('mappingStore', () => {
       }
       useMappingStore.getState().updateMapping('file-1', makeMapping())
       useMappingStore.getState().setTransformConfig('file-1', config)
-      useMappingStore.getState().saveProfile('WithConfig', 'file-1', 'JPK_VDEK', 'SprzedazWiersz')
+      useMappingStore.getState().saveProfile('WithConfig', 'file-1', 'V7M', 'SprzedazWiersz')
 
       const profileId = useMappingStore.getState().savedProfiles[0].id
       useMappingStore.getState().loadProfile(profileId, 'file-2')
@@ -413,7 +413,7 @@ describe('mappingStore', () => {
 
       // Save a profile without transform config
       useMappingStore.getState().updateMapping('file-1', makeMapping())
-      useMappingStore.getState().saveProfile('NoConfig', 'file-1', 'JPK_VDEK', 'SprzedazWiersz')
+      useMappingStore.getState().saveProfile('NoConfig', 'file-1', 'V7M', 'SprzedazWiersz')
 
       const profileId = useMappingStore.getState().savedProfiles[0].id
       useMappingStore.getState().loadProfile(profileId, 'file-2')
@@ -437,8 +437,8 @@ describe('mappingStore', () => {
       let now = 1000
       const spy = vi.spyOn(Date, 'now').mockImplementation(() => now++)
 
-      useMappingStore.getState().saveProfile('A', 'f1', 'JPK_VDEK', 'SprzedazWiersz')
-      useMappingStore.getState().saveProfile('B', 'f1', 'JPK_FA', 'Faktura')
+      useMappingStore.getState().saveProfile('A', 'f1', 'V7M', 'SprzedazWiersz')
+      useMappingStore.getState().saveProfile('B', 'f1', 'FA', 'Faktura')
 
       const profiles = useMappingStore.getState().savedProfiles
       expect(profiles).toHaveLength(2)
@@ -453,7 +453,7 @@ describe('mappingStore', () => {
     })
 
     it('persists deletion to localStorage', () => {
-      useMappingStore.getState().saveProfile('ToDelete', 'f1', 'JPK_VDEK', 'SprzedazWiersz')
+      useMappingStore.getState().saveProfile('ToDelete', 'f1', 'V7M', 'SprzedazWiersz')
       const id = useMappingStore.getState().savedProfiles[0].id
 
       useMappingStore.getState().deleteProfile(id)
@@ -463,7 +463,7 @@ describe('mappingStore', () => {
     })
 
     it('does nothing if profile not found', () => {
-      useMappingStore.getState().saveProfile('Keep', 'f1', 'JPK_VDEK', 'SprzedazWiersz')
+      useMappingStore.getState().saveProfile('Keep', 'f1', 'V7M', 'SprzedazWiersz')
       useMappingStore.getState().deleteProfile('nonexistent')
 
       expect(useMappingStore.getState().savedProfiles).toHaveLength(1)
@@ -492,7 +492,7 @@ describe('mappingStore', () => {
     })
 
     it('does not clear savedProfiles', () => {
-      useMappingStore.getState().saveProfile('Preserved', 'f1', 'JPK_VDEK', 'SprzedazWiersz')
+      useMappingStore.getState().saveProfile('Preserved', 'f1', 'V7M', 'SprzedazWiersz')
       useMappingStore.getState().clearMappings()
 
       expect(useMappingStore.getState().savedProfiles).toHaveLength(1)

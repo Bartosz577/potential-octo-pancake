@@ -31,7 +31,7 @@ describe('ConversionPipeline', () => {
         join(TEST_DATA_DIR, '0P549_NAMOS_JPK_VDEK_SprzedazWiersz_2026-01-01_2026-01-31_20260207020039.txt')
       )
       const config: PipelineConfig = {
-        jpkType: 'JPK_VDEK',
+        jpkType: 'V7M',
         subType: 'SprzedazWiersz',
       }
 
@@ -57,7 +57,7 @@ describe('ConversionPipeline', () => {
         join(TEST_DATA_DIR, '0P549_NAMOS_JPK_VDEK_SprzedazWiersz_2026-01-01_2026-01-31_20260207020039.txt')
       )
       const config: PipelineConfig = {
-        jpkType: 'JPK_VDEK',
+        jpkType: 'V7M',
         subType: 'SprzedazWiersz',
       }
 
@@ -80,7 +80,7 @@ describe('ConversionPipeline', () => {
         join(TEST_DATA_DIR, '0P549_NAMOS_JPK_FA_Faktura_2026-01-01_2026-01-31_20260207020039.txt')
       )
       const config: PipelineConfig = {
-        jpkType: 'JPK_FA',
+        jpkType: 'FA',
         subType: 'Faktura',
       }
 
@@ -102,7 +102,7 @@ describe('ConversionPipeline', () => {
         join(TEST_DATA_DIR, '0P549_ESO_JPK_MAG_WZ_2026-01-31_2026-01-31_20260202043950.txt')
       )
       const config: PipelineConfig = {
-        jpkType: 'JPK_MAG',
+        jpkType: 'MAG',
         subType: 'WZ',
       }
 
@@ -129,7 +129,7 @@ describe('ConversionPipeline', () => {
       })
 
       const result = pipeline.runOnSheet(sheet, {
-        jpkType: 'JPK_VDEK',
+        jpkType: 'V7M',
         subType: 'SprzedazWiersz',
       })
 
@@ -143,7 +143,7 @@ describe('ConversionPipeline', () => {
       const sheet = makeSheet({ rows: [] })
 
       const result = pipeline.runOnSheet(sheet, {
-        jpkType: 'JPK_VDEK',
+        jpkType: 'V7M',
         subType: 'SprzedazWiersz',
       })
 
@@ -166,7 +166,7 @@ describe('ConversionPipeline', () => {
       })
 
       const result = pipeline.runOnSheet(sheet, {
-        jpkType: 'JPK_FA',
+        jpkType: 'FA',
         subType: 'Faktura',
       })
 
@@ -186,7 +186,7 @@ describe('ConversionPipeline', () => {
       })
 
       const result = pipeline.runOnSheet(sheet, {
-        jpkType: 'JPK_FA',
+        jpkType: 'FA',
         subType: 'Faktura',
       })
 
@@ -209,7 +209,7 @@ describe('ConversionPipeline', () => {
       })
 
       const result = pipeline.runOnSheet(sheet, {
-        jpkType: 'JPK_VDEK',
+        jpkType: 'V7M',
         subType: 'SprzedazWiersz',
       })
 
@@ -229,7 +229,7 @@ describe('ConversionPipeline', () => {
       })
 
       const result = pipeline.runOnSheet(sheet, {
-        jpkType: 'JPK_VDEK',
+        jpkType: 'V7M',
         subType: 'SprzedazWiersz',
       })
 
@@ -251,7 +251,7 @@ describe('ConversionPipeline', () => {
       })
 
       const result = pipeline.runOnSheet(sheet, {
-        jpkType: 'JPK_FA',
+        jpkType: 'FA',
         subType: 'Faktura',
         skipValidation: true,
       })
@@ -267,7 +267,7 @@ describe('ConversionPipeline', () => {
     it('handles unparseable file', () => {
       const buffer = Buffer.from([0x00, 0x01, 0x02, 0x03]) // garbage
       const result = pipeline.run(buffer, 'garbage.xyz', {
-        jpkType: 'JPK_VDEK',
+        jpkType: 'V7M',
         subType: 'SprzedazWiersz',
       })
 
@@ -283,7 +283,7 @@ describe('ConversionPipeline', () => {
       })
 
       const result = pipeline.runOnSheet(sheet, {
-        jpkType: 'JPK_VDEK',
+        jpkType: 'V7M',
         subType: 'SprzedazWiersz',
       })
 
@@ -308,7 +308,7 @@ describe('ConversionPipeline', () => {
       }
 
       const result = pipeline.run(buffer, 'test.csv', {
-        jpkType: 'JPK_VDEK',
+        jpkType: 'V7M',
         subType: 'SprzedazWiersz',
         customMapping: emptyMapping,
       })
@@ -334,7 +334,7 @@ describe('ConversionPipeline', () => {
       const buffer = Buffer.from(content, 'utf-8')
 
       const result = pipeline.run(buffer, 'test.csv', {
-        jpkType: 'JPK_VDEK',
+        jpkType: 'V7M',
         subType: 'SprzedazWiersz',
       })
 
@@ -366,7 +366,7 @@ describe('ConversionPipeline', () => {
       }
 
       const result = pipeline.runOnSheet(sheet, {
-        jpkType: 'JPK_VDEK',
+        jpkType: 'V7M',
         subType: 'SprzedazWiersz',
         customMapping,
       })
@@ -396,7 +396,7 @@ describe('ConversionPipeline', () => {
       }
 
       const result = pipeline.runOnSheet(sheet, {
-        jpkType: 'JPK_VDEK',
+        jpkType: 'V7M',
         subType: 'SprzedazWiersz',
         customMapping,
       })
@@ -432,7 +432,7 @@ describe('ConversionPipeline', () => {
       }
 
       const result = pipeline.runOnSheet(sheet, {
-        jpkType: 'JPK_VDEK',
+        jpkType: 'V7M',
         subType: 'SprzedazWiersz',
         customMapping,
       })
@@ -462,7 +462,7 @@ describe('ConversionPipeline', () => {
       }
 
       const result = pipeline.runOnSheet(sheet, {
-        jpkType: 'JPK_VDEK',
+        jpkType: 'V7M',
         subType: 'SprzedazWiersz',
         customMapping,
       })
@@ -483,7 +483,7 @@ describe('ConversionPipeline', () => {
       const buffer = Buffer.from(content, 'utf-8')
 
       const result = pipeline.run(buffer, 'headers_only.csv', {
-        jpkType: 'JPK_VDEK',
+        jpkType: 'V7M',
         subType: 'SprzedazWiersz',
       })
 
@@ -506,7 +506,7 @@ describe('ConversionPipeline', () => {
       const buffer = Buffer.from(content, 'utf-8')
 
       const result = pipeline.run(buffer, 'test.csv', {
-        jpkType: 'JPK_VDEK',
+        jpkType: 'V7M',
         subType: 'SprzedazWiersz',
       })
 
@@ -523,7 +523,7 @@ describe('ConversionPipeline', () => {
       // An empty file should fail parsing or return empty sheets
       const buffer = Buffer.from('', 'utf-8')
       const result = pipeline.run(buffer, 'empty.txt', {
-        jpkType: 'JPK_VDEK',
+        jpkType: 'V7M',
         subType: 'SprzedazWiersz',
       })
 
@@ -553,7 +553,7 @@ describe('ConversionPipeline', () => {
       }
 
       const result = pipeline.runOnSheet(sheet, {
-        jpkType: 'JPK_VDEK',
+        jpkType: 'V7M',
         subType: 'SprzedazWiersz',
         customMapping,
       })

@@ -116,16 +116,16 @@ describe('JpkFieldDefinitions', () => {
   })
 
   describe('JPK_SECTIONS', () => {
-    it('has sections for VDEK, FA, and MAG', () => {
-      expect(JPK_SECTIONS['JPK_VDEK.SprzedazWiersz']).toBeDefined()
-      expect(JPK_SECTIONS['JPK_FA.Faktura']).toBeDefined()
-      expect(JPK_SECTIONS['JPK_MAG.WZ']).toBeDefined()
+    it('has sections for V7M, FA, and MAG', () => {
+      expect(JPK_SECTIONS['V7M.SprzedazWiersz']).toBeDefined()
+      expect(JPK_SECTIONS['FA.Faktura']).toBeDefined()
+      expect(JPK_SECTIONS['MAG.WZ']).toBeDefined()
     })
   })
 
   describe('getFieldDefinitions', () => {
     it('returns fields for known JPK type + sub-type', () => {
-      const fields = getFieldDefinitions('JPK_VDEK', 'SprzedazWiersz')
+      const fields = getFieldDefinitions('V7M', 'SprzedazWiersz')
       expect(fields.length).toBeGreaterThan(0)
       expect(fields[0].name).toBe('LpSprzedazy')
     })

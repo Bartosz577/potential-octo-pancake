@@ -15,7 +15,7 @@ describe('parseTxtFile', () => {
     const result: ParsedFile = parseTxtFile(VALID_NAMOS_LINE, 'test_JPK_VDEK.txt', 1024)
 
     expect(result.system).toBe('NAMOS')
-    expect(result.jpkType).toBe('JPK_VDEK')
+    expect(result.jpkType).toBe('V7M')
     expect(result.subType).toBe('SprzedazWiersz')
     expect(result.pointCode).toBe('PP01')
     expect(result.dateFrom).toBe('2024-01')
@@ -68,7 +68,7 @@ describe('parseTxtFile', () => {
     const unknownType =
       'PP01|NAMOS|JPK_UNKNOWN|SprzedazWiersz|2024-01|2024-01|1|PL|1234567890|Firma'
     expect(() => parseTxtFile(unknownType, 'unknown.txt')).toThrow(
-      'Nieznany typ JPK: JPK_UNKNOWN'
+      'Nieznany typ JPK: UNKNOWN'
     )
   })
 
@@ -95,32 +95,32 @@ describe('parseTxtFile', () => {
 describe('detectFileType', () => {
   it('detects JPK_VDEK from filename containing JPK_VDEK', () => {
     const result = detectFileType('PP01_JPK_VDEK_SprzedazWiersz_2024.txt')
-    expect(result).toEqual({ jpkType: 'JPK_VDEK', subType: 'SprzedazWiersz' })
+    expect(result).toEqual({ jpkType: 'V7M', subType: 'SprzedazWiersz' })
   })
 
   it('detects JPK_VDEK from filename containing JPK_V7M', () => {
     const result = detectFileType('export_JPK_V7M_2024.txt')
-    expect(result).toEqual({ jpkType: 'JPK_VDEK', subType: 'SprzedazWiersz' })
+    expect(result).toEqual({ jpkType: 'V7M', subType: 'SprzedazWiersz' })
   })
 
   it('detects JPK_FA from filename', () => {
     const result = detectFileType('invoices_JPK_FA_2024.txt')
-    expect(result).toEqual({ jpkType: 'JPK_FA', subType: 'Faktura' })
+    expect(result).toEqual({ jpkType: 'FA', subType: 'Faktura' })
   })
 
   it('detects JPK_MAG WZ from filename containing both JPK_MAG and _WZ', () => {
     const result = detectFileType('warehouse_JPK_MAG_WZ_2024.txt')
-    expect(result).toEqual({ jpkType: 'JPK_MAG', subType: 'WZ' })
+    expect(result).toEqual({ jpkType: 'MAG', subType: 'WZ' })
   })
 
   it('detects JPK_MAG RW from filename containing both JPK_MAG and _RW', () => {
     const result = detectFileType('internal_JPK_MAG_RW_2024.txt')
-    expect(result).toEqual({ jpkType: 'JPK_MAG', subType: 'RW' })
+    expect(result).toEqual({ jpkType: 'MAG', subType: 'RW' })
   })
 
   it('is case-insensitive', () => {
     const result = detectFileType('export_jpk_vdek_2024.TXT')
-    expect(result).toEqual({ jpkType: 'JPK_VDEK', subType: 'SprzedazWiersz' })
+    expect(result).toEqual({ jpkType: 'V7M', subType: 'SprzedazWiersz' })
   })
 
   it('returns null for unrecognized filename', () => {

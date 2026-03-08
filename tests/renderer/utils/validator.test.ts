@@ -25,7 +25,7 @@ const VALID_PERIOD = {
 }
 
 function makeParsedFile(
-  jpkType: JpkType = 'JPK_VDEK',
+  jpkType: JpkType = 'V7M',
   subType: SubType = 'SprzedazWiersz',
   rows: string[][] = [['1', 'PL', '5261040828', 'Test', 'FV/001', '2024-03-15', '2024-03-15', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '100.00', '23.00']],
   overrides: Partial<ParsedFile> = {}
@@ -97,7 +97,7 @@ describe('validateFile', () => {
         ['1', '2', '3'],
         ['4', '5', '6']
       ]
-      const file = makeParsedFile('JPK_VDEK', 'SprzedazWiersz', rows, { columnCount: 3 })
+      const file = makeParsedFile('V7M', 'SprzedazWiersz', rows, { columnCount: 3 })
       const report = validateFile(file, [], undefined, undefined)
       const colItem = report.groups[0].items.find((i) => i.id === 'str-columns')
       expect(colItem).toBeDefined()
@@ -110,7 +110,7 @@ describe('validateFile', () => {
         ['4', '5'],      // short row
         ['6', '7', '8', '9']  // long row
       ]
-      const file = makeParsedFile('JPK_VDEK', 'SprzedazWiersz', rows, { columnCount: 3 })
+      const file = makeParsedFile('V7M', 'SprzedazWiersz', rows, { columnCount: 3 })
       const report = validateFile(file, [], undefined, undefined)
       const colItem = report.groups[0].items.find((i) => i.id === 'str-columns')
       expect(colItem).toBeDefined()
@@ -122,7 +122,7 @@ describe('validateFile', () => {
     it('limits bad row display to 10 samples', () => {
       // Create 15 rows with wrong column count
       const rows = Array.from({ length: 15 }, () => ['1', '2'])
-      const file = makeParsedFile('JPK_VDEK', 'SprzedazWiersz', rows, { columnCount: 3 })
+      const file = makeParsedFile('V7M', 'SprzedazWiersz', rows, { columnCount: 3 })
       const report = validateFile(file, [], undefined, undefined)
       const colItem = report.groups[0].items.find((i) => i.id === 'str-columns')
       expect(colItem!.severity).toBe('error')
@@ -151,7 +151,7 @@ describe('validateFile', () => {
     })
 
     it('reports format info when file has format', () => {
-      const file = makeParsedFile('JPK_VDEK', 'SprzedazWiersz', [['1']], {
+      const file = makeParsedFile('V7M', 'SprzedazWiersz', [['1']], {
         format: 'txt',
         encoding: 'windows-1250'
       })
@@ -164,7 +164,7 @@ describe('validateFile', () => {
     })
 
     it('reports format without encoding', () => {
-      const file = makeParsedFile('JPK_VDEK', 'SprzedazWiersz', [['1']], {
+      const file = makeParsedFile('V7M', 'SprzedazWiersz', [['1']], {
         format: 'csv'
       })
       const report = validateFile(file, [], undefined, undefined)
@@ -174,7 +174,7 @@ describe('validateFile', () => {
     })
 
     it('does not report format when file has no format', () => {
-      const file = makeParsedFile('JPK_VDEK', 'SprzedazWiersz', [['1']])
+      const file = makeParsedFile('V7M', 'SprzedazWiersz', [['1']])
       const report = validateFile(file, [], undefined, undefined)
       const fmtItem = report.groups[0].items.find((i) => i.id === 'str-format')
       expect(fmtItem).toBeUndefined()
@@ -187,7 +187,7 @@ describe('validateFile', () => {
     it('reports valid 10-digit NIP as info', () => {
       // 5261040828 is a valid NIP (passes checksum)
       const rows = [['1', 'PL', '5261040828']]
-      const file = makeParsedFile('JPK_VDEK', 'SprzedazWiersz', rows, { columnCount: 3 })
+      const file = makeParsedFile('V7M', 'SprzedazWiersz', rows, { columnCount: 3 })
       const mappings = makeMappings([
         { source: 1, target: 'KodKontrahenta' },
         { source: 2, target: 'NrKontrahenta' }
@@ -200,7 +200,7 @@ describe('validateFile', () => {
 
     it('reports PESEL (11 digits) as info', () => {
       const rows = [['1', 'PL', '12345678901']]
-      const file = makeParsedFile('JPK_VDEK', 'SprzedazWiersz', rows, { columnCount: 3 })
+      const file = makeParsedFile('V7M', 'SprzedazWiersz', rows, { columnCount: 3 })
       const mappings = makeMappings([
         { source: 1, target: 'KodKontrahenta' },
         { source: 2, target: 'NrKontrahenta' }
@@ -213,7 +213,7 @@ describe('validateFile', () => {
 
     it('reports foreign NIP (non-PL country) as info', () => {
       const rows = [['1', 'DE', 'DE123456789']]
-      const file = makeParsedFile('JPK_VDEK', 'SprzedazWiersz', rows, { columnCount: 3 })
+      const file = makeParsedFile('V7M', 'SprzedazWiersz', rows, { columnCount: 3 })
       const mappings = makeMappings([
         { source: 1, target: 'KodKontrahenta' },
         { source: 2, target: 'NrKontrahenta' }
@@ -226,7 +226,7 @@ describe('validateFile', () => {
 
     it('reports "brak" NIP as warning', () => {
       const rows = [['1', 'PL', 'brak']]
-      const file = makeParsedFile('JPK_VDEK', 'SprzedazWiersz', rows, { columnCount: 3 })
+      const file = makeParsedFile('V7M', 'SprzedazWiersz', rows, { columnCount: 3 })
       const mappings = makeMappings([
         { source: 1, target: 'KodKontrahenta' },
         { source: 2, target: 'NrKontrahenta' }
@@ -239,7 +239,7 @@ describe('validateFile', () => {
 
     it('reports empty NIP as warning (brak)', () => {
       const rows = [['1', 'PL', '']]
-      const file = makeParsedFile('JPK_VDEK', 'SprzedazWiersz', rows, { columnCount: 3 })
+      const file = makeParsedFile('V7M', 'SprzedazWiersz', rows, { columnCount: 3 })
       const mappings = makeMappings([
         { source: 1, target: 'KodKontrahenta' },
         { source: 2, target: 'NrKontrahenta' }
@@ -251,7 +251,7 @@ describe('validateFile', () => {
 
     it('reports invalid NIP as error', () => {
       const rows = [['1', 'PL', '1234567890']] // invalid checksum
-      const file = makeParsedFile('JPK_VDEK', 'SprzedazWiersz', rows, { columnCount: 3 })
+      const file = makeParsedFile('V7M', 'SprzedazWiersz', rows, { columnCount: 3 })
       const mappings = makeMappings([
         { source: 1, target: 'KodKontrahenta' },
         { source: 2, target: 'NrKontrahenta' }
@@ -267,7 +267,7 @@ describe('validateFile', () => {
       const rows = Array.from({ length: 10 }, (_, i) => [
         String(i), 'PL', `999999999${i}` // all invalid NIPs
       ])
-      const file = makeParsedFile('JPK_VDEK', 'SprzedazWiersz', rows, { columnCount: 3 })
+      const file = makeParsedFile('V7M', 'SprzedazWiersz', rows, { columnCount: 3 })
       const mappings = makeMappings([
         { source: 1, target: 'KodKontrahenta' },
         { source: 2, target: 'NrKontrahenta' }
@@ -282,7 +282,7 @@ describe('validateFile', () => {
 
     it('handles NIP validation without country code column', () => {
       const rows = [['1', '5261040828']]
-      const file = makeParsedFile('JPK_VDEK', 'SprzedazWiersz', rows, { columnCount: 2 })
+      const file = makeParsedFile('V7M', 'SprzedazWiersz', rows, { columnCount: 2 })
       const mappings = makeMappings([
         // No KodKontrahenta mapped, only NrKontrahenta
         { source: 1, target: 'NrKontrahenta' }
@@ -298,7 +298,7 @@ describe('validateFile', () => {
   describe('MERYTORYKA date validation', () => {
     it('reports valid dates in YYYY-MM-DD format as info', () => {
       const rows = [['1', '2024-03-15']]
-      const file = makeParsedFile('JPK_VDEK', 'SprzedazWiersz', rows, { columnCount: 2 })
+      const file = makeParsedFile('V7M', 'SprzedazWiersz', rows, { columnCount: 2 })
       const mappings = makeMappings([
         { source: 1, target: 'DataWystawienia' }
       ])
@@ -310,7 +310,7 @@ describe('validateFile', () => {
 
     it('reports invalid dates as error', () => {
       const rows = [['1', 'not-a-date']]
-      const file = makeParsedFile('JPK_VDEK', 'SprzedazWiersz', rows, { columnCount: 2 })
+      const file = makeParsedFile('V7M', 'SprzedazWiersz', rows, { columnCount: 2 })
       const mappings = makeMappings([
         { source: 1, target: 'DataWystawienia' }
       ])
@@ -322,7 +322,7 @@ describe('validateFile', () => {
 
     it('provides auto-fix for DD.MM.YYYY dates', () => {
       const rows = [['1', '15.03.2024']]
-      const file = makeParsedFile('JPK_VDEK', 'SprzedazWiersz', rows, { columnCount: 2 })
+      const file = makeParsedFile('V7M', 'SprzedazWiersz', rows, { columnCount: 2 })
       const mappings = makeMappings([
         { source: 1, target: 'DataWystawienia' }
       ])
@@ -337,7 +337,7 @@ describe('validateFile', () => {
 
     it('provides auto-fix for DD/MM/YYYY dates', () => {
       const rows = [['1', '15/03/2024']]
-      const file = makeParsedFile('JPK_VDEK', 'SprzedazWiersz', rows, { columnCount: 2 })
+      const file = makeParsedFile('V7M', 'SprzedazWiersz', rows, { columnCount: 2 })
       const mappings = makeMappings([
         { source: 1, target: 'DataWystawienia' }
       ])
@@ -350,7 +350,7 @@ describe('validateFile', () => {
 
     it('skips empty date values', () => {
       const rows = [['1', '']]
-      const file = makeParsedFile('JPK_VDEK', 'SprzedazWiersz', rows, { columnCount: 2 })
+      const file = makeParsedFile('V7M', 'SprzedazWiersz', rows, { columnCount: 2 })
       const mappings = makeMappings([
         { source: 1, target: 'DataWystawienia' }
       ])
@@ -364,7 +364,7 @@ describe('validateFile', () => {
       const rows = Array.from({ length: 10 }, (_, i) => [
         String(i), `invalid-date-${i}`
       ])
-      const file = makeParsedFile('JPK_VDEK', 'SprzedazWiersz', rows, { columnCount: 2 })
+      const file = makeParsedFile('V7M', 'SprzedazWiersz', rows, { columnCount: 2 })
       const mappings = makeMappings([
         { source: 1, target: 'DataWystawienia' }
       ])
@@ -376,7 +376,7 @@ describe('validateFile', () => {
 
     it('shows auto-fix count in details for fixable dates', () => {
       const rows = [['1', '15.03.2024'], ['2', '20.04.2024']]
-      const file = makeParsedFile('JPK_VDEK', 'SprzedazWiersz', rows, { columnCount: 2 })
+      const file = makeParsedFile('V7M', 'SprzedazWiersz', rows, { columnCount: 2 })
       const mappings = makeMappings([
         { source: 1, target: 'DataWystawienia' }
       ])
@@ -391,7 +391,7 @@ describe('validateFile', () => {
   describe('MERYTORYKA decimal validation', () => {
     it('reports valid decimals as info', () => {
       const rows = [['100.00']]
-      const file = makeParsedFile('JPK_VDEK', 'SprzedazWiersz', rows, { columnCount: 1 })
+      const file = makeParsedFile('V7M', 'SprzedazWiersz', rows, { columnCount: 1 })
       const mappings = makeMappings([
         { source: 0, target: 'K_19' }
       ])
@@ -403,7 +403,7 @@ describe('validateFile', () => {
 
     it('reports comma decimals as warning with auto-fix', () => {
       const rows = [['100,50']]
-      const file = makeParsedFile('JPK_VDEK', 'SprzedazWiersz', rows, { columnCount: 1 })
+      const file = makeParsedFile('V7M', 'SprzedazWiersz', rows, { columnCount: 1 })
       const mappings = makeMappings([
         { source: 0, target: 'K_19' }
       ])
@@ -419,7 +419,7 @@ describe('validateFile', () => {
 
     it('reports unparseable decimals as error', () => {
       const rows = [['abc']]
-      const file = makeParsedFile('JPK_VDEK', 'SprzedazWiersz', rows, { columnCount: 1 })
+      const file = makeParsedFile('V7M', 'SprzedazWiersz', rows, { columnCount: 1 })
       const mappings = makeMappings([
         { source: 0, target: 'K_19' }
       ])
@@ -431,7 +431,7 @@ describe('validateFile', () => {
 
     it('skips empty decimal values', () => {
       const rows = [['']]
-      const file = makeParsedFile('JPK_VDEK', 'SprzedazWiersz', rows, { columnCount: 1 })
+      const file = makeParsedFile('V7M', 'SprzedazWiersz', rows, { columnCount: 1 })
       const mappings = makeMappings([
         { source: 0, target: 'K_19' }
       ])
@@ -442,7 +442,7 @@ describe('validateFile', () => {
 
     it('does not show ok when there are comma fixes', () => {
       const rows = [['100,50'], ['200.00']]
-      const file = makeParsedFile('JPK_VDEK', 'SprzedazWiersz', rows, { columnCount: 1 })
+      const file = makeParsedFile('V7M', 'SprzedazWiersz', rows, { columnCount: 1 })
       const mappings = makeMappings([
         { source: 0, target: 'K_19' }
       ])
@@ -454,7 +454,7 @@ describe('validateFile', () => {
 
     it('limits bad decimal samples to 5', () => {
       const rows = Array.from({ length: 10 }, () => ['abc-invalid'])
-      const file = makeParsedFile('JPK_VDEK', 'SprzedazWiersz', rows, { columnCount: 1 })
+      const file = makeParsedFile('V7M', 'SprzedazWiersz', rows, { columnCount: 1 })
       const mappings = makeMappings([
         { source: 0, target: 'K_19' }
       ])
@@ -472,7 +472,7 @@ describe('validateFile', () => {
         ['100.00', '23.00'],
         ['200.00', '46.00']
       ]
-      const file = makeParsedFile('JPK_VDEK', 'SprzedazWiersz', rows, { columnCount: 2 })
+      const file = makeParsedFile('V7M', 'SprzedazWiersz', rows, { columnCount: 2 })
       const mappings = makeMappings([
         { source: 0, target: 'K_19' },
         { source: 1, target: 'K_20' }
@@ -485,7 +485,7 @@ describe('validateFile', () => {
 
     it('includes row count in control sums', () => {
       const rows = [['100.00'], ['200.00'], ['300.00']]
-      const file = makeParsedFile('JPK_VDEK', 'SprzedazWiersz', rows, { columnCount: 1 })
+      const file = makeParsedFile('V7M', 'SprzedazWiersz', rows, { columnCount: 1 })
       const report = validateFile(file, [], undefined, undefined)
       const rowCountItem = report.groups[2].items.find((i) => i.id === 'sum-rows')
       expect(rowCountItem).toBeDefined()
@@ -494,7 +494,7 @@ describe('validateFile', () => {
 
     it('skips key fields that are not mapped', () => {
       const rows = [['100.00']]
-      const file = makeParsedFile('JPK_VDEK', 'SprzedazWiersz', rows, { columnCount: 1 })
+      const file = makeParsedFile('V7M', 'SprzedazWiersz', rows, { columnCount: 1 })
       // No mappings for K_19 or K_20
       const report = validateFile(file, [], undefined, undefined)
       const sumItems = report.groups[2].items.filter((i) => i.id.startsWith('sum-K'))
@@ -503,7 +503,7 @@ describe('validateFile', () => {
 
     it('handles JPK types with no key sum fields', () => {
       const rows = [['1', 'item']]
-      const file = makeParsedFile('JPK_ST', 'STWiersz', rows, { columnCount: 2 })
+      const file = makeParsedFile('ST', 'STWiersz', rows, { columnCount: 2 })
       const report = validateFile(file, [], undefined, undefined)
       // JPK_ST has empty KEY_SUM_FIELDS, should still have row count
       const rowCountItem = report.groups[2].items.find((i) => i.id === 'sum-rows')
@@ -512,7 +512,7 @@ describe('validateFile', () => {
 
     it('parses comma decimals correctly in sum calculation', () => {
       const rows = [['100,50']]
-      const file = makeParsedFile('JPK_VDEK', 'SprzedazWiersz', rows, { columnCount: 1 })
+      const file = makeParsedFile('V7M', 'SprzedazWiersz', rows, { columnCount: 1 })
       const mappings = makeMappings([
         { source: 0, target: 'K_19' }
       ])
@@ -524,7 +524,7 @@ describe('validateFile', () => {
 
     it('handles empty and missing values as 0 in sums', () => {
       const rows = [[''], ['100.00']]
-      const file = makeParsedFile('JPK_VDEK', 'SprzedazWiersz', rows, { columnCount: 1 })
+      const file = makeParsedFile('V7M', 'SprzedazWiersz', rows, { columnCount: 1 })
       const mappings = makeMappings([
         { source: 0, target: 'K_19' }
       ])
@@ -588,7 +588,7 @@ describe('validateFile', () => {
   describe('autoFixCount', () => {
     it('counts total fixes across all groups', () => {
       const rows = [['15.03.2024', '100,50']]
-      const file = makeParsedFile('JPK_VDEK', 'SprzedazWiersz', rows, { columnCount: 2 })
+      const file = makeParsedFile('V7M', 'SprzedazWiersz', rows, { columnCount: 2 })
       const mappings = makeMappings([
         { source: 0, target: 'DataWystawienia' },
         { source: 1, target: 'K_19' }
@@ -603,11 +603,11 @@ describe('validateFile', () => {
 
 describe('validateFiles', () => {
   it('validates multiple files and aggregates totals', () => {
-    const file1 = makeParsedFile('JPK_VDEK', 'SprzedazWiersz', [['1', '2024-03-15', '100.00']], {
+    const file1 = makeParsedFile('V7M', 'SprzedazWiersz', [['1', '2024-03-15', '100.00']], {
       id: 'file-1',
       columnCount: 3
     })
-    const file2 = makeParsedFile('JPK_VDEK', 'SprzedazWiersz', [['2', '2024-04-15', '200.00']], {
+    const file2 = makeParsedFile('V7M', 'SprzedazWiersz', [['2', '2024-04-15', '200.00']], {
       id: 'file-2',
       columnCount: 3
     })
@@ -630,7 +630,7 @@ describe('validateFiles', () => {
   })
 
   it('uses empty mappings for files without mappings', () => {
-    const file = makeParsedFile('JPK_VDEK', 'SprzedazWiersz', [['1']], {
+    const file = makeParsedFile('V7M', 'SprzedazWiersz', [['1']], {
       id: 'file-no-mapping',
       columnCount: 1
     })
@@ -641,11 +641,11 @@ describe('validateFiles', () => {
   })
 
   it('sums errors and warnings across all files', () => {
-    const file1 = makeParsedFile('JPK_VDEK', 'SprzedazWiersz', [['1', '15.03.2024']], {
+    const file1 = makeParsedFile('V7M', 'SprzedazWiersz', [['1', '15.03.2024']], {
       id: 'file-1',
       columnCount: 2
     })
-    const file2 = makeParsedFile('JPK_VDEK', 'SprzedazWiersz', [['1', 'invalid-date']], {
+    const file2 = makeParsedFile('V7M', 'SprzedazWiersz', [['1', 'invalid-date']], {
       id: 'file-2',
       columnCount: 2
     })
@@ -661,11 +661,11 @@ describe('validateFiles', () => {
   })
 
   it('sums auto fixes across all files', () => {
-    const file1 = makeParsedFile('JPK_VDEK', 'SprzedazWiersz', [['100,50']], {
+    const file1 = makeParsedFile('V7M', 'SprzedazWiersz', [['100,50']], {
       id: 'file-1',
       columnCount: 1
     })
-    const file2 = makeParsedFile('JPK_VDEK', 'SprzedazWiersz', [['200,50']], {
+    const file2 = makeParsedFile('V7M', 'SprzedazWiersz', [['200,50']], {
       id: 'file-2',
       columnCount: 1
     })
@@ -684,7 +684,7 @@ describe('validateFiles', () => {
 
 describe('applyFixes', () => {
   it('returns new file with fixes applied without mutating original', () => {
-    const file = makeParsedFile('JPK_VDEK', 'SprzedazWiersz', [
+    const file = makeParsedFile('V7M', 'SprzedazWiersz', [
       ['15.03.2024', '100,50'],
       ['20.04.2024', '200,75']
     ], { columnCount: 2 })
@@ -709,7 +709,7 @@ describe('applyFixes', () => {
   })
 
   it('returns same file reference for empty fixes array', () => {
-    const file = makeParsedFile('JPK_VDEK', 'SprzedazWiersz', [['original']], { columnCount: 1 })
+    const file = makeParsedFile('V7M', 'SprzedazWiersz', [['original']], { columnCount: 1 })
     const result = applyFixes(file, [])
     expect(result).toBe(file)
     expect(result.rows[0][0]).toBe('original')
@@ -721,7 +721,7 @@ describe('applyFixes', () => {
 describe('getMappedColumnsByType — field type routing', () => {
   it('routes nip, country, date, decimal fields correctly', () => {
     const rows = [['5261040828', 'PL', '2024-03-15', '100.00']]
-    const file = makeParsedFile('JPK_VDEK', 'SprzedazWiersz', rows, { columnCount: 4 })
+    const file = makeParsedFile('V7M', 'SprzedazWiersz', rows, { columnCount: 4 })
     const mappings = makeMappings([
       { source: 0, target: 'NrKontrahenta' },    // nip type
       { source: 1, target: 'KodKontrahenta' },    // country type
@@ -737,7 +737,7 @@ describe('getMappedColumnsByType — field type routing', () => {
 
   it('ignores fields not found in field definitions', () => {
     const rows = [['value']]
-    const file = makeParsedFile('JPK_VDEK', 'SprzedazWiersz', rows, { columnCount: 1 })
+    const file = makeParsedFile('V7M', 'SprzedazWiersz', rows, { columnCount: 1 })
     const mappings = makeMappings([
       { source: 0, target: 'NonExistentField' }
     ])
@@ -753,7 +753,7 @@ describe('getMappedColumnsByType — field type routing', () => {
 describe('KEY_SUM_FIELDS per type', () => {
   it('uses K_19/K_20 for JPK_VDEK', () => {
     const rows = [['100.00', '23.00']]
-    const file = makeParsedFile('JPK_VDEK', 'SprzedazWiersz', rows, { columnCount: 2 })
+    const file = makeParsedFile('V7M', 'SprzedazWiersz', rows, { columnCount: 2 })
     const mappings = makeMappings([
       { source: 0, target: 'K_19' },
       { source: 1, target: 'K_20' }
@@ -765,7 +765,7 @@ describe('KEY_SUM_FIELDS per type', () => {
 
   it('uses P_15 for JPK_FA', () => {
     const rows = [['100.00']]
-    const file = makeParsedFile('JPK_FA', 'Faktura', rows, { columnCount: 1 })
+    const file = makeParsedFile('FA', 'Faktura', rows, { columnCount: 1 })
     const mappings = makeMappings([
       { source: 0, target: 'P_15' }
     ])
@@ -775,7 +775,7 @@ describe('KEY_SUM_FIELDS per type', () => {
 
   it('uses KwotaOperacji for JPK_WB', () => {
     const rows = [['500.00']]
-    const file = makeParsedFile('JPK_WB', 'SprzedazWiersz' as SubType, rows, { columnCount: 1 })
+    const file = makeParsedFile('WB', 'SprzedazWiersz' as SubType, rows, { columnCount: 1 })
     const mappings = makeMappings([
       { source: 0, target: 'KwotaOperacji' }
     ])
@@ -785,7 +785,7 @@ describe('KEY_SUM_FIELDS per type', () => {
 
   it('uses K_9 for JPK_PKPIR', () => {
     const rows = [['150.00']]
-    const file = makeParsedFile('JPK_PKPIR', 'PKPIRWiersz', rows, { columnCount: 1 })
+    const file = makeParsedFile('PKPIR', 'PKPIRWiersz', rows, { columnCount: 1 })
     const mappings = makeMappings([
       { source: 0, target: 'K_9' }
     ])
@@ -795,7 +795,7 @@ describe('KEY_SUM_FIELDS per type', () => {
 
   it('uses K_8 for JPK_EWP', () => {
     const rows = [['250.00']]
-    const file = makeParsedFile('JPK_EWP', 'EWPWiersz', rows, { columnCount: 1 })
+    const file = makeParsedFile('EWP', 'EWPWiersz', rows, { columnCount: 1 })
     const mappings = makeMappings([
       { source: 0, target: 'K_8' }
     ])
@@ -805,7 +805,7 @@ describe('KEY_SUM_FIELDS per type', () => {
 
   it('handles unknown jpkType key sum fields gracefully', () => {
     const rows = [['100.00']]
-    const file = makeParsedFile('JPK_VDEK', 'SprzedazWiersz', rows, { columnCount: 1 })
+    const file = makeParsedFile('V7M', 'SprzedazWiersz', rows, { columnCount: 1 })
     ;(file as unknown as Record<string, unknown>).jpkType = 'JPK_UNKNOWN'
     const report = validateFile(file, [], undefined, undefined)
     // Should still have row count

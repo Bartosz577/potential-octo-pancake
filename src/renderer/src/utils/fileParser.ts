@@ -8,10 +8,14 @@ function generateId(): string {
   return `file_${Date.now()}_${++idCounter}`
 }
 
-/** Normalize JPK type aliases (JPK_V7M/JPK_V7K → JPK_VDEK) */
+/** Normalize JPK type aliases to canonical unprefixed form */
 function normalizeJpkType(raw: string): JpkType {
-  if (raw === 'JPK_V7M' || raw === 'JPK_V7K') return 'JPK_VDEK'
-  return raw as JpkType
+  const upper = raw.toUpperCase().trim()
+  if (upper === 'JPK_V7M' || upper === 'JPK_V7K' || upper === 'JPK_VDEK' || upper === 'VDEK') return 'V7M'
+  const stripped = upper.startsWith('JPK_') ? upper.slice(4) : upper
+  const valid: JpkType[] = ['V7M', 'FA', 'MAG', 'WB', 'PKPIR', 'EWP', 'KR_PD', 'ST', 'ST_KR', 'FA_RR', 'KR']
+  if (valid.includes(stripped as JpkType)) return stripped as JpkType
+  return stripped as JpkType
 }
 
 export function parseTxtFile(content: string, filename: string, fileSize = 0): ParsedFile {
@@ -42,7 +46,7 @@ export function parseTxtFile(content: string, filename: string, fileSize = 0): P
     throw new Error(`Nieznany system ERP: ${system}`)
   }
 
-  if (!['JPK_VDEK', 'JPK_FA', 'JPK_MAG', 'JPK_WB'].includes(jpkType)) {
+  if (!['V7M', 'FA', 'MAG', 'WB'].includes(jpkType)) {
     throw new Error(`Nieznany typ JPK: ${jpkType}`)
   }
 
@@ -78,16 +82,16 @@ export function detectFileType(filename: string): { jpkType: JpkType; subType: S
   const upper = filename.toUpperCase()
 
   if (upper.includes('JPK_VDEK') || upper.includes('JPK_V7M')) {
-    return { jpkType: 'JPK_VDEK', subType: 'SprzedazWiersz' }
+    return { jpkType: 'V7M', subType: 'SprzedazWiersz' }
   }
   if (upper.includes('JPK_FA')) {
-    return { jpkType: 'JPK_FA', subType: 'Faktura' }
+    return { jpkType: 'FA', subType: 'Faktura' }
   }
   if (upper.includes('JPK_MAG') && upper.includes('_WZ')) {
-    return { jpkType: 'JPK_MAG', subType: 'WZ' }
+    return { jpkType: 'MAG', subType: 'WZ' }
   }
   if (upper.includes('JPK_MAG') && upper.includes('_RW')) {
-    return { jpkType: 'JPK_MAG', subType: 'RW' }
+    return { jpkType: 'MAG', subType: 'RW' }
   }
 
   return null

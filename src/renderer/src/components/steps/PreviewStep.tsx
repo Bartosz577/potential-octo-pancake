@@ -337,17 +337,17 @@ function DataTable({
 }
 
 const TAB_LABELS: Record<JpkType, string> = {
-  JPK_VDEK: 'Sprzedaż V7M',
-  JPK_FA: 'Faktury',
-  JPK_MAG: 'Magazyn',
-  JPK_WB: 'Wyciągi bankowe',
-  JPK_PKPIR: 'KPiR',
-  JPK_EWP: 'Ewidencja przychodów',
-  JPK_KR_PD: 'Księgi rachunkowe',
-  JPK_ST: 'Środki trwałe',
-  JPK_ST_KR: 'Środki trwałe (KR)',
-  JPK_FA_RR: 'Faktury VAT RR',
-  JPK_KR: 'Księgi rachunkowe (legacy)'
+  V7M: 'Sprzedaż V7M',
+  FA: 'Faktury',
+  MAG: 'Magazyn',
+  WB: 'Wyciągi bankowe',
+  PKPIR: 'KPiR',
+  EWP: 'Ewidencja przychodów',
+  KR_PD: 'Księgi rachunkowe',
+  ST: 'Środki trwałe',
+  ST_KR: 'Środki trwałe (KR)',
+  FA_RR: 'Faktury VAT RR',
+  KR: 'Księgi rachunkowe (legacy)'
 }
 
 export function PreviewStep(): React.JSX.Element {

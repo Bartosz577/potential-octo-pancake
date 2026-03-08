@@ -3,7 +3,7 @@ import { useAppStore, STEP_LABELS } from '../../../src/renderer/src/stores/appSt
 import type { JpkType, JpkSubtype, Step, AppMode } from '../../../src/renderer/src/stores/appStore'
 
 const initialState = {
-  activeJpkType: 'JPK_VDEK' as JpkType,
+  activeJpkType: 'V7M' as JpkType,
   jpkSubtype: 'V7M' as JpkSubtype,
   currentStep: 1 as Step,
   mode: 'conversion' as AppMode,
@@ -17,8 +17,8 @@ describe('appStore', () => {
   })
 
   describe('initial state', () => {
-    it('has activeJpkType = JPK_VDEK', () => {
-      expect(useAppStore.getState().activeJpkType).toBe('JPK_VDEK')
+    it('has activeJpkType = V7M', () => {
+      expect(useAppStore.getState().activeJpkType).toBe('V7M')
     })
 
     it('has currentStep = 1', () => {
@@ -52,12 +52,12 @@ describe('appStore', () => {
 
   describe('setActiveJpkType', () => {
     it('changes the active JPK type', () => {
-      useAppStore.getState().setActiveJpkType('JPK_FA')
-      expect(useAppStore.getState().activeJpkType).toBe('JPK_FA')
+      useAppStore.getState().setActiveJpkType('FA')
+      expect(useAppStore.getState().activeJpkType).toBe('FA')
     })
 
     it('can cycle through all types', () => {
-      const types: JpkType[] = ['JPK_VDEK', 'JPK_FA', 'JPK_MAG', 'JPK_WB']
+      const types: JpkType[] = ['V7M', 'FA', 'MAG', 'WB']
       for (const type of types) {
         useAppStore.getState().setActiveJpkType(type)
         expect(useAppStore.getState().activeJpkType).toBe(type)

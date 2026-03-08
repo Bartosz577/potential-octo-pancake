@@ -228,7 +228,7 @@ describe('FileReaderRegistry', () => {
 
       expect(result.sheets).toHaveLength(1)
       expect(result.sheets[0].rows).toHaveLength(1107)
-      expect(result.sheets[0].metadata.jpkType).toBe('JPK_FA')
+      expect(result.sheets[0].metadata.jpkType).toBe('FA')
     })
 
     it('reads ESO MAG .txt file', () => {

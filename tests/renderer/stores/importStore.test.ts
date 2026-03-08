@@ -7,7 +7,7 @@ function makeParsedFile(overrides?: Partial<ParsedFile>): ParsedFile {
     id: 'f1',
     filename: 'test.txt',
     system: 'NAMOS',
-    jpkType: 'JPK_VDEK',
+    jpkType: 'V7M',
     subType: 'SprzedazWiersz',
     pointCode: '',
     dateFrom: '',

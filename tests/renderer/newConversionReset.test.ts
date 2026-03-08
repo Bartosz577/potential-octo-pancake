@@ -12,7 +12,7 @@ import type { ParsedFile } from '../../src/renderer/src/types'
 function simulateNewConversion(): void {
   useImportStore.getState().clearFiles()
   useMappingStore.getState().clearMappings()
-  useAppStore.getState().setActiveJpkType('JPK_VDEK')
+  useAppStore.getState().setActiveJpkType('V7M')
   useAppStore.getState().setJpkSubtype('V7M')
   useAppStore.getState().setMode('conversion')
   useAppStore.getState().setValidationXml(null)
@@ -23,7 +23,7 @@ const mockFile: ParsedFile = {
   id: 'file-1',
   name: 'test.csv',
   format: 'CSV',
-  jpkType: 'JPK_FA',
+  jpkType: 'FA',
   subType: 'Faktura',
   system: 'TestSystem',
   headers: ['A', 'B'],
@@ -37,7 +37,7 @@ describe('New Conversion Reset', () => {
   beforeEach(() => {
     // Set up dirty state simulating a completed conversion
     useAppStore.setState({
-      activeJpkType: 'JPK_FA',
+      activeJpkType: 'FA',
       jpkSubtype: 'V7K',
       currentStep: 6,
       mode: 'validation',
@@ -69,9 +69,9 @@ describe('New Conversion Reset', () => {
     expect(useAppStore.getState().currentStep).toBe(1)
   })
 
-  it('resets activeJpkType to JPK_VDEK', () => {
+  it('resets activeJpkType to V7M', () => {
     simulateNewConversion()
-    expect(useAppStore.getState().activeJpkType).toBe('JPK_VDEK')
+    expect(useAppStore.getState().activeJpkType).toBe('V7M')
   })
 
   it('resets jpkSubtype to V7M', () => {
@@ -125,7 +125,7 @@ describe('New Conversion Reset', () => {
       savedProfiles: [{
         id: 'profile_1',
         name: 'Test Profile',
-        jpkType: 'JPK_FA',
+        jpkType: 'FA',
         subType: 'Faktura',
         mappings: [{ sourceColumn: 0, targetField: 'NrFaktury', confidence: 1 }],
         createdAt: '2025-01-01T00:00:00.000Z'

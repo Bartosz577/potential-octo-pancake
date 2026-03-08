@@ -306,62 +306,72 @@ export const JPK_KR_DZIENNIK_FIELDS: JpkFieldDef[] = [
 // ═══════════════════════════════════════════════════════
 
 export const JPK_SECTIONS: Record<string, JpkSectionDef> = {
-  'JPK_VDEK.SprzedazWiersz': {
+  'V7M.SprzedazWiersz': {
     sectionName: 'SprzedazWiersz',
     label: 'Sprzedaż — wiersze',
     fields: JPK_V7M_SPRZEDAZ_FIELDS,
   },
-  'JPK_FA.Faktura': {
+  'FA.Faktura': {
     sectionName: 'Faktura',
     label: 'Faktury — nagłówki',
     fields: JPK_FA_FAKTURA_FIELDS,
   },
-  'JPK_MAG.WZ': {
+  'MAG.WZ': {
     sectionName: 'WZ',
     label: 'Magazyn — wydania zewnętrzne',
     fields: JPK_MAG_WZ_FIELDS,
   },
-  'JPK_PKPIR.PKPIRWiersz': {
+  'PKPIR.PKPIRWiersz': {
     sectionName: 'PKPIRWiersz',
     label: 'KPiR — wiersze',
     fields: JPK_PKPIR_WIERSZ_FIELDS,
   },
-  'JPK_EWP.EWPWiersz': {
+  'EWP.EWPWiersz': {
     sectionName: 'EWPWiersz',
     label: 'EWP — ewidencja przychodów',
     fields: JPK_EWP_WIERSZ_FIELDS,
   },
-  'JPK_KR_PD.Dziennik': {
+  'KR_PD.Dziennik': {
     sectionName: 'Dziennik',
     label: 'KR_PD — dziennik księgowy',
     fields: JPK_KR_PD_DZIENNIK_FIELDS,
   },
-  'JPK_ST.STWiersz': {
+  'ST.STWiersz': {
     sectionName: 'STWiersz',
     label: 'ST — środki trwałe (PKPiR)',
     fields: JPK_ST_WIERSZ_FIELDS,
   },
-  'JPK_ST_KR.STKrWiersz': {
+  'ST_KR.STKrWiersz': {
     sectionName: 'STKrWiersz',
     label: 'ST_KR — środki trwałe (KR)',
     fields: JPK_ST_KR_WIERSZ_FIELDS,
   },
-  'JPK_FA_RR.FaRrFaktura': {
+  'FA_RR.FaRrFaktura': {
     sectionName: 'FaRrFaktura',
     label: 'FA_RR — faktury VAT RR',
     fields: JPK_FA_RR_FAKTURA_FIELDS,
   },
-  'JPK_KR.KrDziennik': {
+  'KR.KrDziennik': {
     sectionName: 'KrDziennik',
     label: 'KR — dziennik księgowy (legacy)',
     fields: JPK_KR_DZIENNIK_FIELDS,
   },
 }
 
+/** Normalize a jpkType string to the canonical unprefixed form for section lookup */
+function normalizeForLookup(jpkType: string): string {
+  const upper = jpkType.toUpperCase().trim()
+  if (upper === 'JPK_V7M' || upper === 'JPK_V7K' || upper === 'JPK_VDEK' || upper === 'VDEK') return 'V7M'
+  if (upper.startsWith('JPK_')) return upper.slice(4)
+  return upper
+}
+
 /**
  * Look up field definitions for a given JPK type and sub-type.
+ * Accepts both prefixed ('JPK_FA') and unprefixed ('FA') jpkType values.
  */
 export function getFieldDefinitions(jpkType: string, subType: string): JpkFieldDef[] {
-  const key = `${jpkType}.${subType}`
+  const normalized = normalizeForLookup(jpkType)
+  const key = `${normalized}.${subType}`
   return JPK_SECTIONS[key]?.fields ?? []
 }

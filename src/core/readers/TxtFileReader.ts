@@ -86,10 +86,12 @@ function hasMetadataPrefix(lines: string[], separator: string): boolean {
 /**
  * Extract metadata from the first row's metadata columns.
  */
-/** Normalize JPK type aliases so runtime values always match the JpkType union */
+/** Normalize JPK type aliases so runtime values match the canonical JpkType union (unprefixed) */
 function normalizeJpkType(raw: string): string {
-  if (raw === 'JPK_V7M' || raw === 'JPK_V7K') return 'JPK_VDEK'
-  return raw
+  const upper = raw.toUpperCase().trim()
+  if (upper === 'JPK_V7M' || upper === 'JPK_V7K' || upper === 'JPK_VDEK' || upper === 'VDEK') return 'V7M'
+  if (upper.startsWith('JPK_')) return upper.slice(4)
+  return upper
 }
 
 function extractMetadata(firstRow: string[]): Record<string, string> {

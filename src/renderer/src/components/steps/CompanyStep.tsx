@@ -27,7 +27,7 @@ const FA_SELLER_NAME_COL = 5  // P_3C
 const FA_SELLER_NIP_COL = 8   // P_4B
 
 function extractCompanyFromFA(files: ReturnType<typeof useImportStore.getState>['files']): Partial<CompanyData> | null {
-  const faFile = files.find((f) => f.jpkType === 'JPK_FA')
+  const faFile = files.find((f) => f.jpkType === 'FA')
   if (!faFile || faFile.rows.length === 0) return null
 
   const firstRow = faFile.rows[0]
@@ -353,7 +353,7 @@ export function CompanyStep(): React.JSX.Element {
         <h2 className="text-sm font-semibold text-text-primary mb-4">Okres rozliczeniowy</h2>
 
         {/* Monthly / Quarterly toggle — only for V7M type */}
-        {activeJpkType === 'JPK_VDEK' && (
+        {activeJpkType === 'V7M' && (
           <div className="flex items-center gap-2 mb-4">
             <span className="text-xs font-medium text-text-secondary">Typ rozliczenia:</span>
             <div className="flex rounded-lg border border-border overflow-hidden">

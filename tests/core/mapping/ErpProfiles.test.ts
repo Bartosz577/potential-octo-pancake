@@ -34,7 +34,7 @@ function makeSheet(opts: {
 // ═══════════════════════════════════════════════════════
 
 describe('ENOVA365_XML_FA profile', () => {
-  const profile = findProfile('ENOVA365', 'JPK_FA', 'Faktura')!
+  const profile = findProfile('ENOVA365', 'FA', 'Faktura')!
 
   it('exists in registry', () => {
     expect(profile).toBeDefined()
@@ -43,7 +43,7 @@ describe('ENOVA365_XML_FA profile', () => {
 
   it('has correct system and target', () => {
     expect(profile.system).toBe('ENOVA365')
-    expect(profile.jpkType).toBe('JPK_FA')
+    expect(profile.jpkType).toBe('FA')
     expect(profile.subType).toBe('Faktura')
   })
 
@@ -118,7 +118,7 @@ describe('ENOVA365_CDN_TXT profile', () => {
   })
 
   it('maps col 0 → P_2 (Nr_dokumentu)', () => {
-    const _p = findProfile('ENOVA365', 'JPK_FA', 'Faktura')!
+    const _p = findProfile('ENOVA365', 'FA', 'Faktura')!
     // findProfile returns ENOVA365_XML_FA (first match). Use direct lookup.
     const cdn = SYSTEM_PROFILES.find((p) => p.id === 'ENOVA365_CDN_TXT')!
     expect(cdn.columnMap[0]).toBe('P_2')

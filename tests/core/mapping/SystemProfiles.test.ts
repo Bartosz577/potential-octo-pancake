@@ -17,7 +17,7 @@ describe('SystemProfiles', () => {
       const p = SYSTEM_PROFILES.find((p) => p.id === 'NAMOS_JPK_VDEK_SprzedazWiersz')
       expect(p).toBeDefined()
       expect(p!.system).toBe('NAMOS')
-      expect(p!.jpkType).toBe('JPK_VDEK')
+      expect(p!.jpkType).toBe('V7M')
       expect(p!.subType).toBe('SprzedazWiersz')
     })
 
@@ -25,14 +25,14 @@ describe('SystemProfiles', () => {
       const p = SYSTEM_PROFILES.find((p) => p.id === 'NAMOS_JPK_FA_Faktura')
       expect(p).toBeDefined()
       expect(p!.system).toBe('NAMOS')
-      expect(p!.jpkType).toBe('JPK_FA')
+      expect(p!.jpkType).toBe('FA')
     })
 
     it('contains ESO MAG WZ profile', () => {
       const p = SYSTEM_PROFILES.find((p) => p.id === 'ESO_JPK_MAG_WZ')
       expect(p).toBeDefined()
       expect(p!.system).toBe('ESO')
-      expect(p!.jpkType).toBe('JPK_MAG')
+      expect(p!.jpkType).toBe('MAG')
       expect(p!.subType).toBe('WZ')
     })
 
@@ -40,7 +40,7 @@ describe('SystemProfiles', () => {
       const p = SYSTEM_PROFILES.find((p) => p.id === 'COMARCH_OPTIMA_VAT_TXT')
       expect(p).toBeDefined()
       expect(p!.system).toBe('COMARCH_OPTIMA')
-      expect(p!.jpkType).toBe('JPK_VDEK')
+      expect(p!.jpkType).toBe('V7M')
       expect(p!.subType).toBe('SprzedazWiersz')
     })
 
@@ -48,20 +48,20 @@ describe('SystemProfiles', () => {
       const p = SYSTEM_PROFILES.find((p) => p.id === 'COMARCH_OPTIMA_XML_FA')
       expect(p).toBeDefined()
       expect(p!.system).toBe('COMARCH_OPTIMA')
-      expect(p!.jpkType).toBe('JPK_FA')
+      expect(p!.jpkType).toBe('FA')
       expect(p!.subType).toBe('Faktura')
     })
   })
 
   describe('findProfile', () => {
     it('finds NAMOS VDEK profile', () => {
-      const p = findProfile('NAMOS', 'JPK_VDEK', 'SprzedazWiersz')
+      const p = findProfile('NAMOS', 'V7M', 'SprzedazWiersz')
       expect(p).not.toBeNull()
       expect(p!.id).toBe('NAMOS_JPK_VDEK_SprzedazWiersz')
     })
 
     it('finds ESO MAG WZ profile', () => {
-      const p = findProfile('ESO', 'JPK_MAG', 'WZ')
+      const p = findProfile('ESO', 'MAG', 'WZ')
       expect(p).not.toBeNull()
       expect(p!.id).toBe('ESO_JPK_MAG_WZ')
     })
@@ -71,17 +71,17 @@ describe('SystemProfiles', () => {
     })
 
     it('returns null for unknown system even with valid jpkType/subType', () => {
-      expect(findProfile('SAP_RE', 'JPK_VDEK', 'SprzedazWiersz')).toBeNull()
+      expect(findProfile('SAP_RE', 'V7M', 'SprzedazWiersz')).toBeNull()
     })
 
     it('finds COMARCH_OPTIMA VDEK profile', () => {
-      const p = findProfile('COMARCH_OPTIMA', 'JPK_VDEK', 'SprzedazWiersz')
+      const p = findProfile('COMARCH_OPTIMA', 'V7M', 'SprzedazWiersz')
       expect(p).not.toBeNull()
       expect(p!.id).toBe('COMARCH_OPTIMA_VAT_TXT')
     })
 
     it('finds COMARCH_OPTIMA FA profile', () => {
-      const p = findProfile('COMARCH_OPTIMA', 'JPK_FA', 'Faktura')
+      const p = findProfile('COMARCH_OPTIMA', 'FA', 'Faktura')
       expect(p).not.toBeNull()
       expect(p!.id).toBe('COMARCH_OPTIMA_XML_FA')
     })
@@ -89,24 +89,24 @@ describe('SystemProfiles', () => {
 
   describe('findProfileByStructure', () => {
     it('finds VDEK SprzedazWiersz profile regardless of system name', () => {
-      const p = findProfileByStructure('JPK_VDEK', 'SprzedazWiersz')
+      const p = findProfileByStructure('V7M', 'SprzedazWiersz')
       expect(p).not.toBeNull()
       expect(p!.id).toBe('NAMOS_JPK_VDEK_SprzedazWiersz')
     })
 
     it('finds FA Faktura profile regardless of system name', () => {
-      const p = findProfileByStructure('JPK_FA', 'Faktura')
+      const p = findProfileByStructure('FA', 'Faktura')
       expect(p).not.toBeNull()
       expect(p!.id).toBe('NAMOS_JPK_FA_Faktura')
     })
 
     it('finds MAG WZ profile regardless of system name', () => {
-      const p = findProfileByStructure('JPK_MAG', 'WZ')
+      const p = findProfileByStructure('MAG', 'WZ')
       expect(p).not.toBeNull()
       expect(p!.id).toBe('ESO_JPK_MAG_WZ')
     })
 
-    it('normalizes JPK_V7M to JPK_VDEK', () => {
+    it('normalizes JPK_V7M to V7M', () => {
       const p = findProfileByStructure('JPK_V7M', 'SprzedazWiersz')
       expect(p).not.toBeNull()
       expect(p!.id).toBe('NAMOS_JPK_VDEK_SprzedazWiersz')
@@ -118,7 +118,7 @@ describe('SystemProfiles', () => {
   })
 
   describe('NAMOS VDEK SprzedazWiersz profile', () => {
-    const profile = findProfile('NAMOS', 'JPK_VDEK', 'SprzedazWiersz')!
+    const profile = findProfile('NAMOS', 'V7M', 'SprzedazWiersz')!
 
     it('maps col 0 → LpSprzedazy', () => {
       expect(profile.columnMap[0]).toBe('LpSprzedazy')
@@ -157,7 +157,7 @@ describe('SystemProfiles', () => {
   })
 
   describe('NAMOS FA Faktura profile', () => {
-    const profile = findProfile('NAMOS', 'JPK_FA', 'Faktura')!
+    const profile = findProfile('NAMOS', 'FA', 'Faktura')!
 
     it('maps col 0 → KodWaluty', () => {
       expect(profile.columnMap[0]).toBe('KodWaluty')
@@ -197,7 +197,7 @@ describe('SystemProfiles', () => {
   })
 
   describe('ESO MAG WZ profile', () => {
-    const profile = findProfile('ESO', 'JPK_MAG', 'WZ')!
+    const profile = findProfile('ESO', 'MAG', 'WZ')!
 
     it('maps col 9 → KodTowaru', () => {
       expect(profile.columnMap[9]).toBe('KodTowaru')
@@ -221,7 +221,7 @@ describe('SystemProfiles', () => {
   })
 
   describe('COMARCH_OPTIMA_VAT_TXT profile', () => {
-    const profile = findProfile('COMARCH_OPTIMA', 'JPK_VDEK', 'SprzedazWiersz')!
+    const profile = findProfile('COMARCH_OPTIMA', 'V7M', 'SprzedazWiersz')!
 
     it('exists in the registry', () => {
       expect(profile).toBeDefined()
@@ -230,7 +230,7 @@ describe('SystemProfiles', () => {
 
     it('has correct system and target', () => {
       expect(profile.system).toBe('COMARCH_OPTIMA')
-      expect(profile.jpkType).toBe('JPK_VDEK')
+      expect(profile.jpkType).toBe('V7M')
       expect(profile.subType).toBe('SprzedazWiersz')
     })
 
@@ -296,7 +296,7 @@ describe('SystemProfiles', () => {
   })
 
   describe('COMARCH_OPTIMA_XML_FA profile', () => {
-    const profile = findProfile('COMARCH_OPTIMA', 'JPK_FA', 'Faktura')!
+    const profile = findProfile('COMARCH_OPTIMA', 'FA', 'Faktura')!
 
     it('exists in the registry', () => {
       expect(profile).toBeDefined()
@@ -305,7 +305,7 @@ describe('SystemProfiles', () => {
 
     it('has correct system and target', () => {
       expect(profile.system).toBe('COMARCH_OPTIMA')
-      expect(profile.jpkType).toBe('JPK_FA')
+      expect(profile.jpkType).toBe('FA')
       expect(profile.subType).toBe('Faktura')
     })
 
@@ -423,7 +423,7 @@ describe('SystemProfiles', () => {
         rows: [{ index: 0, cells: Array.from({ length: 70 }, (_, i) => `val_${i}`) }],
         metadata: {
           system: 'SAP_RE',
-          jpkType: 'JPK_VDEK',
+          jpkType: 'V7M',
           subType: 'SprzedazWiersz',
         },
       }
@@ -439,13 +439,13 @@ describe('SystemProfiles', () => {
       expect(k10!.sourceColumn).toBe(45)
     })
 
-    it('matches JPK_V7M alias to JPK_VDEK profile', () => {
+    it('matches JPK_V7M alias to V7M profile', () => {
       const sheet: import('../../../src/core/models/types').RawSheet = {
         name: 'test_v7m.txt',
         rows: [{ index: 0, cells: Array.from({ length: 70 }, (_, i) => `val_${i}`) }],
         metadata: {
           system: 'CUSTOM_ERP',
-          jpkType: 'JPK_V7M',
+          jpkType: 'V7M',
           subType: 'SprzedazWiersz',
         },
       }

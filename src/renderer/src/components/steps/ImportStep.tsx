@@ -43,17 +43,17 @@ const ENCODING_OPTIONS = [
 const TEXT_FORMATS: Set<string> = new Set(['txt', 'csv', 'tsv', 'dat'])
 
 const JPK_BADGE_CONFIG: Record<JpkType, { label: string; className: string; icon: typeof FileText }> = {
-  JPK_VDEK: { label: 'V7M', className: 'bg-accent/15 text-accent', icon: FileText },
-  JPK_FA: { label: 'FA', className: 'bg-purple-500/15 text-purple-400', icon: FileSpreadsheet },
-  JPK_MAG: { label: 'MAG', className: 'bg-amber-500/15 text-amber-400', icon: Package },
-  JPK_WB: { label: 'WB', className: 'bg-cyan-500/15 text-cyan-400', icon: Wallet },
-  JPK_PKPIR: { label: 'PKPiR', className: 'bg-emerald-500/15 text-emerald-400', icon: BookOpen },
-  JPK_EWP: { label: 'EWP', className: 'bg-rose-500/15 text-rose-400', icon: BookOpen },
-  JPK_KR_PD: { label: 'KR_PD', className: 'bg-indigo-500/15 text-indigo-400', icon: BookOpen },
-  JPK_ST: { label: 'ST', className: 'bg-teal-500/15 text-teal-400', icon: BookOpen },
-  JPK_ST_KR: { label: 'ST_KR', className: 'bg-sky-500/15 text-sky-400', icon: BookOpen },
-  JPK_FA_RR: { label: 'FA_RR', className: 'bg-lime-500/15 text-lime-400', icon: BookOpen },
-  JPK_KR: { label: 'KR', className: 'bg-violet-500/15 text-violet-400', icon: BookOpen }
+  V7M: { label: 'V7M', className: 'bg-accent/15 text-accent', icon: FileText },
+  FA: { label: 'FA', className: 'bg-purple-500/15 text-purple-400', icon: FileSpreadsheet },
+  MAG: { label: 'MAG', className: 'bg-amber-500/15 text-amber-400', icon: Package },
+  WB: { label: 'WB', className: 'bg-cyan-500/15 text-cyan-400', icon: Wallet },
+  PKPIR: { label: 'PKPiR', className: 'bg-emerald-500/15 text-emerald-400', icon: BookOpen },
+  EWP: { label: 'EWP', className: 'bg-rose-500/15 text-rose-400', icon: BookOpen },
+  KR_PD: { label: 'KR_PD', className: 'bg-indigo-500/15 text-indigo-400', icon: BookOpen },
+  ST: { label: 'ST', className: 'bg-teal-500/15 text-teal-400', icon: BookOpen },
+  ST_KR: { label: 'ST_KR', className: 'bg-sky-500/15 text-sky-400', icon: BookOpen },
+  FA_RR: { label: 'FA_RR', className: 'bg-lime-500/15 text-lime-400', icon: BookOpen },
+  KR: { label: 'KR', className: 'bg-violet-500/15 text-violet-400', icon: BookOpen }
 }
 
 function formatFileSize(bytes: number): string {
@@ -124,7 +124,7 @@ function FileCard({
   onEncodingChange: (encoding: string) => void
   isReloading: boolean
 }): React.JSX.Element {
-  const badge = JPK_BADGE_CONFIG[file.jpkType] || JPK_BADGE_CONFIG.JPK_VDEK
+  const badge = JPK_BADGE_CONFIG[file.jpkType] || JPK_BADGE_CONFIG.V7M
   const [showPreview, setShowPreview] = useState(false)
   const [selectedEncoding, setSelectedEncoding] = useState(file.encoding || 'auto')
   const canChangeEncoding = isTextFormat(file.filename)
@@ -282,10 +282,15 @@ function AutoDetectPanel({ files }: { files: ParsedFile[] }): React.JSX.Element 
   )
 }
 
-/** Normalize JPK type aliases (JPK_V7M/JPK_V7K → JPK_VDEK) */
+/** Normalize JPK type aliases to canonical unprefixed form */
 function normalizeJpkType(raw: string): JpkType {
-  if (raw === 'JPK_V7M' || raw === 'JPK_V7K') return 'JPK_VDEK'
-  return raw as JpkType
+  const upper = raw.toUpperCase().trim()
+  if (upper === 'JPK_V7M' || upper === 'JPK_V7K' || upper === 'JPK_VDEK' || upper === 'VDEK') return 'V7M'
+  // Strip JPK_ prefix
+  const stripped = upper.startsWith('JPK_') ? upper.slice(4) : upper
+  const valid: JpkType[] = ['V7M', 'FA', 'MAG', 'WB', 'PKPIR', 'EWP', 'KR_PD', 'ST', 'ST_KR', 'FA_RR', 'KR']
+  if (valid.includes(stripped as JpkType)) return stripped as JpkType
+  return 'V7M'
 }
 
 /** Convert serialized IPC result into a ParsedFile */
@@ -305,7 +310,7 @@ function resultToParsedFile(
     filename,
     filePath,
     system: (meta.system as ParsedFile['system']) || 'UNKNOWN',
-    jpkType: normalizeJpkType(meta.jpkType || 'JPK_VDEK'),
+    jpkType: normalizeJpkType(meta.jpkType || 'V7M'),
     subType: (meta.subType as ParsedFile['subType']) || 'SprzedazWiersz',
     pointCode: meta.pointCode || '',
     dateFrom: meta.dateFrom || '',

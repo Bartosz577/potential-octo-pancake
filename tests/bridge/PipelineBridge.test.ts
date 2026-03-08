@@ -16,7 +16,7 @@ function makeFile(overrides?: Partial<ParsedFile>): ParsedFile {
     id: 'test-file-1',
     filename: 'test.txt',
     system: 'NAMOS',
-    jpkType: 'JPK_VDEK',
+    jpkType: 'V7M',
     subType: 'SprzedazWiersz',
     pointCode: '0P',
     dateFrom: '2026-01-01',
@@ -77,7 +77,7 @@ describe('PipelineBridge', () => {
       expect(sheet.rows[1]).toEqual({ index: 1, cells: file.rows[1] })
       expect(sheet.metadata).toEqual({
         system: 'NAMOS',
-        jpkType: 'JPK_VDEK',
+        jpkType: 'V7M',
         subType: 'SprzedazWiersz'
       })
     })
@@ -103,7 +103,7 @@ describe('PipelineBridge', () => {
       const mappings = makeMappings()
       const config = buildPipelineConfig(file, mappings)
 
-      expect(config.jpkType).toBe('JPK_VDEK')
+      expect(config.jpkType).toBe('V7M')
       expect(config.subType).toBe('SprzedazWiersz')
       expect(config.customMapping).toBeDefined()
       expect(config.customMapping!.mappings).toBe(mappings)

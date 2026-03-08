@@ -352,7 +352,7 @@ export const SYSTEM_PROFILES: SystemProfile[] = [
     id: 'NAMOS_JPK_VDEK_SprzedazWiersz',
     name: 'NAMOS → JPK_V7M Sprzedaż',
     system: 'NAMOS',
-    jpkType: 'JPK_VDEK',
+    jpkType: 'V7M',
     subType: 'SprzedazWiersz',
     columnMap: NAMOS_VDEK_SPRZEDAZ_MAP,
     fields: JPK_V7M_SPRZEDAZ_FIELDS,
@@ -361,7 +361,7 @@ export const SYSTEM_PROFILES: SystemProfile[] = [
     id: 'NAMOS_JPK_FA_Faktura',
     name: 'NAMOS → JPK_FA Faktura',
     system: 'NAMOS',
-    jpkType: 'JPK_FA',
+    jpkType: 'FA',
     subType: 'Faktura',
     columnMap: NAMOS_FA_FAKTURA_MAP,
     fields: JPK_FA_FAKTURA_FIELDS,
@@ -370,7 +370,7 @@ export const SYSTEM_PROFILES: SystemProfile[] = [
     id: 'ESO_JPK_MAG_WZ',
     name: 'ESO → JPK_MAG WZ',
     system: 'ESO',
-    jpkType: 'JPK_MAG',
+    jpkType: 'MAG',
     subType: 'WZ',
     columnMap: ESO_MAG_WZ_MAP,
     fields: [...JPK_MAG_WZ_DOC_FIELDS, ...JPK_MAG_WZ_FIELDS],
@@ -379,7 +379,7 @@ export const SYSTEM_PROFILES: SystemProfile[] = [
     id: 'COMARCH_OPTIMA_VAT_TXT',
     name: 'Comarch Optima → JPK_V7M Sprzedaż (TXT)',
     system: 'COMARCH_OPTIMA',
-    jpkType: 'JPK_VDEK',
+    jpkType: 'V7M',
     subType: 'SprzedazWiersz',
     columnMap: COMARCH_OPTIMA_VAT_TXT_MAP,
     fields: JPK_V7M_SPRZEDAZ_FIELDS,
@@ -388,7 +388,7 @@ export const SYSTEM_PROFILES: SystemProfile[] = [
     id: 'COMARCH_OPTIMA_XML_FA',
     name: 'Comarch Optima → JPK_FA Faktura (XML)',
     system: 'COMARCH_OPTIMA',
-    jpkType: 'JPK_FA',
+    jpkType: 'FA',
     subType: 'Faktura',
     columnMap: COMARCH_OPTIMA_XML_FA_MAP,
     fields: JPK_FA_FAKTURA_FIELDS,
@@ -397,7 +397,7 @@ export const SYSTEM_PROFILES: SystemProfile[] = [
     id: 'INSERT_SUBIEKT_FA',
     name: 'Insert Subiekt GT → JPK_FA Faktura (EPP)',
     system: 'INSERT_SUBIEKT',
-    jpkType: 'JPK_FA',
+    jpkType: 'FA',
     subType: 'Faktura',
     columnMap: INSERT_SUBIEKT_FA_MAP,
     fields: JPK_FA_FAKTURA_FIELDS,
@@ -406,7 +406,7 @@ export const SYSTEM_PROFILES: SystemProfile[] = [
     id: 'ENOVA365_XML_FA',
     name: 'enova365 → JPK_FA Faktura (XML)',
     system: 'ENOVA365',
-    jpkType: 'JPK_FA',
+    jpkType: 'FA',
     subType: 'Faktura',
     columnMap: ENOVA365_XML_FA_MAP,
     fields: JPK_FA_FAKTURA_FIELDS,
@@ -415,7 +415,7 @@ export const SYSTEM_PROFILES: SystemProfile[] = [
     id: 'ENOVA365_CDN_TXT',
     name: 'enova365 CDN → JPK_FA Faktura (CSV)',
     system: 'ENOVA365',
-    jpkType: 'JPK_FA',
+    jpkType: 'FA',
     subType: 'Faktura',
     columnMap: ENOVA365_CDN_TXT_MAP,
     fields: JPK_FA_FAKTURA_FIELDS,
@@ -424,7 +424,7 @@ export const SYSTEM_PROFILES: SystemProfile[] = [
     id: 'SAGE_SYMFONIA_FA',
     name: 'Sage Symfonia → JPK_FA Faktura (TXT)',
     system: 'SAGE_SYMFONIA',
-    jpkType: 'JPK_FA',
+    jpkType: 'FA',
     subType: 'Faktura',
     columnMap: SAGE_SYMFONIA_FA_MAP,
     fields: JPK_FA_FAKTURA_FIELDS,
@@ -433,7 +433,7 @@ export const SYSTEM_PROFILES: SystemProfile[] = [
     id: 'ASSECO_WAPRO_XML_FA',
     name: 'Asseco WAPRO → JPK_FA Faktura (XML)',
     system: 'ASSECO_WAPRO',
-    jpkType: 'JPK_FA',
+    jpkType: 'FA',
     subType: 'Faktura',
     columnMap: ASSECO_WAPRO_XML_FA_MAP,
     fields: JPK_FA_FAKTURA_FIELDS,
@@ -442,7 +442,7 @@ export const SYSTEM_PROFILES: SystemProfile[] = [
     id: 'DYNAMICS_NAV_FA',
     name: 'Dynamics NAV → JPK_FA Faktura (XML)',
     system: 'DYNAMICS_NAV',
-    jpkType: 'JPK_FA',
+    jpkType: 'FA',
     subType: 'Faktura',
     columnMap: DYNAMICS_NAV_FA_MAP,
     fields: JPK_FA_FAKTURA_FIELDS,
@@ -451,7 +451,7 @@ export const SYSTEM_PROFILES: SystemProfile[] = [
     id: 'SAP_R3_CSV_FA',
     name: 'SAP R/3 → JPK_FA Faktura (CSV)',
     system: 'SAP_R3',
-    jpkType: 'JPK_FA',
+    jpkType: 'FA',
     subType: 'Faktura',
     columnMap: SAP_R3_CSV_FA_MAP,
     fields: JPK_FA_FAKTURA_FIELDS,
@@ -481,10 +481,12 @@ export function findProfileByStructure(jpkType: string, subType: string): System
   ) ?? null
 }
 
-/** Normalize JPK type aliases (JPK_VDEK ↔ JPK_V7M are the same structure) */
+/** Normalize JPK type aliases to canonical unprefixed form */
 function normalizeJpkType(jpkType: string): string {
-  if (jpkType === 'JPK_V7M' || jpkType === 'JPK_VDEK') return 'JPK_VDEK'
-  return jpkType
+  const upper = jpkType.toUpperCase().trim()
+  if (upper === 'JPK_V7M' || upper === 'JPK_V7K' || upper === 'JPK_VDEK' || upper === 'VDEK' || upper === 'V7M' || upper === 'V7K') return 'V7M'
+  if (upper.startsWith('JPK_')) return upper.slice(4)
+  return upper
 }
 
 /**

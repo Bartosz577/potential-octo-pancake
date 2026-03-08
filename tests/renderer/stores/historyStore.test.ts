@@ -3,7 +3,7 @@ import { useHistoryStore } from '../../../src/renderer/src/stores/historyStore'
 import type { ConversionRecord } from '../../../src/renderer/src/stores/historyStore'
 
 const minimalRecord: Omit<ConversionRecord, 'id' | 'date'> = {
-  jpkType: 'JPK_VDEK',
+  jpkType: 'V7M',
   companyName: 'Test',
   companyNip: '1234567890',
   fileName: 'test.xml',
@@ -29,7 +29,7 @@ describe('historyStore', () => {
       expect(records[0].date).toBeTruthy()
       // Verify the date is a valid ISO string
       expect(() => new Date(records[0].date)).not.toThrow()
-      expect(records[0].jpkType).toBe('JPK_VDEK')
+      expect(records[0].jpkType).toBe('V7M')
       expect(records[0].companyName).toBe('Test')
       expect(records[0].fileName).toBe('test.xml')
     })

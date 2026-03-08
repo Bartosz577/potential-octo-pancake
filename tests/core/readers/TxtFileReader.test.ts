@@ -122,7 +122,7 @@ describe('TxtFileReader', () => {
 
       const sheet = result.sheets[0]
       expect(sheet.metadata.system).toBe('NAMOS')
-      expect(sheet.metadata.jpkType).toBe('JPK_VDEK')
+      expect(sheet.metadata.jpkType).toBe('V7M')
       expect(sheet.metadata.subType).toBe('SprzedazWiersz')
       expect(sheet.metadata.dateFrom).toBe('2026-01-01')
       expect(sheet.metadata.dateTo).toBe('2026-01-31')
@@ -143,7 +143,7 @@ describe('TxtFileReader', () => {
 
       const sheet = result.sheets[0]
       expect(sheet.metadata.system).toBe('SAP_RE')
-      expect(sheet.metadata.jpkType).toBe('JPK_VDEK')
+      expect(sheet.metadata.jpkType).toBe('V7M')
       expect(sheet.metadata.subType).toBe('SprzedazWiersz')
 
       // Data columns should exclude the 6 metadata columns
@@ -227,7 +227,7 @@ describe('TxtFileReader', () => {
       const result = reader.read(buffer, NAMOS_VDEK_FILE)
       const meta = result.sheets[0].metadata
       expect(meta.system).toBe('NAMOS')
-      expect(meta.jpkType).toBe('JPK_VDEK')
+      expect(meta.jpkType).toBe('V7M')
       expect(meta.subType).toBe('SprzedazWiersz')
       expect(meta.pointCode).toBe('0P549')
       expect(meta.dateFrom).toBe('2026-01-01')
@@ -281,7 +281,7 @@ describe('TxtFileReader', () => {
       const result = reader.read(buffer, NAMOS_FA_FILE)
       const meta = result.sheets[0].metadata
       expect(meta.system).toBe('NAMOS')
-      expect(meta.jpkType).toBe('JPK_FA')
+      expect(meta.jpkType).toBe('FA')
       expect(meta.subType).toBe('Faktura')
     })
 
@@ -321,7 +321,7 @@ describe('TxtFileReader', () => {
       const result = reader.read(buffer, ESO_MAG_FILE)
       const meta = result.sheets[0].metadata
       expect(meta.system).toBe('ESO')
-      expect(meta.jpkType).toBe('JPK_MAG')
+      expect(meta.jpkType).toBe('MAG')
       expect(meta.subType).toBe('WZ')
     })
 

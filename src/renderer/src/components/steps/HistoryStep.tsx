@@ -17,34 +17,34 @@ import { useMappingStore } from '@renderer/stores/mappingStore'
 import type { JpkType } from '@renderer/types'
 
 const JPK_LABELS: Record<JpkType, string> = {
-  JPK_VDEK: 'V7M',
-  JPK_FA: 'FA',
-  JPK_MAG: 'MAG',
-  JPK_WB: 'WB',
-  JPK_PKPIR: 'PKPiR',
-  JPK_EWP: 'EWP',
-  JPK_KR_PD: 'KR_PD',
-  JPK_ST: 'ST',
-  JPK_ST_KR: 'ST_KR',
-  JPK_FA_RR: 'FA_RR',
-  JPK_KR: 'KR'
+  V7M: 'V7M',
+  FA: 'FA',
+  MAG: 'MAG',
+  WB: 'WB',
+  PKPIR: 'PKPiR',
+  EWP: 'EWP',
+  KR_PD: 'KR_PD',
+  ST: 'ST',
+  ST_KR: 'ST_KR',
+  FA_RR: 'FA_RR',
+  KR: 'KR'
 }
 
 const JPK_COLORS: Record<JpkType, string> = {
-  JPK_VDEK: 'bg-accent/15 text-accent',
-  JPK_FA: 'bg-purple-500/15 text-purple-400',
-  JPK_MAG: 'bg-amber-500/15 text-amber-400',
-  JPK_WB: 'bg-cyan-500/15 text-cyan-400',
-  JPK_PKPIR: 'bg-emerald-500/15 text-emerald-400',
-  JPK_EWP: 'bg-rose-500/15 text-rose-400',
-  JPK_KR_PD: 'bg-indigo-500/15 text-indigo-400',
-  JPK_ST: 'bg-teal-500/15 text-teal-400',
-  JPK_ST_KR: 'bg-sky-500/15 text-sky-400',
-  JPK_FA_RR: 'bg-lime-500/15 text-lime-400',
-  JPK_KR: 'bg-violet-500/15 text-violet-400'
+  V7M: 'bg-accent/15 text-accent',
+  FA: 'bg-purple-500/15 text-purple-400',
+  MAG: 'bg-amber-500/15 text-amber-400',
+  WB: 'bg-cyan-500/15 text-cyan-400',
+  PKPIR: 'bg-emerald-500/15 text-emerald-400',
+  EWP: 'bg-rose-500/15 text-rose-400',
+  KR_PD: 'bg-indigo-500/15 text-indigo-400',
+  ST: 'bg-teal-500/15 text-teal-400',
+  ST_KR: 'bg-sky-500/15 text-sky-400',
+  FA_RR: 'bg-lime-500/15 text-lime-400',
+  KR: 'bg-violet-500/15 text-violet-400'
 }
 
-const ALL_TYPES: JpkType[] = ['JPK_VDEK', 'JPK_FA', 'JPK_MAG', 'JPK_WB', 'JPK_PKPIR', 'JPK_EWP', 'JPK_KR_PD', 'JPK_ST', 'JPK_ST_KR', 'JPK_FA_RR', 'JPK_KR']
+const ALL_TYPES: JpkType[] = ['V7M', 'FA', 'MAG', 'WB', 'PKPIR', 'EWP', 'KR_PD', 'ST', 'ST_KR', 'FA_RR', 'KR']
 
 function formatDate(iso: string): string {
   const d = new Date(iso)
@@ -151,7 +151,7 @@ export function HistoryStep(): React.JSX.Element {
   const handleNewConversion = useCallback(() => {
     clearFiles()
     clearMappings()
-    setActiveJpkType('JPK_VDEK')
+    setActiveJpkType('V7M')
     setJpkSubtype('V7M')
     setMode('conversion')
     setValidationXml(null)

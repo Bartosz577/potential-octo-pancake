@@ -1,7 +1,6 @@
 import { create } from 'zustand'
-import type { JpkType } from '../types'
 
-export type { JpkType }
+export type JpkType = 'V7M' | 'FA' | 'MAG' | 'WB' | 'PKPIR' | 'EWP' | 'KR_PD' | 'ST' | 'ST_KR' | 'FA_RR' | 'KR'
 export type JpkSubtype = 'V7M' | 'V7K'
 export type Step = 1 | 2 | 3 | 4 | 5 | 6 | 7
 export type AppMode = 'conversion' | 'validation'
@@ -31,7 +30,7 @@ interface AppState {
 }
 
 export const useAppStore = create<AppState>((set) => ({
-  activeJpkType: 'JPK_VDEK',
+  activeJpkType: 'V7M',
   jpkSubtype: 'V7M',
   currentStep: 1,
   mode: 'conversion',

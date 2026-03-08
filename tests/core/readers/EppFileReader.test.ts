@@ -549,18 +549,18 @@ Ilosc=1
       const profile = SYSTEM_PROFILES.find((p) => p.id === 'INSERT_SUBIEKT_FA')
       expect(profile).toBeDefined()
       expect(profile!.system).toBe('INSERT_SUBIEKT')
-      expect(profile!.jpkType).toBe('JPK_FA')
+      expect(profile!.jpkType).toBe('FA')
       expect(profile!.subType).toBe('Faktura')
     })
 
     it('findProfile returns INSERT_SUBIEKT_FA', () => {
-      const p = findProfile('INSERT_SUBIEKT', 'JPK_FA', 'Faktura')
+      const p = findProfile('INSERT_SUBIEKT', 'FA', 'Faktura')
       expect(p).not.toBeNull()
       expect(p!.id).toBe('INSERT_SUBIEKT_FA')
     })
 
     it('column map includes invoice-level fields', () => {
-      const profile = findProfile('INSERT_SUBIEKT', 'JPK_FA', 'Faktura')!
+      const profile = findProfile('INSERT_SUBIEKT', 'FA', 'Faktura')!
       expect(profile.columnMap[0]).toBe('P_2')    // NrFaktury
       expect(profile.columnMap[1]).toBe('P_1')    // DataWystawienia
       expect(profile.columnMap[2]).toBe('P_6')    // NIPNabywcy
